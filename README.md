@@ -1,7 +1,7 @@
-emgr
-====
+![emgr Logo](emgr.png) emgr
+                       ====
 
-![emgr Logo](emgr.png) Empirical Gramian Framework
+Empirical Gramian Framework
 
 Empirical gramians can be computed for linear and nonlinear control systems for purposes of model order reduction (MOR) or system identification. 
 Model reduction using empirical gramians can be applied to the state space, to the parameter space or to both through combined reduction. 
