@@ -9,6 +9,8 @@ disp('general:');
 general
 disp('closed:');
 closed
+disp('nonsym:');
+nonsym
 disp('hierarchy:');
 hierarchy
 disp('soureterm:');
