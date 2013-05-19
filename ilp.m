@@ -128,7 +128,6 @@ end
 
 function [X Y Z] = balance(WC,WO)
 	L = chol(WC+eye(size(WC,1)))-eye(size(WC,1));
-	[U D V] = svd(L*WO*L');
-	X = diag(diag(D).^0.25) * V' / L';
-	Y = X'*WO*X;
-	Z = inv(X);
+	[U Y V] = svd(L*WO*L');
+	X = diag(sqrt(diag(Y))) * V' / L';
+	Z = L'*U*diag(1./sqrt(diag(Y)));
