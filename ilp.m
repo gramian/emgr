@@ -1,5 +1,5 @@
-function hierarchy(o)
-% hierarchy
+function ilp(o)
+% ilp (inverse lyapunov procedure)
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( http://gramian.de/#license )
 %*
@@ -9,24 +9,15 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
 %% CONSTANTS
- L = 3; %Tree depth
- M = 3; %Children per node
- S = -0.2*M; %Diagonal Scale
-
- J = 1;
- O = L*M;
- N = (M^(L+1)-1)/(M-1);
+ J = 9;
+ N = 36;
+ O = J;
  R = O+O;
+ [A B C] = generate(J,N,O);
  t = [0 0.01 1];
  T = (t(3)-t(1))/t(2);
- u = [N zeros(1,T-1)];
- x =    ones(N,1);
-%%
-
-%% PARAMETER
- A = trasm(L,M,S);
- B = sparse(N,1); B(1,1) = 1;
- C = [sparse(O,N-O) speye(O)];
+ u = [ones(J,1) zeros(J,T-1)];
+ x = zeros(N,1);
 %%
 
 %% FUNCTIONS
@@ -34,7 +25,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  OUT = @(x,u,p) C*x;
 %%
 
-%%%%%%%% Hierarchy Reduction %%%%%%%%
+%%%%%%%% Reduction %%%%%%%%%
 
 %% FULL
  %% ONLINE
@@ -49,7 +40,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  tic;
   WC = emgr(LIN,OUT,[J N O],0,t,'c');
   WO = emgr(LIN,OUT,[J N O],0,t,'o');
-  [UU D VV] = squareroot(WC,WO,R);
+  [UU D VV] = balance(WC,WO); UU = UU(1:R,:); VV = VV(:,1:R);
   a = UU*A*VV;
   b = UU*B;
   c = C*VV;
@@ -74,25 +65,52 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap);
  set(gca,'YTick',1:N);
  if(o==2 &&  exist('OCTAVE_VERSION'))
- 	print -dsvg hierarchy.svg;
+ 	print -dsvg ilp.svg;
  end
 %%
 
-%%%%%%%% Tree Assembler %%%%%%%%
 
-function A = trasm(d,c,s)
+%%%%%%%% Generate %%%%%%%%%
 
-a = (c^(d+1)-1)/(c-1);
-A = sparse(a,a);
+function [A B C] = generate(J,N,O,s)
 
-A(1,1) = -s;
+%% Gramian Eigenvalues
+ WC = exp(-N + N*rand(N,1));
+ WO = exp(-N + N*rand(N,1));
 
-for I=0:((a-1)/c)-1
-	b = 1+c*I;
-	%A(1+I,b+1:b+c) = rand(1,c)+1;
-	A(b+1:b+c,1+I) = rand(c,1)+1;
-	A(sub2ind(size(A),b+1,b+1):a+1:sub2ind(size(A),b+c,b+c)) = s;
-end
+%% Gramian Eigenvectors
+ X = randn(N,N);
+ [U E V] = svd(X);
+
+%% Balancing Trafo
+ [P D Q] = svd(diag(WC.*WO));
+ W = -D;
+
+%% Input and Output
+ B = randn(N,J);
+
+ if(nargin<4 || s==0)
+	C = randn(O,N);
+ else
+	C = B';
+ end
+
+%% Scale Output Matrix
+ BB = sum(B.*B,2);  % = diag(B*B')
+ CC = sum(C.*C,1)'; % = diag(C'*C)
+ C = bsxfun(@times,C,sqrt(BB./CC)');
+
+%% Solve System Matrix
+ f = @(x,u,p) W*x+B*u;
+ g = @(x,u,p) C*x;
+ A = -emgr(f,g,[J N O],0,[0 0.01 1],'c');
+
+%% Unbalance System
+ T = U'*P';
+ A = T*A*T';
+ B = T*B;
+ C = C*T';
+
 
 %%%%%%%% RK2 Integration %%%%%%%%
 
@@ -106,11 +124,11 @@ for A=1:T
 	y(:,A) = g(x,u(:,A),p);
 end
 
-%%%%%%%% Squareroot %%%%%%%%
+%%%%%%%% Balance %%%%%%%%
 
-function [X Y Z] = squareroot(WC,WO,R)
-	[L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
-	[L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
-	[U Y V] = svd(LO'*LC);
-	X = ( LO*U(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R)))) )';
-	Z =   LC*V(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R))));
+function [X Y Z] = balance(WC,WO)
+	L = chol(WC+eye(size(WC,1)))-eye(size(WC,1));
+	[U D V] = svd(L*WO*L');
+	X = diag(diag(D).^0.25) * V' / L';
+	Y = X'*WO*X;
+	Z = inv(X);

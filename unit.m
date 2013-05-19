@@ -13,6 +13,8 @@ disp('nonsym:');
 nonsym
 disp('hierarchy:');
 hierarchy
+disp('ilp:');
+ilp
 disp('soureterm:');
 sourceterm
 disp('energy:');
