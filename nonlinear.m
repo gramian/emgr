@@ -47,8 +47,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  %% OFFLINE
   tic;
   WJ = emgr(non,out,[J N O],P,t,'j',0,1,0,x);
-  [UU D VV] = svds(WJ{1},R); VV = VV';
-  [PP D QQ] = svds(WJ{2},R); PP = PP';
+  [UU D VV] = svd(WJ{1}); UU = UU(:,1:R);   VV = VV(:,1:R)';
+  [PP D QQ] = svd(WJ{2}); PP = PP(1:R*R,:); QQ = QQ(1:R*R,:)';
   OFFLINE = toc
  %%
 
@@ -83,4 +83,3 @@ for A=1:T
 	x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
 	y(:,A) = g(x,u(:,A),p);
 end
-

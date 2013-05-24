@@ -46,13 +46,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  %% OFFLINE
   tic;
   WS = emgr(LIN,OUT,[J N O],p,t,'s',1,1,0,x);
-  [PP D QQ] = svds(WS{2},R); QQ = QQ'; q = QQ*p;
+  [PP D QQ] = svd(WS{2}); PP = PP(1:R,:); QQ = QQ(1:R,:)'; q = PP*p;
   OFFLINE = toc
  %%
 
  %% ONLINE
   tic;
-  y = rk2(LIN,OUT,[J N O],t,x,u,PP*q);
+  y = rk2(LIN,OUT,[J N O],t,x,u,QQ*q);
   ONLINE = toc
   ERROR = norm(norm(Y - y)./norm(Y))
   RELER = abs(Y - y)./abs(Y);

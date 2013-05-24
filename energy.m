@@ -42,7 +42,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  %% OFFLINE
   tic;
   WI = emgr(LIN,OUT,[1 N 1],p,t,'i',1,1,0,x);
-  [PP D QQ] = svds(WI{2},1); PP = PP'; q = PP*p;
+  [PP D QQ] = svd(WI{2}); PP = PP(1,:); QQ = QQ(1,:)'; q = PP*p;
   OFFLINE = toc
  %%
 

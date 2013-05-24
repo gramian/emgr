@@ -52,8 +52,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
   %WC = WG(1:N,1:N);
   %WO = WG(N+1:N+N,N+1:N+N);
   WX = WG(1:N,N+1:N+N);
-
-  [UU D VV] = svds(WX,R); VV = VV';
+  [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
   a = VV*A*UU;
   b = VV*B;
   c = C*UU;
@@ -75,7 +74,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin<1 || o==0 ) return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap);
  set(gca,'YTick',1:N);
  if(o==2 &&  exist('OCTAVE_VERSION'))
  	print -dsvg general.svg;
@@ -93,4 +92,3 @@ for A=1:T
 	x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
 	y(:,A) = g(x,u(:,A),p);
 end
- 

@@ -45,7 +45,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  %% OFFLINE
   tic;
   WO = emgr(LIN,OUT,[J N O],p,t,'o');
-  [UU D VV] = svds(WO,R); VV = VV';
+  [UU D VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
   a = VV*A*UU;
   c = C*UU;
   lin = @(x,u,p) p*a*x;

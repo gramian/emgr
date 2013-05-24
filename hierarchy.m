@@ -111,6 +111,6 @@ end
 function [X Y Z] = squareroot(WC,WO,R)
 	[L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
 	[L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
-	[U Y V] = svds(LO'*LC,R);
-	X = ( LO*U*diag(1./sqrt(diag(Y))) )';
-	Z =   LC*V*diag(1./sqrt(diag(Y)));
+	[U Y V] = svd(LO'*LC);
+	X = ( LO*U(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R)))) )';
+	Z =   LC*V(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R))));
