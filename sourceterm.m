@@ -69,8 +69,6 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  end
 %%
 
-%%
-
 %%%%%%%% RK2 Integration %%%%%%%%
 
 function y = rk2(f,g,q,t,x,u,p)

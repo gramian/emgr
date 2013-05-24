@@ -47,7 +47,6 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
   %[U D V] = svds(WXP,r); V = U';
   WXV = WX(n+1:N,n+1:N);
   [U D V] = svds(WXV,r); V = U';
-
   a = [zeros(r,r),eye(r);V*A(n+1:N,1:n)*U,V*A(n+1:N,n+1:N)*U];
   b = [zeros(r,J);V*B(n+1:N,:)];
   c = [zeros(O,r),C(:,n+1:N)*U];
