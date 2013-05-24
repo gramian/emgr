@@ -41,7 +41,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  %% OFFLINE
   tic;
   WX = (B*C)*emgr(LIN,OUT,[J N O],0,t,'x');
-  [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
+  [UU D VV] = svds(WX,R); VV = VV';
   a = VV*A*UU;
   b = VV*B;
   c = C*UU;

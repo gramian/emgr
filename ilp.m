@@ -1,10 +1,12 @@
-function [A B C] = ilp(J,N,O,s)
+function [A B C] = ilp(J,N,O,s,r)
 % ilp (inverse lyapunov procedure)
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( http://gramian.de/#license )
 %*
 
 if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+
+if(nargin==5) rand('seed',r); randn('seed',r); end;
 
 %% Gramian Eigenvalues
  WC = exp(-N + N*rand(N,1));
@@ -21,10 +23,10 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %% Input and Output
  B = randn(N,J);
 
- if(nargin<4 || s==0)
-        C = randn(O,N);
- else
+ if(nargin>=4 && s~=0)
         C = B';
+ else
+        C = randn(O,N);
  end
 
 %% Scale Output Matrix

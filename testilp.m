@@ -5,6 +5,7 @@ function testilp(o)
 %*
 
 if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian.de/ilp.m'); return; end
 
 %%%%%%%% Setup %%%%%%%%
 
@@ -40,7 +41,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  tic;
   WC = emgr(LIN,OUT,[J N O],0,t,'c');
   WO = emgr(LIN,OUT,[J N O],0,t,'o');
-  [UU D VV] = balance(WC,WO); UU = UU(1:R,:); VV = VV(:,1:R);
+  [UU D VV] = balance(WC,WO,R);
   a = UU*A*VV;
   b = UU*B;
   c = C*VV;
@@ -83,50 +84,8 @@ end
 
 %%%%%%%% Balance %%%%%%%%
 
-function [X Y Z] = balance(WC,WO)
+function [X Y Z] = balance(WC,WO,R)
 	L = chol(WC+eye(size(WC,1)))-eye(size(WC,1));
-	[U Y V] = svd(L*WO*L');
+	[U Y V] = svds(L*WO*L',R);
 	X = diag(sqrt(diag(Y))) * V' / L';
 	Z = L'*U*diag(1./sqrt(diag(Y)));
-
-
-%%%%%%%% Inverse Lyapunov Procedure %%%%%%%%%
-
-function [A B C] = ilp(J,N,O,s)
-
-%% Gramian Eigenvalues
- WC = exp(-N + N*rand(N,1));
- WO = exp(-N + N*rand(N,1));
-
-%% Gramian Eigenvectors
- X = randn(N,N);
- [U E V] = svd(X);
-
-%% Balancing Trafo
- [P D Q] = svd(diag(WC.*WO));
- W = -D;
-
-%% Input and Output
- B = randn(N,J);
-
- if(nargin<4 || s==0)
-        C = randn(O,N);
- else
-        C = B';
- end
-
-%% Scale Output Matrix
- BB = sum(B.*B,2);  % = diag(B*B')
- CC = sum(C.*C,1)'; % = diag(C'*C)
- C = bsxfun(@times,C,sqrt(BB./CC)');
-
-%% Solve System Matrix
- f = @(x,u,p) W*x+B*u;
- g = @(x,u,p) C*x;
- A = -emgr(f,g,[J N O],0,[0 0.01 1],'c');
-
-%% Unbalance System
- T = U'*P';
- A = T*A*T';
- B = T*B;
- C = C*T';

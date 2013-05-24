@@ -44,9 +44,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
   tic;
   WX = emgr(LIN,OUT,[J N O],0,t,'x',[0 0 0 0 0 0 0 0 0 1]);
   %WXP = WX(1:n,1:n);
-  %[U D V] = svd(WXP); U = U(:,1:r); V = U';
+  %[U D V] = svds(WXP,r); V = U';
   WXV = WX(n+1:N,n+1:N);
-  [U D V] = svd(WXV); U = U(:,1:r); V = U';
+  [U D V] = svds(WXV,r); V = U';
 
   a = [zeros(r,r),eye(r);V*A(n+1:N,1:n)*U,V*A(n+1:N,n+1:N)*U];
   b = [zeros(r,J);V*B(n+1:N,:)];

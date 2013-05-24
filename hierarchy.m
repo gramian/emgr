@@ -16,7 +16,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  J = 1;
  O = L*M;
  N = (M^(L+1)-1)/(M-1);
- R = O+O;
+ R = O;
  t = [0 0.01 1];
  T = (t(3)-t(1))/t(2);
  u = [N zeros(1,T-1)];
@@ -111,6 +111,6 @@ end
 function [X Y Z] = squareroot(WC,WO,R)
 	[L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
 	[L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
-	[U Y V] = svd(LO'*LC);
-	X = ( LO*U(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R)))) )';
-	Z =   LC*V(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R))));
+	[U Y V] = svds(LO'*LC,R);
+	X = ( LO*U*diag(1./sqrt(diag(Y))) )';
+	Z =   LC*V*diag(1./sqrt(diag(Y)));

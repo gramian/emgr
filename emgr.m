@@ -50,7 +50,7 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 %	          (cell)  W - {State,Parameter} Gramian Matrices (WS, WI, WJ only)
 %
 % TODO:
-% 	factorial transformations, parfor parallelization
+% 	factorial transformations
 %
 % For further information see http://gramian.de
 %*
@@ -67,10 +67,10 @@ h = t(2);		%Time step
 T = (t(3)-t(1))/h;	%Number of time steps
 w = lower(w);		%Force lower case gramian type
 
-if (nargin<7) ||(isempty(nf)) nf = 0; end;	%If options empty, set to zero
-if (nargin<8) ||(isempty(ut)) ut = 1; end;	%If input empty, set to one
-if (nargin<9) ||(isempty(us)) us = 0; end;	%If steady-state input empty, set to zero
-if (nargin<10)||(isempty(xs)) xs = 0; end;	%If steady-state empty, set to zero
+if (nargin<7) ||(isempty(nf)) nf = 0; end;		%If options empty, set to zero
+if (nargin<8) ||(isempty(ut)) ut = 1; end;		%If input empty, set to one
+if (nargin<9) ||(isempty(us)) us = 0; end;		%If steady-state input empty, set to zero
+if (nargin<10)||(isempty(xs)) xs = 0; end;		%If steady-state empty, set to zero
 if (nargin<11)||(isempty(um)) um = 1; end; 	%If input scales empty, set to one
 if (nargin<12)||(isempty(xm)) xm = 1; end; 	%If state scales empty, set to one
 if (nargin<13)||(isempty(yd)) yd = cell(2,1); end;
@@ -98,7 +98,7 @@ if(w=='c' || w=='o' || w=='x')
 	if(size(us,2)==1) us = us*ones(1,T); end;					%Expand input steady state for each step
 	if(size(ut,2)==1) k  = (1/h); ut = [ut,zeros(J,T-1)]; else k = 1; end;	%TODO ut sparse when octave compat
 
-	if(nf(1)==4)&&(w=='o')&&(nf(8)~=0) nf(1)=5; end;
+	if(nf(1)==4)&&(w=='o')&&(nf(8)~=0) nf(1) = 5; end;
 	if(nf(2)==1)&&(w~='o') dx = pod(ut);                     else dx = 0; end;	%Set input directions
 	if(nf(2)==1)&&(w~='c') dy = pod(ode1x(f,N,h,T,xs,us,p)); else dy = 0; end;	%Set state directions
 
@@ -139,11 +139,11 @@ end;
 
 switch(w)												%Switch by gramian type
 	case 'c'												%Type: controllability gramian
-  		for c=1:C										%For all input scales
+		for c=1:C										%For all input scales
 			for j=1:J									%For all input components
 				uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));			%Set up input
 				if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end;		%Simulate (nonlinear) system
-				x = bsxfun(@minus,x,steady(nf(1),x,X))*(1/um(j,c));			%Subtract scaled steady state
+				x = bsxfun(@minus,x,steady(nf(1),x,X))*(1.0/um(j,c));			%Subtract scaled steady state
 				W = W + x*x';								%Vectorized sum of dyadic products x(:,t)'*x(:,t) for all t
 			end;
 		end;
@@ -153,9 +153,9 @@ switch(w)												%Switch by gramian type
 			for n=1:N									%For all state components
 				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
 				if(nf(9)==0) odey(f,g,h,T,xx,us,p,n,nf(10)); else o{n} = yd{2-sn,d}; end;	%Simulate (nonlinear) system
-				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1/xm(n,d));		%Subtract scaled steady state
+				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1.0/xm(n,d));		%Subtract scaled steady state
 			end;
-			for n=1:N %parfor								%For each row
+			for n=1:N									%For each row
 				for m=1:N								%For each column
 					W(n,m) = W(n,m) + o{n}(:)'*o{m}(:);				%Vectorized dot product of o{n}(:,t)*o{m}(:,t)' for all t
 				end;
@@ -168,14 +168,14 @@ switch(w)												%Switch by gramian type
 			for n=1:N 									%For all state components
 				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
 				if(nf(9)==0) odey(f,g,h,T,xx,us,p,n,nf(10)); else o{n} = yd{2,d}; end;	%Simulate (nonlinear) system
-				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1/xm(n,d));		%Subtract scaled steady state
+				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1.0/xm(n,d));		%Subtract scaled steady state
 			end;
 			for c=1:C									%For all input scales
 				for j=1:J								%For all input components
 					uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));		%Set up input
 					if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end;	%Simulate (nonlinear) system
-					x = bsxfun(@minus,x,steady(nf(1),x,X))*(1/um(j,c));		%Subtract scaled steady state
-					for m=1:N %parfor						%For each column
+					x = bsxfun(@minus,x,steady(nf(1),x,X))*(1.0/um(j,c));		%Subtract scaled steady state
+					for m=1:N							%For each column
 						W(:,m) = W(:,m) + x*o{m}(j,:)';				%Sum product of control and observe components
 					end;
 				end;
@@ -314,7 +314,7 @@ switch(q)
 
 		for t=2:T
 			k = 0.5*h*f(z,u(:,t),p);
-			z = z + 3*k-m;
+			z = z + 3.0*k-m;
 			x(:,t) = z;
 			m = k;
 		end;
@@ -342,7 +342,7 @@ switch(q)
 
 		for t=2:T
 			k = 0.5*h*f(z,u(:,t),p);
-			z = z + 3*k-m;
+			z = z + 3.0*k-m;
 			o{n}(:,t) = g(z,u(:,t),p);
 			m = k;
 		end;

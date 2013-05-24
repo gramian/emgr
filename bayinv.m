@@ -55,9 +55,9 @@ optopt = optimset('Display','off','MaxIter',10);
 %% WJ
  %% OFFLINE
   tic;
-  WJ = emgr(non,out,[J N O],p,t,'j',0,1,0,x);
-  [TT D VV] = svd(WJ{1}); TT = TT(:,1:R);   VV = VV(:,1:R)';
-  [PP D QQ] = svd(WJ{2}); PP = PP(1:R*R,:); QQ = QQ(1:R*R,:)';
+  WJ = emgr(non,out,[J N O],p,t,'j',[0 0 0 0 0 0 0 0 0 1],1,0,x);
+  [TT D VV] = svds(WJ{1},R); VV = VV';
+  [PP D QQ] = svds(WJ{2},R); PP = PP';
   OFFLINE = toc
  %%
 

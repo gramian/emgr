@@ -53,7 +53,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
   %WO = WG(N+1:N+N,N+1:N+N);
   WX = WG(1:N,N+1:N+N);
 
-  [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
+  [UU D VV] = svds(WX,R); VV = VV';
   a = VV*A*UU;
   b = VV*B;
   c = C*UU;

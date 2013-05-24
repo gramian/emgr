@@ -13,13 +13,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  t = [0 0.01 1];
  T = (t(3)-t(1))/t(2);
  u = [1 zeros(1,T-1)];
- x = zeros(N,1);
+ x = ones(N,1);
 %%
 
 %% SYSTEM
  A = rand(N,N);
  A(1:N+1:end) = -0.48*N;
- A = 0.5*(A+A');
  B = rand(N,1);
  p = A(:);
 %%
@@ -43,13 +42,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  %% OFFLINE
   tic;
   WI = emgr(LIN,OUT,[1 N 1],p,t,'i',1,1,0,x);
-  [PP D QQ] = svd(WI{2}); PP = PP(1,:); QQ = QQ(1,:)'; r = PP*p;
+  [PP D QQ] = svds(WI{2},1); PP = PP'; q = PP*p;
   OFFLINE = toc
  %%
 
  %% ONLINE
   tic;
-  y = rk2(LIN,OUT,[1 N 1],t,x,u,QQ*r);
+  y = rk2(LIN,OUT,[1 N 1],t,x,u,QQ*q);
   ONLINE = toc
   ERROR = norm(norm(Y - y)./norm(Y))
   RELER = abs(Y - y)./abs(Y);
