@@ -9,7 +9,7 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 % ABOUT:
 %	emgr - Empirical Gramian Framemwork, computating empirical gramians
 %	for model reduction and system identification.
-%	Compatible with Octave and Matlab.
+%	Compatible with OCTAVE and MATLAB.
 %
 % INPUTS:
 %		  (func)  f - system function handle, signature: xdot = f(x,u,p)
@@ -25,8 +25,8 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 %			* 'I' or 'i' : empirical identifiability gramian (WI)
 %			* 'J' or 'j' : empirical joint gramian (WJ)
 %		(vector) [nf = 0] - options, 10 components
-%			+ residualize against zero(0), average(1), last(2), steady-state(3), pca(4)
-%			+ unit-normal(0), pca(1) directions
+%			+ residualize against zero(0), average(1), last(2), steady-state(3), pod(4), data pod(5), median(6)
+%			+ unit-normal(0), pod(1) directions
 %			+ linear(0), log(1), rombergseq(2), single(3) input scale spacing
 %			+ linear(0), log(1), rombergseq(2), single(3) init-state scale spacing
 %			+ unit(0), [factorial(1)], single(3) rotations of input directions
@@ -34,7 +34,7 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 %			+ single(0), double(0) run
 %			+ disable(0), enable(1)
 %				* robust parameters (WC, WS only)
-%				* data-driven pca (WO, WI only)
+%				* data-driven pod (WO, WI only)
 %				* less scales (WX, WJ only)
 %			+ disable(0), enable(1) data-driven gramians
 %			+ euler-method-1(0), adams-bashforth-2(1)
@@ -55,8 +55,8 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 % For further information see http://gramian.de
 %*
 
-global x;		%Make x available to ode1x
-global o;		%Make y available to ode1y
+global x;		%Make x available to odex
+global o;		%Make y available to odey
 
 J = q(1);		%Number of Inputs
 N = q(2);		%Number of States
@@ -99,8 +99,8 @@ if(w=='c' || w=='o' || w=='x')
 	if(size(ut,2)==1) k  = (1/h); ut = [ut,zeros(J,T-1)]; else k = 1; end;	%TODO ut sparse when octave compat
 
 	if(nf(1)==4)&&(w=='o')&&(nf(8)~=0) nf(1) = 5; end;
-	if(nf(2)==1)&&(w~='o') dx = pod(ut);                     else dx = 0; end;	%Set input directions
-	if(nf(2)==1)&&(w~='c') dy = pod(ode1x(f,N,h,T,xs,us,p)); else dy = 0; end;	%Set state directions
+	if(nf(2)==1)&&(w~='o') dx = svd(ut,'econ');                    else dx = 0; end;	%Set input directions
+	if(nf(2)==1)&&(w~='c') dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy = 0; end;	%Set state directions
 
 	o = cell(N,1);	%Preallocate array of outputs
 	x = zeros(N,T);	%Preallocate array pf states
@@ -115,7 +115,7 @@ if(w=='c' || w=='o' || w=='x')
 			Y = g(xs,us(:,1),p);
 		case 5
 			X = 0;
-			Y = pod(yd);
+			Y = svd(yd,'econ');
 		otherwise
 			X = 0;
 			Y = 0;
@@ -134,7 +134,7 @@ if(w=='c' || w=='o' || w=='x')
 		g = @(x,u,p)   G(B*x,u,p);
 	end;
 
-	sn = size(yd,1)==1;
+	sn = 2 - (size(yd,1)==1);
 end;
 
 switch(w)												%Switch by gramian type
@@ -152,7 +152,7 @@ switch(w)												%Switch by gramian type
 		for d=1:D										%For all scales
 			for n=1:N									%For all state components
 				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
-				if(nf(9)==0) odey(f,g,h,T,xx,us,p,n,nf(10)); else o{n} = yd{2-sn,d}; end;	%Simulate (nonlinear) system
+				if(nf(9)==0) odey(f,g,h,T,xx,us,p,n,nf(10)); else o{n} = yd{sn,d}; end;	%Simulate (nonlinear) system
 				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1.0/xm(n,d));		%Subtract scaled steady state
 			end;
 			for n=1:N									%For each row
@@ -213,7 +213,7 @@ switch(w)												%Switch by gramian type
 		V = emgr(F,G,[J+P N+P O+P],0,t,'x',nf,[ut;up],[us;zeros(P,1)],[xs;p],um,xm);%Compute Cross Gramian of double augmented system
 		S = norm(V,1);								%Bound largest eigenvalue
 		W{1} = V(1:N,1:N);							%Extract Cross gramian
-		V = chol(V+S*speye(N+P));							%Use shortcut to compute schur complement of augmented wit ensured positive definiteness
+		V = chol(V+S*speye(N+P));							%Use shortcut to compute schur complement of augmented with ensured positive definiteness
 		V = V(N+1:N+P,N+1:N+P);							%Extract parameter cross gramian using cholesky factors
 		W{2} = V'*V - S*speye(P);							%Compute cross identifiability gramian
 	otherwise
@@ -231,7 +231,7 @@ function d = dirs(n,N,e)
 	switch(e)
 		case 0    %Unit-Normal
 			d = (1:N==n)';
-		otherwise %PCA
+		otherwise %POD
 			d = e;
 	end;
 
@@ -278,21 +278,15 @@ function y = steady(v,d,e)
 			y = d(end,:);
 		case 3 %Steady State
 			y = e;
-		case 4 %PCA
-			y = pod(d);
-		case 5 %Data PCA
+		case 4 %POD
+			y = svd(d,'econ');
+		case 5 %Data POD
 			y = e;
+		case 6 %Median
+			y = median(d,2);
 	end;
 
 end	%end steady
-
-%********
-
-function p = pod(y)
-
-	p = svd(cov(bsxfun(@minus,y,mean(y,2))'),'econ');
-
-end	%end pod
 
 %********
 
@@ -300,24 +294,24 @@ function odex(f,h,T,z,u,p,q)
 
 global x;
 
-switch(q)
-	case 0 %Eulers Method
-		for t=1:T
-			z = z + h*f(z,u(:,t),p);
-			x(:,t) = z;
-		end;
-	case 1 %Adams-Bashforth Method
-		m = h*f(z + 0.5*h*f(z,u(:,1),p),u(:,1),p);
-		z = z + m;
-		x(:,1) = z;
-		m = 0.5*m;
+	switch(q)
+		case 0 %Eulers Method
+			for t=1:T
+				z = z + h*f(z,u(:,t),p);
+				x(:,t) = z;
+			end;
+		case 1 %Adams-Bashforth Method
+			m = h*f(z + 0.5*h*f(z,u(:,1),p),u(:,1),p);
+			z = z + m;
+			x(:,1) = z;
+			m = 0.5*m;
 
-		for t=2:T
-			k = 0.5*h*f(z,u(:,t),p);
-			z = z + 3.0*k-m;
-			x(:,t) = z;
-			m = k;
-		end;
+			for t=2:T
+				k = 0.5*h*f(z,u(:,t),p);
+				z = z + 3.0*k-m;
+				x(:,t) = z;
+				m = k;
+			end;
 	end;
 
 end	%end odex
@@ -328,24 +322,24 @@ function odey(f,g,h,T,z,u,p,n,q)
 
 global o;
 
-switch(q)
-	case 0 %Eulers Method
-		for t=1:T
-			z = z + h*f(z,u(:,t),p);
-			o{n}(:,t) = g(z,u(:,t),p);
-		end;
-	case 1 %Adams-Bashforth Method
-		m = h*f(z + 0.5*h*f(z,u(:,1),p),u(:,1),p);
-		z = z + m;
-		o{n}(:,1) = g(z,u(:,1),p);
-		m = 0.5*m;
+	switch(q)
+		case 0 %Eulers Method
+			for t=1:T
+				z = z + h*f(z,u(:,t),p);
+				o{n}(:,t) = g(z,u(:,t),p);
+			end;
+		case 1 %Adams-Bashforth Method
+			m = h*f(z + 0.5*h*f(z,u(:,1),p),u(:,1),p);
+			z = z + m;
+			o{n}(:,1) = g(z,u(:,1),p);
+			m = 0.5*m;
 
-		for t=2:T
-			k = 0.5*h*f(z,u(:,t),p);
-			z = z + 3.0*k-m;
-			o{n}(:,t) = g(z,u(:,t),p);
-			m = k;
-		end;
+			for t=2:T
+				k = 0.5*h*f(z,u(:,t),p);
+				z = z + 3.0*k-m;
+				o{n}(:,t) = g(z,u(:,t),p);
+				m = k;
+			end;
 	end;
 
 end	%end odey
