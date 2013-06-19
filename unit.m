@@ -3,14 +3,15 @@
 % released under BSD 2-Clause License ( http://gramian.de/#license )
 %*
 
+rand('seed',65535);
+randn('seed',65535);
+
 disp('largescale:');
 largescale
 disp('general:');
 general
 disp('closed:');
 closed
-disp('nonsym:');
-nonsym
 disp('hierarchy:');
 hierarchy
 disp('testilp:');

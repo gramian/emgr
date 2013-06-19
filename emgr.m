@@ -1,5 +1,5 @@
 function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
-% emgr - Empirical Gramian Framework (Version 1.1)
+% emgr - Empirical Gramian Framework (Version 1.2)
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( http://gramian.de/#license )
 %
@@ -50,13 +50,13 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 %	          (cell)  W - {State,Parameter} Gramian Matrices (WS, WI, WJ only)
 %
 % TODO:
-% 	factorial transformations
+% 	factorial transformations, leapfrog integrator
 %
 % For further information see http://gramian.de
 %*
 
 global x;		%Make x available to odex
-global o;		%Make y available to odey
+global y;		%Make y available to odey
 
 J = q(1);		%Number of Inputs
 N = q(2);		%Number of States
@@ -88,7 +88,7 @@ if(w=='c' || w=='o' || w=='x')
 		if(size(um,1)==J) um = [um;ones(P,1)]; end;
 		F = f; f = @(x,u,p) F(x,u(1:J),u(J+1:J+P));
 		G = g; g = @(x,u,p) G(x,u(1:J),u(J+1:J+P));
-	end;
+	end
 
 	if(size(um,2)==1) um = scales(um,nf(3),nf(5),w=='x'&&nf(8)==0); end;	%Generate Scales
 	if(size(xm,2)==1) xm = scales(xm,nf(4),nf(6),w=='x'&&nf(8)==0); end;	%Generate Scales
@@ -102,9 +102,10 @@ if(w=='c' || w=='o' || w=='x')
 	if(nf(2)==1)&&(w~='o') dx = svd(ut,'econ');                    else dx = 0; end;	%Set input directions
 	if(nf(2)==1)&&(w~='c') dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy = 0; end;	%Set state directions
 
-	o = cell(N,1);	%Preallocate array of outputs
-	x = zeros(N,T);	%Preallocate array pf states
-	W = zeros(N,N);	%Preallocate gramian
+	W = zeros(N,N);			%Preallocate gramian
+	x = zeros(N,T);			%Preallocate array of states
+	y = zeros(O,T);			%Preallocate array of outputs
+	o = zeros(O,T,N);		%Preallocate array of output containers
 
 	switch(nf(1))
 		case 0
@@ -119,7 +120,7 @@ if(w=='c' || w=='o' || w=='x')
 		otherwise
 			X = 0;
 			Y = 0;
-	end;
+	end
 
 	if(nf(7)==1)	%Double Run
 		nf(7) = 0;
@@ -142,45 +143,45 @@ switch(w)												%Switch by gramian type
 		for c=1:C										%For all input scales
 			for j=1:J									%For all input components
 				uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));			%Set up input
-				if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end;		%Simulate (nonlinear) system
+				if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end		%Simulate (nonlinear) system
 				x = bsxfun(@minus,x,steady(nf(1),x,X))*(1.0/um(j,c));			%Subtract scaled steady state
 				W = W + x*x';								%Vectorized sum of dyadic products x(:,t)'*x(:,t) for all t
-			end;
-		end;
+			end
+		end
 		W = W*(h/C);										%Symmetrize and normalize by number of scales
 	case 'o'												%Type: observability gramian
 		for d=1:D										%For all scales
 			for n=1:N									%For all state components
 				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
-				if(nf(9)==0) odey(f,g,h,T,xx,us,p,n,nf(10)); else o{n} = yd{sn,d}; end;	%Simulate (nonlinear) system
-				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1.0/xm(n,d));		%Subtract scaled steady state
-			end;
+				if(nf(9)==0) odey(f,g,h,T,xx,us,p,nf(10)); else y = yd{sn,d}; end		%Simulate (nonlinear) system
+				o(:,:,n) = bsxfun(@minus,y,steady(nf(1),y,Y))*(1.0/xm(n,d));		%Subtract scaled steady state
+			end
 			for n=1:N									%For each row
+				on = o(:,:,n); on = on(:)';						%Vectorize Timeseries
 				for m=1:N								%For each column
-					W(n,m) = W(n,m) + o{n}(:)'*o{m}(:);				%Vectorized dot product of o{n}(:,t)*o{m}(:,t)' for all t
-				end;
-			end;
+					om = o(:,:,m); om = om(:);					%Vectorize Timeseries
+					W(n,m) = W(n,m) + on*om;						%Vectorized dot product of o(:,t,n)*o(:,t,m)' for all t
+				end
+			end
 		end;
 		W = W*(h/D);										%Symmetrize and normalize by number of scales
 	case 'x'												%Type: cross gramian
-		if(J~=O) error('ERROR: non-square system!'); end;						%error if non square
+		if(J~=O) error('ERROR: non-square system!'); end;						%Error if non square
 		for d=1:D										%For all state scales
 			for n=1:N 									%For all state components
 				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
-				if(nf(9)==0) odey(f,g,h,T,xx,us,p,n,nf(10)); else o{n} = yd{2,d}; end;	%Simulate (nonlinear) system
-				o{n} = bsxfun(@minus,o{n},steady(nf(1),o{n},Y))*(1.0/xm(n,d));		%Subtract scaled steady state
-			end;
+				if(nf(9)==0) odey(f,g,h,T,xx,us,p,nf(10)); else y = yd{2,d}; end		%Simulate (nonlinear) system
+				o(:,:,n) = bsxfun(@minus,y,steady(nf(1),y,Y))*(1.0/xm(n,d));		%Subtract scaled steady state
+			end
 			for c=1:C									%For all input scales
 				for j=1:J								%For all input components
 					uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));		%Set up input
-					if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end;	%Simulate (nonlinear) system
+					if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end	%Simulate (nonlinear) system
 					x = bsxfun(@minus,x,steady(nf(1),x,X))*(1.0/um(j,c));		%Subtract scaled steady state
-					for m=1:N							%For each column
-						W(:,m) = W(:,m) + x*o{m}(j,:)';				%Sum product of control and observe components
-					end;
-				end;
-			end;
-		end;
+					W = W + x*shiftdim(o(j,:,:),1);					%Sum product of controllability and observability components
+				end
+			end
+		end
 		W = W*(h/(C*D));								%Symmetrize and normalize by number of scales
 	case 's'										%Type: sensitivity gramian
 		W = cell(2,1);								%Allocate return type
@@ -192,7 +193,7 @@ switch(w)												%Switch by gramian type
 			V = emgr(F,G,[1 N O],(1:P==q)*p(q),t,'c',nf,0,p(q),xs,1,xm);	%Compute parameter controllability Gramian
 			W{2}(q,q) = trace(V);						%Trace of current parameter controllability gramian
 			W{1} = W{1} + V;							%Accumulate controllability gramian
-		end;
+		end
 	case 'i'										%Type: identifiability gramian
 		if(size(xm,1)==N) xm = [xm;ones(P,1)]; end;				%Augment state scales
 		W = cell(2,1);								%Allocate return type
@@ -218,11 +219,11 @@ switch(w)												%Switch by gramian type
 		W{2} = V'*V - S*speye(P);							%Compute cross identifiability gramian
 	otherwise
 		error('ERROR: unknown gramian type!');
-end;
+end
 
 if(w=='c' || w=='o' || w=='x') W = 0.5*(W+W'); end; 	%Enforce Symmetry
 
-end	%end emgr
+end
 
 %********
 
@@ -233,9 +234,8 @@ function d = dirs(n,N,e)
 			d = (1:N==n)';
 		otherwise %POD
 			d = e;
-	end;
-
-end	%end dirs
+	end
+end
 
 %********
 
@@ -250,7 +250,7 @@ function s = scales(s,d,e,f)
 			if(f) s = s*[1/4,1];   else s = s*[1/8,1/4,1/2,1]; end;
 		case 3 %Single
 			%s = s;
-	end;
+	end
 
 	switch(e)
 		case 0 %Unit
@@ -261,9 +261,8 @@ function s = scales(s,d,e,f)
 
 		case 3 %Single
 			%s = s;
-	end;
-
-end	%end scales
+	end
+end
 
 %********
 
@@ -284,62 +283,59 @@ function y = steady(v,d,e)
 			y = e;
 		case 6 %Median
 			y = median(d,2);
-	end;
-
-end	%end steady
+	end
+end
 
 %********
 
-function odex(f,h,T,z,u,p,q)
+function odex(f,h,T,Z,u,p,q)
 
 global x;
-
+z = Z;
 	switch(q)
 		case 0 %Eulers Method
 			for t=1:T
 				z = z + h*f(z,u(:,t),p);
 				x(:,t) = z;
-			end;
+			end
 		case 1 %Adams-Bashforth Method
-			m = h*f(z + 0.5*h*f(z,u(:,1),p),u(:,1),p);
-			z = z + m;
+			m = 0.5*h*f(z,u(:,1),p);
+			z = z + h*f(z + m,u(:,1),p);
 			x(:,1) = z;
-			m = 0.5*m;
+			k = z;
 
 			for t=2:T
 				k = 0.5*h*f(z,u(:,t),p);
-				z = z + 3.0*k-m;
+				z = z + 3.0*k - m;
 				x(:,t) = z;
 				m = k;
-			end;
-	end;
-
-end	%end odex
+			end
+	end
+end
 
 %********
 
-function odey(f,g,h,T,z,u,p,n,q)
+function odey(f,g,h,T,Z,u,p,q)
 
-global o;
-
+global y;
+z = Z;
 	switch(q)
 		case 0 %Eulers Method
 			for t=1:T
 				z = z + h*f(z,u(:,t),p);
-				o{n}(:,t) = g(z,u(:,t),p);
-			end;
+				y(:,t) = g(z,u(:,t),p);
+			end
 		case 1 %Adams-Bashforth Method
-			m = h*f(z + 0.5*h*f(z,u(:,1),p),u(:,1),p);
-			z = z + m;
-			o{n}(:,1) = g(z,u(:,1),p);
-			m = 0.5*m;
+			m = 0.5*h*f(z,u(:,1),p);
+			z = z + h*f(z + m,u(:,1),p);
+			y(:,1) = g(z,u(:,1),p);
+			k = z;
 
 			for t=2:T
 				k = 0.5*h*f(z,u(:,t),p);
-				z = z + 3.0*k-m;
-				o{n}(:,t) = g(z,u(:,t),p);
+				z = z + 3.0*k - m;
+				y(:,t) = g(z,u(:,t),p);
 				m = k;
-			end;
-	end;
-
-end	%end odey
+			end
+	end
+end
