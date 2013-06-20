@@ -12,8 +12,8 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 %	Compatible with OCTAVE and MATLAB.
 %
 % INPUTS:
-%		  (func)  f - system function handle, signature: xdot = f(x,u,p)
-%		  (func)  g - output function handle, signature: y = g(x,u,p)
+%  (func handle)  f - system function handle, signature: xdot = f(x,u,p)
+%  (func handle)  g - output function handle, signature:    y = g(x,u,p)
 %		(vector)  q - system dimensions [inputs,states,outputs]
 %		(vector)  p - parameters, 0 if none
 %		(vector)  t - time [start,step,stop]
@@ -25,7 +25,7 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 %			* 'I' or 'i' : empirical identifiability gramian (WI)
 %			* 'J' or 'j' : empirical joint gramian (WJ)
 %		(vector) [nf = 0] - options, 10 components
-%			+ residualize against zero(0), average(1), last(2), steady-state(3), pod(4), data pod(5), median(6)
+%			+ residual zero(0), average(1), last(2), steady-state(3), pod(4), data pod(5), median(6)
 %			+ unit-normal(0), pod(1) directions
 %			+ linear(0), log(1), rombergseq(2), single(3) input scale spacing
 %			+ linear(0), log(1), rombergseq(2), single(3) init-state scale spacing
@@ -55,32 +55,32 @@ function W = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd)
 % For further information see http://gramian.de
 %*
 
-global x;		%Make x available to odex
-global y;		%Make y available to odey
+global x;			%Make x available to odex
+global y;			%Make y available to odey
 
-J = q(1);		%Number of Inputs
-N = q(2);		%Number of States
-O = q(3);		%Number of Outputs
-p = p(:);		%Ensure parameters are in column vector
+J = q(1);			%Number of Inputs
+N = q(2);			%Number of States
+O = q(3);			%Number of Outputs
+p = p(:);			%Ensure parameters are in column vector
 P = numel(p);		%Number of parameters
-h = t(2);		%Time step
+h = t(2);			%Time step
 T = (t(3)-t(1))/h;	%Number of time steps
 w = lower(w);		%Force lower case gramian type
 
-if (nargin<7) ||(isempty(nf)) nf = 0; end;		%If options empty, set to zero
-if (nargin<8) ||(isempty(ut)) ut = 1; end;		%If input empty, set to one
-if (nargin<9) ||(isempty(us)) us = 0; end;		%If steady-state input empty, set to zero
-if (nargin<10)||(isempty(xs)) xs = 0; end;		%If steady-state empty, set to zero
-if (nargin<11)||(isempty(um)) um = 1; end; 	%If input scales empty, set to one
-if (nargin<12)||(isempty(xm)) xm = 1; end; 	%If state scales empty, set to one
+if (nargin<7) ||(isempty(nf)) nf = 0; end;
+if (nargin<8) ||(isempty(ut)) ut = 1; end;
+if (nargin<9) ||(isempty(us)) us = 0; end;
+if (nargin<10)||(isempty(xs)) xs = 0; end;
+if (nargin<11)||(isempty(um)) um = 1; end; 
+if (nargin<12)||(isempty(xm)) xm = 1; end;
 if (nargin<13)||(isempty(yd)) yd = cell(2,1); end;
 
-if (numel(nf)<10) nf(10) = 0; end;		%If options scalar, extend to vector
-if (numel(ut)==1) ut = ones(J,1)*ut; end;		%If input scalar, extend to vector
-if (numel(us)==1) us = ones(J,1)*us; end;		%If steady-state input scalar, extend to vector
-if (numel(xs)==1) xs = ones(N,1)*xs; end;		%If steady-state scalar, extend to vector
-if (numel(um)==1) um = ones(J,1)*um; end;		%If input scales scalar, extend to vector
-if (numel(xm)==1) xm = ones(N,1)*xm; end;		%If state scales scalar, extend to vector
+if (numel(nf)<10) nf(10) = 0; end;
+if (numel(ut)==1) ut = ones(J,1)*ut; end;
+if (numel(us)==1) us = ones(J,1)*us; end;
+if (numel(xs)==1) xs = ones(N,1)*xs; end;
+if (numel(um)==1) um = ones(J,1)*um; end;
+if (numel(xm)==1) xm = ones(N,1)*xm; end;
 
 if(w=='c' || w=='o' || w=='x')
 	if(w=='c'&&nf(8)~=0)
@@ -90,22 +90,22 @@ if(w=='c' || w=='o' || w=='x')
 		G = g; g = @(x,u,p) G(x,u(1:J),u(J+1:J+P));
 	end
 
-	if(size(um,2)==1) um = scales(um,nf(3),nf(5),w=='x'&&nf(8)==0); end;	%Generate Scales
-	if(size(xm,2)==1) xm = scales(xm,nf(4),nf(6),w=='x'&&nf(8)==0); end;	%Generate Scales
-	C = size(um,2);								%Number input scales
-	D = size(xm,2);								%Number state scales
+	if(size(um,2)==1) um = scales(um,nf(3),nf(5),w=='x'&&nf(8)==0); end;		%Generate Scales
+	if(size(xm,2)==1) xm = scales(xm,nf(4),nf(6),w=='x'&&nf(8)==0); end;		%Generate Scales
+	C = size(um,2);																%Number input scales
+	D = size(xm,2);																%Number state scales
 
-	if(size(us,2)==1) us = us*ones(1,T); end;					%Expand input steady state for each step
-	if(size(ut,2)==1) k  = (1/h); ut = [ut,zeros(J,T-1)]; else k = 1; end;	%TODO ut sparse when octave compat
+	if(size(us,2)==1) us = us*ones(1,T); end;									%Expand input steady state
+	if(size(ut,2)==1) k  = (1/h); ut = [ut,sparse(J,T-1)]; else k = 1; end;		%Set input scale
 
 	if(nf(1)==4)&&(w=='o')&&(nf(8)~=0) nf(1) = 5; end;
-	if(nf(2)==1)&&(w~='o') dx = svd(ut,'econ');                    else dx = 0; end;	%Set input directions
-	if(nf(2)==1)&&(w~='c') dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy = 0; end;	%Set state directions
+	if(nf(2)==1)&&(w~='o') dx=svd(ut,'econ');                    else dx=0; end;%Set input directions
+	if(nf(2)==1)&&(w~='c') dy=svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;%Set state directions
 
-	W = zeros(N,N);			%Preallocate gramian
-	x = zeros(N,T);			%Preallocate array of states
-	y = zeros(O,T);			%Preallocate array of outputs
-	o = zeros(O,T,N);		%Preallocate array of output containers
+	W = zeros(N,N);		%Preallocate gramian
+	x = zeros(N,T);		%Preallocate array of states
+	y = zeros(O,T);		%Preallocate array of outputs
+	o = zeros(O,T,N);	%Preallocate array of output containers
 
 	switch(nf(1))
 		case 0
@@ -138,85 +138,83 @@ if(w=='c' || w=='o' || w=='x')
 	sn = 2 - (size(yd,1)==1);
 end;
 
-switch(w)												%Switch by gramian type
-	case 'c'												%Type: controllability gramian
-		for c=1:C										%For all input scales
-			for j=1:J									%For all input components
+switch(w)																		%Switch by gramian type
+	case 'c'																	%Type: controllability gramian
+		for c=1:C																%For all input scales
+			for j=1:J															%For all input components
 				uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));			%Set up input
-				if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end		%Simulate (nonlinear) system
+				if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x=yd{1,c}; end	%Generate state trajectory
 				x = bsxfun(@minus,x,steady(nf(1),x,X))*(1.0/um(j,c));			%Subtract scaled steady state
-				W = W + x*x';								%Vectorized sum of dyadic products x(:,t)'*x(:,t) for all t
+				W = W + x*x';													%Vectorized sum of dyadic products x(:,t)'*x(:,t) for all t
 			end
 		end
-		W = W*(h/C);										%Symmetrize and normalize by number of scales
-	case 'o'												%Type: observability gramian
-		for d=1:D										%For all scales
-			for n=1:N									%For all state components
-				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
-				if(nf(9)==0) odey(f,g,h,T,xx,us,p,nf(10)); else y = yd{sn,d}; end		%Simulate (nonlinear) system
-				o(:,:,n) = bsxfun(@minus,y,steady(nf(1),y,Y))*(1.0/xm(n,d));		%Subtract scaled steady state
+		W = W*(h/C);															%Normalize by number of scales
+	case 'o'																	%Type: observability gramian
+		for d=1:D																%For all scales
+			for n=1:N															%For all state components
+				xx = xs + dirs(n,N,dy)*xm(n,d);									%Set up initial value
+				if(nf(9)==0) odey(f,g,h,T,xx,us,p,nf(10)); else y=yd{sn,d}; end	%Generate output trajectory
+				o(:,:,n) = bsxfun(@minus,y,steady(nf(1),y,Y))*(1.0/xm(n,d));	%Subtract scaled steady state
 			end
-			for n=1:N									%For each row
-				on = o(:,:,n); on = on(:)';						%Vectorize Timeseries
-				for m=1:N								%For each column
-					om = o(:,:,m); om = om(:);					%Vectorize Timeseries
-					W(n,m) = W(n,m) + on*om;						%Vectorized dot product of o(:,t,n)*o(:,t,m)' for all t
+			for n=1:N															%For each row
+				for m=1:N														%For each column
+					W(n,m) = W(n,m) + sum(sum(o(:,:,n).*o(:,:,m)));				%Vectorized dot product of o(:,t,n)*o(:,t,m)' for all t
 				end
 			end
 		end;
-		W = W*(h/D);										%Symmetrize and normalize by number of scales
-	case 'x'												%Type: cross gramian
+		W = W*(h/D);															%Normalize by number of scales
+	case 'x'																	%Type: cross gramian
 		if(J~=O) error('ERROR: non-square system!'); end;						%Error if non square
-		for d=1:D										%For all state scales
-			for n=1:N 									%For all state components
-				xx = xs + dirs(n,N,dy)*xm(n,d);						%Set up initial value
-				if(nf(9)==0) odey(f,g,h,T,xx,us,p,nf(10)); else y = yd{2,d}; end		%Simulate (nonlinear) system
-				o(:,:,n) = bsxfun(@minus,y,steady(nf(1),y,Y))*(1.0/xm(n,d));		%Subtract scaled steady state
+		for d=1:D																%For all state scales
+			for n=1:N 															%For all state components
+				xx = xs + dirs(n,N,dy)*xm(n,d);									%Set up initial value
+				if(nf(9)==0) odey(f,g,h,T,xx,us,p,nf(10)); else y=yd{2,d}; end	%Generate output trajectory
+				o(:,:,n) = bsxfun(@minus,y,steady(nf(1),y,Y))*(1.0/xm(n,d));	%Subtract scaled steady state
 			end
-			for c=1:C									%For all input scales
-				for j=1:J								%For all input components
+			for c=1:C															%For all input scales
+				for j=1:J														%For all input components
 					uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));		%Set up input
-					if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x = yd{1,c}; end	%Simulate (nonlinear) system
+					if(nf(9)==0) odex(f,h,T,xs,uu,p,nf(10)); else x=yd{1,c}; end	%Generate state trajectory
 					x = bsxfun(@minus,x,steady(nf(1),x,X))*(1.0/um(j,c));		%Subtract scaled steady state
-					W = W + x*shiftdim(o(j,:,:),1);					%Sum product of controllability and observability components
+					W = W + x*squeeze(o(j,:,:));								%Sum product of controllability and observability components
 				end
 			end
 		end
-		W = W*(h/(C*D));								%Symmetrize and normalize by number of scales
-	case 's'										%Type: sensitivity gramian
-		W = cell(2,1);								%Allocate return type
-		W{1} = emgr(f,g,[J N O],zeros(P,1),t,'c',nf,ut,us,xs,um,xm); 		%Compute parameterless controllability gramian
-		W{2} = eye(P);								%Allocate return type
-		F = @(x,u,p) f(x,zeros(J,1),p*u);						%Augment system function with constant parameter input
-		G = @(x,u,p) g(x,zeros(J,1),p*u);						%Adapt Output function
-		for q=1:P								%For each parameter
-			V = emgr(F,G,[1 N O],(1:P==q)*p(q),t,'c',nf,0,p(q),xs,1,xm);	%Compute parameter controllability Gramian
-			W{2}(q,q) = trace(V);						%Trace of current parameter controllability gramian
-			W{1} = W{1} + V;							%Accumulate controllability gramian
+		W = W*(h/(C*D));														%Normalize by number of scales
+	case 's'																	%Type: sensitivity gramian
+		W = cell(2,1);															%Allocate return type
+		W{1} = emgr(f,g,[J N O],zeros(P,1),t,'c',nf,ut,us,xs,um,xm); 			%Compute parameterless controllability gramian
+		W{2} = eye(P);															%Allocate return type
+		F = @(x,u,p) f(x,zeros(J,1),p*u);										%Augment system function with constant parameter input
+		G = @(x,u,p) g(x,zeros(J,1),p*u);										%Adapt Output function
+		for q=1:P																%For each parameter
+			V = emgr(F,G,[1 N O],(1:P==q)*p(q),t,'c',nf,0,p(q),xs,1,xm);		%Compute parameter controllability Gramian
+			W{2}(q,q) = trace(V);												%Trace of current parameter controllability gramian
+			W{1} = W{1} + V;													%Accumulate controllability gramian
 		end
-	case 'i'										%Type: identifiability gramian
-		if(size(xm,1)==N) xm = [xm;ones(P,1)]; end;				%Augment state scales
-		W = cell(2,1);								%Allocate return type
-		F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));zeros(P,1)];				%Augment system function with constant parameter states
-		G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));					%Adapt Output function
-		V = emgr(F,G,[J N+P O],0,t,'o',nf,ut,us,[xs;p],um,xm); 			%Compute Observability Gramian of augmented system
-		W{1} = V(1:N,1:N);							%Extract Observability gramian
-		V = chol(V+speye(N+P));							%Use shortcut to compute schur complement of augmented with ensured positive definiteness
-		V = V(N+1:N+P,N+1:N+P);							%Extract parameter observability gramian using cholesky factors
-		W{2} = V'*V - speye(P);	 						%Compute identifiability gramian
-	case 'j'										%Type: joint gramian
-		if(size(um,1)==J) um = [um;ones(P,1)]; end;				%Augment input scales
-		if(size(xm,1)==N) xm = [xm;ones(P,1)]; end;				%Augment state scales
+	case 'i'																	%Type: identifiability gramian
+		if(size(xm,1)==N) xm = [xm;ones(P,1)]; end;								%Augment state scales
+		W = cell(2,1);															%Allocate return type
+		F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));zeros(P,1)];						%Augment system function with constant parameter states
+		G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));									%Adapt Output function
+		V = emgr(F,G,[J N+P O],0,t,'o',nf,ut,us,[xs;p],um,xm); 					%Compute Observability Gramian of augmented system
+		W{1} = V(1:N,1:N);														%Extract Observability gramian
+		V = chol(V+speye(N+P));													%Use shortcut to compute schur complement of augmented with ensured positive definiteness
+		V = V(N+1:N+P,N+1:N+P);													%Extract parameter observability gramian using cholesky factors
+		W{2} = V'*V - speye(P);	 												%Compute identifiability gramian
+	case 'j'																	%Type: joint gramian
+		if(size(um,1)==J) um = [um;ones(P,1)]; end;								%Augment input scales
+		if(size(xm,1)==N) xm = [xm;ones(P,1)]; end;								%Augment state scales
 		up = [p+(p==0),zeros(P,size(ut,2)-1)];
-		W = cell(2,1);								%Allocate return type
-		F = @(x,u,p) [f(x(1:N),u(1:J),x(N+1:N+P));u(J+1:J+P)];			%Augment system function with constant parameter states
-		G = @(x,u,p) [g(x(1:N),u(1:J),x(N+1:N+P));x(J+1:J+P)];			%Adapt Output function
-		V = emgr(F,G,[J+P N+P O+P],0,t,'x',nf,[ut;up],[us;zeros(P,1)],[xs;p],um,xm);%Compute Cross Gramian of double augmented system
-		S = norm(V,1);								%Bound largest eigenvalue
-		W{1} = V(1:N,1:N);							%Extract Cross gramian
-		V = chol(V+S*speye(N+P));							%Use shortcut to compute schur complement of augmented with ensured positive definiteness
-		V = V(N+1:N+P,N+1:N+P);							%Extract parameter cross gramian using cholesky factors
-		W{2} = V'*V - S*speye(P);							%Compute cross identifiability gramian
+		W = cell(2,1);															%Allocate return type
+		F = @(x,u,p) [f(x(1:N),u(1:J),x(N+1:N+P));u(J+1:J+P)];					%Augment system function with constant parameter states
+		G = @(x,u,p) [g(x(1:N),u(1:J),x(N+1:N+P));x(J+1:J+P)];					%Adapt Output function
+		V = emgr(F,G,[J+P N+P O+P],0,t,'x',nf,[ut;up],[us;zeros(P,1)],[xs;p],um,xm);	%Compute Cross Gramian of extra augmented system
+		S = norm(V,1);															%Bound largest eigenvalue
+		W{1} = V(1:N,1:N);														%Extract Cross gramian
+		V = chol(V+S*speye(N+P));												%Use shortcut to compute schur complement of augmented with ensured positive definiteness
+		V = V(N+1:N+P,N+1:N+P);													%Extract parameter cross gramian using cholesky factors
+		W{2} = V'*V - S*speye(P);												%Compute cross identifiability gramian
 	otherwise
 		error('ERROR: unknown gramian type!');
 end
@@ -256,7 +254,7 @@ function s = scales(s,d,e,f)
 		case 0 %Unit
 			s = [-s,s];
 		case 1 %Factorial
-			s = s*(2*(dec2bin(0:2^q-1)-'0')'-1)./sqrt(2^q);	%not beautiful but working
+			s = s*(2*(dec2bin(0:2^q-1)-'0')'-1)./sqrt(2^q);						%not beautiful but working
 		case 2 %Ideas: All, Dyadic
 
 		case 3 %Single
@@ -339,3 +337,4 @@ z = Z;
 			end
 	end
 end
+
