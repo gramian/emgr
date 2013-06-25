@@ -13,7 +13,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  t = [0 0.01 1];
  T = (t(3)-t(1))/t(2);
  u = [1 zeros(1,T-1)];
- x = ones(N,1);
+ x = N*ones(N,1);
 %%
 
 %% SYSTEM
@@ -41,7 +41,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %% WI
  %% OFFLINE
   tic;
-  WI = emgr(LIN,OUT,[1 N 1],p,t,'i',1,1,0,x);
+  WI = emgr(LIN,OUT,[1 N 1],p,t,'i');
   [PP D QQ] = svd(WI{2}); PP = PP(1,:); QQ = QQ(1,:)'; q = PP*p;
   OFFLINE = toc
  %%

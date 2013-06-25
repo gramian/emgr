@@ -18,7 +18,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  O = 3;
  R = 26;
  r = R/2;
- t = [0 0.001 1];
+ t = [0 0.01 1];
  T = (t(3)-t(1))/t(2);
  u = [ones(J,1) zeros(J,T-1)];
  x = zeros(N,1);
@@ -42,7 +42,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %% WX
  %% OFFLINE
   tic;
-  WX = emgr(LIN,OUT,[J N O],0,t,'x',[0 0 0 0 0 0 0 0 0 1]);
+  WX = emgr(LIN,OUT,[J N O],0,t,'x',[0 0 0 0 0 0 0 0 0 2]);
   %WXP = WX(1:n,1:n);
   %[U D V] = svd(WXP); U = U(:,1:r); V = U';
   WXV = WX(n+1:N,n+1:N);
