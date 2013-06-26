@@ -111,7 +111,7 @@ if(w=='c' || w=='o' || w=='x')
 		nf(7) = 0;
 		A = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd);
 		A = sqrt(diag(A));
-		B = diag(1./A);
+		B = diag(1.0./A);
 		A = diag(A);
 
 		F = f;
@@ -227,7 +227,7 @@ function s = scales(s,d,e,f)
 		case 0 %Unit
 			s = [-s,s];
 		case 1 %Factorial
-			s = s*(2*(dec2bin(0:2^q-1)-'0')'-1)./sqrt(2^q);						%not beautiful but working
+			s = s*(2*(dec2bin(0:2^q-1)-'0')'-1)./sqrt(2^q);					%not beautiful but working
 		case 2 %Dyadic
 			
 		case 3 %Single
@@ -256,10 +256,10 @@ function y = res(v,d,e)
 			y = e;
 		case 1 %Average
 			y = mean(d,2);
-		case 5 %Median
+		case 2 %Median
 			y = median(d,2);
-		case 2 %Last
-			y = d(end,:);
+		case 3 %Last
+			y = d(:,end);
 		case 4 %POD
 			y = svd(d,'econ');
 	end
