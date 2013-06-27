@@ -229,7 +229,7 @@ function s = scales(s,d,e,f)
 		case 1 %Factorial
 			s = s*(2*(dec2bin(0:2^q-1)-'0')'-1)./sqrt(2^q);					%not beautiful but working
 		case 2 %Dyadic
-			
+			s = s*s';
 		case 3 %Single
 			%s = s;
 	end
