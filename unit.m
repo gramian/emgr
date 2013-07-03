@@ -24,6 +24,8 @@ disp('nonlinear:');
 nonlinear
 disp('bayinv:');
 bayinv
+disp('robust:');
+robust
 disp('decentral:');
 decentral
 disp('benchmark:');

@@ -1,5 +1,5 @@
-function general(o)
-% general (generalized cross gramian via controllability gramian)
+function robust(o)
+% robust (reduction)
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( http://gramian.de/#license )
 %*
@@ -8,8 +8,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Setup %%%%%%%%
 
- J = 16;
- N = 128;
+ J = 4;
+ N = 16;
  O = J;
  R = O;
  T = [0 0.01 1];
@@ -18,39 +18,34 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  X =    ones(N,1);
 
  A = rand(N,N);
- A(1:N+1:end) = -0.55*N;
- A = 0.5*(A+A');
+ A(1:N+1:end) = 0;
  B = rand(N,J);
- C = B';
+ C = rand(O,N);
+ P = -0.55*N*ones(N,1);
+ Q = P+5;
 
- LIN = @(x,u,p) A*x+B*u;
+ LIN = @(x,u,p) (A+diag(p))*x + B*u;
  OUT = @(x,u,p) C*x;
 
- Lin = @(x,u,p) [A,sparse(N,N);sparse(N,N),A']*x + [B;C']*u;
- Out = @(x,u,p) x;
-
-%%%%%%%% Reduction %%%%%%%%%
+%%%%%%%% Reduction %%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,[J N O],T,X,U,0); FULL = toc
+ tic; Y = rk2(LIN,OUT,[J N O],T,X,U,Q); FULL = toc;
 
 % OFFLINE
  tic;
- WG = emgr(Lin,Out,[J 2*N 2*N],0,T,'c');
- %WC = WG(1:N,1:N);
- %WO = WG(N+1:N+N,N+1:N+N);
- WX = WG(1:N,N+1:N+N);
- [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
- a = VV*A*UU;
- b = VV*B;
- c = C*UU;
- x = VV*X;
- lin = @(x,u,p) a*x + b*u;
- out = @(x,u,p) c*x;
+ WC = emgr(LIN,OUT,[J N O],P,T,'c',[0 0 0 0 0 0 0 1 0 0],1,0,0,[ones(J,1);4*ones(N,1)]);
+ WO = emgr(LIN,OUT,[J N O],P,T,'o');
+ [UU D VV] = squareroot(WC,WO,R);
+ x = UU*X;
+ lin = @(x,u,p) UU*LIN(VV*x,u,p);
+ out = @(x,u,p) OUT(VV*x,u,p);
  OFFLINE = toc
 
 % ONLINE
- tic; y = rk2(lin,out,[J R O],T,x,U,0); ONLINE = toc
+ tic;
+ y = rk2(lin,out,[J R O],T,x,U,Q);
+ ONLINE = toc
 
 %%%%%%%% Output %%%%%%%%
 
@@ -63,7 +58,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
  imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N);
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg general.svg; end
+ if(o==2 && exist('OCTAVE_VERSION')), print -dsvg robust.svg; end
 
 %%%%%%%% Integrator %%%%%%%%
 
@@ -77,3 +72,13 @@ function y = rk2(f,g,q,t,x,u,p)
   x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
   y(:,A) = g(x,u(:,A),p);
  end
+
+%%%%%%%% Balancer %%%%%%%%
+
+function [X Y Z] = squareroot(WC,WO,R)
+
+ [L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
+ [L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
+ [U Y V] = svd(LO'*LC);
+ X = ( LO*U(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R)))) )';
+ Z =   LC*V(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R))));

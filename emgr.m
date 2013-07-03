@@ -83,20 +83,22 @@ if (numel(um)==1), um = ones(J,1)*um; end;
 if (numel(xm)==1), xm = ones(N,1)*xm; end;
 
 if(w=='c' || w=='o' || w=='x')
+
 	if(w=='c'&&nf(8)~=0)
 		J = J+P;
-		if(size(um,1)==J), um = [um;ones(P,1)]; end;
-		F = f; f = @(x,u,p) F(x,u(1:J),u(J+1:J+P));
-		G = g; g = @(x,u,p) G(x,u(1:J),u(J+1:J+P));
+		if(size(ut,1)==J-P), ut = [ut;ones(P,1)]; end;
+		if(size(us,1)==J-P), us = [us;P*ones(P,1)]; end;
+		if(size(um,1)==J-P), um = [um;ones(P,1)]; end;
+		F = f; f = @(x,u,p) F(x,u(1:J-P),u(J-P+1:J));
+		G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
 	end
 
-	if(size(um,2)==1), um = scales(um,nf(3),nf(5),w=='x'&&nf(8)==0); end;		%Generate Scales
-	if(size(xm,2)==1), xm = scales(xm,nf(4),nf(6),w=='x'&&nf(8)==0); end;		%Generate Scales
+	if(size(ut,2)==1), ut = [ut,sparse(J,T-1)]; k = (1/h); else k = 1; end;		%Generate impulse input
+	if(size(us,2)==1), us = us*ones(1,T); end;									%Expand input steady state
+	if(size(um,2)==1), um = scales(um,nf(3),nf(5),w=='x'&&nf(8)==0); end;		%Generate scales
+	if(size(xm,2)==1), xm = scales(xm,nf(4),nf(6),w=='x'&&nf(8)==0); end;		%Generate scales
 	C = size(um,2);															%Number input scales
 	D = size(xm,2);															%Number state scales
-
-	if(size(us,2)==1), us = us*ones(1,T); end;									%Expand input steady state
-	if(size(ut,2)==1), k  = (1/h); ut = [ut,sparse(J,T-1)]; else k = 1; end;	%Set input scale
 
 	if(nf(2)==1)&&(w~='o'), dx=svd(ut,'econ');                    else dx=0; end;	%Set input directions
 	if(nf(2)==1)&&(w~='c'), dy=svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;	%Set state directions
