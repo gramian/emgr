@@ -17,8 +17,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  U = [N*ones(J,1) zeros(J,L-1)];
  X =    ones(N,1);
 
- A = rand(N,N);
- A(1:N+1:end) = 0;
+ A = rand(N,N); A(1:N+1:end) = 0;
  B = rand(N,J);
  C = rand(O,N);
  P = -0.55*N*ones(N,1);

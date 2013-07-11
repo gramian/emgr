@@ -11,21 +11,18 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  J = 1;
  O = J;
  N = 16;
- R = O;
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
- X =  ones(N,1);
+ X = zeros(N,1);
 
- A = rand(N,N);
- A(1:N+1:end) = -0.55*N;
- A = 0.5*(A+A');
+ A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
  B = rand(N,J);
  C = B';
 
  LIN = @(x,u,p) A*x + B*u;
  OUT = @(x,u,p) C*x;
  NIN = @(x,u,p) A*x + B*asinh(p*u);
- NSY = @(x,u,p) A*asinh(p*x) + B*u;
+ NST = @(x,u,p) A*asinh(p*x) + B*u;
  NOU = @(x,u,p) C*asinh(p*x);
 
 %%%%%%%% Reduction %%%%%%%%%
@@ -36,25 +33,24 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 % NONLINEAR
  K = 100;
  y = zeros(3,K);
- Q = 2/K;
- P = Q;
+ Q = 2.0/K;
+ P = 0;
 
  for(I=1:K)
-  Wi = emgr(NIN,OUT,[J N O],P,T,'x');
-  Ws = emgr(NSY,OUT,[J N O],P,T,'x');
-  Wo = emgr(LIN,NOU,[J N O],P,T,'x');
+  Wi = emgr(NIN,OUT,[J N O],P,T,'c');
+  Ws = emgr(NST,OUT,[J N O],P,T,'x');
+  Wo = emgr(LIN,NOU,[J N O],P,T,'o');
 
   Ni = sum(sum(abs(WL-Wi)));
   Ns = sum(sum(abs(WL-Ws)));
   No = sum(sum(abs(WL-Wo)));
 
   y(:,I) = [Ni;Ns;No];
-  Q = P + Q;
+  P = P + Q;
  end
 
 % NORMALIZE
- Nl = sum(sum(WL));
- y = y./Nl;
+ y = y./trace(WL);
 
 %%%%%%%% Output %%%%%%%%
 
