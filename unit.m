@@ -1,10 +1,7 @@
 % unit
 % by Christian Himpe, 2013 ( http://gramian.de )
-% released under BSD 2-Clause License ( http://gramian.de/#license )
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
-
-rand('seed',65535);
-randn('seed',65535);
 
 disp('largescale:');
 largescale

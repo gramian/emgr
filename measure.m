@@ -1,7 +1,7 @@
 function measure(o)
 % nonlinearity measure
 % by Christian Himpe, 2013 ( http://gramian.de )
-% released under BSD 2-Clause License ( http://gramian.de/#license )
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
 if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
@@ -15,6 +15,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  L = (T(3)-T(1))/T(2);
  X = zeros(N,1);
 
+ rand('seed',1009);
  A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
  B = rand(N,J);
  C = B';

@@ -1,7 +1,7 @@
 function advection(o)
 % pde transport equation reduction
 % by Christian Himpe, 2013 ( http://gramian.de )
-% released under BSD 2-Clause License ( http://gramian.de/#license )
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
 if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
