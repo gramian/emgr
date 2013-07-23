@@ -104,7 +104,7 @@ if(w=='c' || w=='o' || w=='x')
     W = zeros(N,N);
     o = zeros(O,T,N);
 
-    if(nf(7)==1) % double Run
+    if(nf(7)==1) % double run
         nf(7) = 0;
         A = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd);
         A = sqrt(diag(A));
@@ -117,7 +117,11 @@ if(w=='c' || w=='o' || w=='x')
         g = @(x,u,p)   G(B*x,u,p);
     end
 
-    S = 2 - (size(yd,1)==1);
+    if(nf(9)==1) % data driven
+        if(size(yd,1)==1 && w=='o'), yd = {[];yd{:}}; end;
+        C = size(yd,1); um = ones(J,C);
+        D = size(yd,2); xm = ones(N,D);
+    end
 end
 
 switch(w)
@@ -137,7 +141,7 @@ switch(w)
         for d=1:D
             for n=1:N % parfor
                 xx = xs + dirs(n,N,dy)*xm(n,d);
-                if(nf(9)==0), y=odey(f,g,h,T,xx,us,O,p,nf(10)); else y=yd{S,d}; end;
+                if(nf(9)==0), y=odey(f,g,h,T,xx,us,O,p,nf(10)); else y=yd{2,d}; end;
                 o(:,:,n) = bsxfun(@minus,y,res(nf(1),y,Y))*(1.0/xm(n,d));
             end
             for n=1:N
@@ -275,7 +279,6 @@ x = zeros(numel(z),T);
             m = 0.5*h*f(z,u(:,1),p);
             z = z + h*f(z + m,u(:,1),p);
             x(:,1) = z;
-            k = z;
 
             for t=2:T
                 k = 0.5*h*f(z,u(:,t),p);
@@ -316,7 +319,6 @@ y = zeros(o,T);
             m = 0.5*h*f(z,u(:,1),p);
             z = z + h*f(z + m,u(:,1),p);
             y(:,1) = g(z,u(:,1),p);
-            k = z;
 
             for t=2:T
                 k = 0.5*h*f(z,u(:,t),p);

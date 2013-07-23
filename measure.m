@@ -10,7 +10,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
  J = 1;
  O = J;
- N = 16;
+ N = 8;
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
  X = zeros(N,1);
