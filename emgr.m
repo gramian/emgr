@@ -178,9 +178,9 @@ switch(w)
         F = @(x,u,p) f(x,zeros(J,1),p*u);
         G = @(x,u,p) g(x,zeros(J,1),p*u);
         for q=1:P
-            V = emgr(F,G,[1 N O],(1:P==q)*p(q),t,'c',nf,0,p(q),xs,1,xm);
-            W{2}(q,q) = trace(V);
-            W{1} = W{1} + V;
+            V = emgr(F,G,[1 N O],(1:P==q),t,'c',nf,1,p(q),xs,1,xm);
+            W{1} = W{1} + V;      % controllability gramian
+            W{2}(q,q) = trace(V); % sensitivity gramian
         end
 
     case 'i' % identifiability gramian
@@ -194,10 +194,11 @@ switch(w)
 
     case 'j' % joint gramian
         if(size(xm,1)==N), xm = [xm;ones(P,1)]; end;
+        if(size(um,1)==J), um = [um;ones(P,1)]; end;
         W = cell(2,1);
-        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));zeros(P,1)];
-        G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
-        V = emgr(F,G,[J N+P O],0,t,'x',nf,ut,us,[xs;p],um,xm);
+        F = @(x,u,p) [f(x(1:N),u(1:J),x(N+1:N+P));u(J+1:J+P)];
+        G = @(x,u,p) [g(x(1:N),u(1:J),x(N+1:N+P));x(N+1:N+P)];
+        V = emgr(F,G,[J+P N+P O+P],0,t,'x',nf,[ut;ones(P,1)],[us;zeros(P,1)],[xs;p],um,xm);
         W{1} = V(1:N,1:N);         % cross gramian
         W{2} = V(N+1:N+P,N+1:N+P); % cross identifiability gramian
 
