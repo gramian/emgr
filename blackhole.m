@@ -25,14 +25,17 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Identification %%%%%%%%
 
 % FULL
- Y = [rk2(@orbit,@bl2c,[0 4 3],t,xu,u,pu);rk2(@orbit,@bl2c,[0 4 3],t,xp,u,pp)];
+ Y = [rk2(@orbit,@bl2c,t,xu,u,pu);...
+      rk2(@orbit,@bl2c,t,xp,u,pp)];
+
+ fprintf('Parameters: E,L,Q,a,e,eps,mu\n');
 
 % PLANET
- WS = emgr(@orbit,@bl2c,[0 4 3],pu,t,'s',[1 0 0 0 0 0 0 0 0 0],1,0,xu);
+ WS = emgr(@orbit,@bl2c,[0 4 3],t,'s',pu,[1 0 0 0 0 0 0 0 0 0],1,0,xu);
  PLANET_SENSITIVITY = diag(WS{2})
 
 % PHOTON
- WS = emgr(@orbit,@bl2c,[0 4 3],pp,t,'s',[1 0 0 0 0 0 0 0 0 0],1,0,xp);
+ WS = emgr(@orbit,@bl2c,[0 4 3],t,'s',pp,[1 0 0 0 0 0 0 0 0 0],1,0,xp);
  PHOTON_SENSITIVITY = diag(WS{2})
 
 %%%%%%%% Output %%%%%%%%
@@ -86,13 +89,13 @@ function y = bl2c(x,u,p)
 
 %%%%%%%% Integrator %%%%%%%%
 
-function y = rk2(f,g,q,t,x,u,p)
+function y = rk2(f,g,t,x,u,p)
 
- T = (t(3)-t(1))/t(2);
- y = zeros(q(3),T);
  h = t(2);
+ T = (t(3)-t(1))/h;
+ y = zeros(numel(g(x,u(:,1),p)),T);
 
- for A=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
-  y(:,A) = g(x,u(:,A),p);
+ for t=1:T
+  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
+  y(:,t) = g(x,u(:,t),p);
  end

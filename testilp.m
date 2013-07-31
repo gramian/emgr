@@ -25,12 +25,12 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,[J N O],T,X,U,0); FULL = toc
+ tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
 
 % OFFLINE
  tic;
- WC = emgr(LIN,OUT,[J N O],0,T,'c');
- WO = emgr(LIN,OUT,[J N O],0,T,'o');
+ WC = emgr(LIN,OUT,[J N O],T,'c');
+ WO = emgr(LIN,OUT,[J N O],T,'o');
  [UU D VV] = balance(WC,WO,R);
  a = UU*A*VV;
  b = UU*B;
@@ -41,7 +41,7 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
  OFFLINE = toc
 
 % ONLINE
- tic; y = rk2(lin,out,[J R O],T,x,U,0); ONLINE = toc
+ tic; y = rk2(lin,out,T,x,U,0); ONLINE = toc
 
 %%%%%%%% Output %%%%%%%%
 
@@ -58,15 +58,15 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
 
 %%%%%%%% Integrator %%%%%%%%
 
-function y = rk2(f,g,q,t,x,u,p)
+function y = rk2(f,g,t,x,u,p)
 
- T = (t(3)-t(1))/t(2);
- y = zeros(q(3),T);
  h = t(2);
+ T = (t(3)-t(1))/h;
+ y = zeros(numel(g(x,u(:,1),p)),T);
 
- for A=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
-  y(:,A) = g(x,u(:,A),p);
+ for t=1:T
+  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
+  y(:,t) = g(x,u(:,t),p);
  end
 
 %%%%%%%% Balancer %%%%%%%%

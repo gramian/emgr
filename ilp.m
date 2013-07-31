@@ -37,7 +37,7 @@ if(nargin==5) rand('seed',r); randn('seed',r); end;
 % Solve System Matrix
  f = @(x,u,p) W*x+B*u;
  g = @(x,u,p) C*x;
- A = -emgr(f,g,[J N O],0,[0 0.01 1],'c');
+ A = -emgr(f,g,[J N O],[0 0.01 1],'c');
 
 % Unbalance System
  T = U'*P';

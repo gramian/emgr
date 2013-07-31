@@ -21,21 +21,21 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  A = rand(N,N); A(1:N+1:end) = 0;
  B = rand(N,J);
  C = rand(O,N);
- P = -0.55*N*ones(N,1);
- Q = P+5;
+ P = -N*ones(N,1);
+ Q = P-3;
 
- LIN = @(x,u,p) (A+diag(p))*x + B*u;
+ LIN = @(x,u,p) (A+diag(P))*x + B*u;
  OUT = @(x,u,p) C*x;
 
 %%%%%%%% Reduction %%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,[J N O],T,X,U,Q); FULL = toc;
+ tic; Y = rk2(LIN,OUT,T,X,U,Q); FULL = toc;
 
 % OFFLINE
  tic;
- WC = emgr(LIN,OUT,[J N O],P,T,'c',[0 0 0 0 0 0 0 1 0 0],1,0,0,[ones(J,1);4*ones(N,1)]);
- WO = emgr(LIN,OUT,[J N O],P,T,'o');
+ WC = emgr(LIN,OUT,[J N O],T,'c',P,[0 0 0 0 0 0 0 1 0 0],1,0,0,[ones(J,1);3*ones(N,1)]);
+ WO = emgr(LIN,OUT,[J N O],T,'o',P);
  [UU D VV] = squareroot(WC,WO,R);
  x = UU*X;
  lin = @(x,u,p) UU*LIN(VV*x,u,p);
@@ -44,7 +44,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % ONLINE
  tic;
- y = rk2(lin,out,[J R O],T,x,U,Q);
+ y = rk2(lin,out,T,x,U,Q);
  ONLINE = toc
 
 %%%%%%%% Output %%%%%%%%
@@ -62,15 +62,15 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Integrator %%%%%%%%
 
-function y = rk2(f,g,q,t,x,u,p)
+function y = rk2(f,g,t,x,u,p)
 
- T = (t(3)-t(1))/t(2);
- y = zeros(q(3),T);
  h = t(2);
+ T = (t(3)-t(1))/h;
+ y = zeros(numel(g(x,u(:,1),p)),T);
 
- for A=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
-  y(:,A) = g(x,u(:,A),p);
+ for t=1:T
+  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
+  y(:,t) = g(x,u(:,t),p);
  end
 
 %%%%%%%% Balancer %%%%%%%%

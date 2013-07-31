@@ -29,7 +29,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % LINEAR
- WL = emgr(LIN,OUT,[J N O],0,T,'x');
+ WL = emgr(LIN,OUT,[J N O],T,'x');
 
 % NONLINEAR
  K = 100;
@@ -38,9 +38,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  P = 0;
 
  for(I=1:K)
-  Wi = emgr(NIN,OUT,[J N O],P,T,'c');
-  Ws = emgr(NST,OUT,[J N O],P,T,'x');
-  Wo = emgr(LIN,NOU,[J N O],P,T,'o');
+  Wi = emgr(NIN,OUT,[J N O],T,'c',P);
+  Ws = emgr(NST,OUT,[J N O],T,'x',P);
+  Wo = emgr(LIN,NOU,[J N O],T,'o',P);
 
   Ni = sum(sum(abs(WL-Wi)));
   Ns = sum(sum(abs(WL-Ws)));

@@ -31,11 +31,11 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,[J N O],T,X,U,0); FULL = toc
+ tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
 
 % OFFLINE
  tic;
- WX = emgr(LIN,OUT,[J N O],0,T,'x',[0 0 0 0 0 0 0 0 0 2]);
+ WX = emgr(LIN,OUT,[J N O],T,'x',0,[0 0 0 0 0 0 0 0 0 2]);
  %WXP = WX(1:n,1:n);
  %[UU D VV] = svd(WXP); UU = UU(:,1:r); VV = UU';
  WXV = WX(n+1:N,n+1:N);
@@ -49,7 +49,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  OFFLINE = toc
 
 % ONLINE
- tic; y = rk2(lin,out,[J R O],T,x,U,0); ONLINE = toc
+ tic; y = rk2(lin,out,T,x,U,0); ONLINE = toc
 
 %%%%%%%% Output %%%%%%%%
 
@@ -66,13 +66,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Integrator %%%%%%%%
 
-function y = rk2(f,g,q,t,x,u,p)
+function y = rk2(f,g,t,x,u,p)
 
- T = (t(3)-t(1))/t(2);
- y = zeros(q(3),T);
  h = t(2);
+ T = (t(3)-t(1))/h;
+ y = zeros(numel(g(x,u(:,1),p)),T);
 
- for A=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,A),p),u(:,A),p); %Improved Eulers Method
-  y(:,A) = g(x,u(:,A),p);
+ for t=1:T
+  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
+  y(:,t) = g(x,u(:,t),p);
  end
