@@ -1,5 +1,5 @@
 function W = emgr(f,g,q,t,w,pr,cf,ut,us,xs,um,xm,yd)
-% emgr - Empirical Gramian Framework ( Version: 1.3 )
+% emgr - Empirical Gramian Framework ( Version: 1.5 )
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
@@ -37,7 +37,7 @@ function W = emgr(f,g,q,t,w,pr,cf,ut,us,xs,um,xm,yd)
 %                * data-driven pod (WO, WI only)
 %                * enforce symmetry (WX, WJ only)
 %            + disable(0), enable(1) data-driven gramians
-%            + solver: euler(0), adams-bashforth(1), leapfrog(2)
+%            + solver: Euler(0), Adams-Bashforth(1), Leapfrog(2)
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
 %         (vector,scalar) [xs = 0] - steady-state
@@ -108,14 +108,14 @@ if(w=='c' || w=='o' || w=='x')
         G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
     end
 
-    if(size(ut,2)==1), ut = [ut,sparse(J,T-1)]; k = (1.0/h); else k = 1.0; end;
+    if(size(ut,2)==1), ut = [ut,zeros(J,T-1)]; k = (1.0/h); else k = 1.0; end; %sparse(J,T-1)
     if(size(us,2)==1), us = us*ones(1,T); end;
     if(size(um,2)==1), um = scales(um,cf(3),cf(5)); end;
     if(size(xm,2)==1), xm = scales(xm,cf(4),cf(6)); end;
     C = size(um,2);
     D = size(xm,2);
 
-    if(cf(1)==0), X = xs; Y = g(xs,zeros(J,1),p); else X = 0; Y = 0; end;
+    if(cf(1)==0), X = xs; Y = g(xs,us,p); else X = 0; Y = 0; end;
     if(cf(2)==1)&&(w~='o'), dx=svd(ut,'econ');                    else dx=0; end;
     if(cf(2)==1)&&(w~='c'), dy=svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;
 
@@ -186,8 +186,8 @@ switch(w)
         W = cell(2,1);
         W{1} = emgr(f,g,[J N O],t,'c',zeros(P,1),cf,ut,us,xs,um,xm);
         W{2} = eye(P);
-        F = @(x,u,p) f(x,zeros(J,1),p*u);
-        G = @(x,u,p) g(x,zeros(J,1),p*u);
+        F = @(x,u,p) f(x,us,p*u);
+        G = @(x,u,p) g(x,us,p*u);
         for q=1:P
             V = emgr(F,G,[1 N O],t,'c',(1:P==q),cf,1,p(q),xs,1,xm);
             W{1} = W{1} + V;      % controllability gramian
@@ -209,10 +209,9 @@ switch(w)
         F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));zeros(P,1)];
         G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
         V = emgr(F,G,[J N+P O],t,'x',0,cf,ut,us,[xs;p],um,xm);
-        W{1} = V(1:N,1:N);                         % cross gramian
-        [WU WD WV] = svd(W{1});
-        Wx = (WU*diag(1./(diag(WD)))*WV')';
-        W{2} = -V(1:N,N+1:N+P)'*Wx*V(1:N,N+1:N+P); % cross identifiability gramian
+        W{1} = V(1:N,1:N);                       % cross gramian
+        U = W{1}+W{1}';
+        W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross identifiability gramian
 
     otherwise
         error('ERROR: unknown gramian type!');

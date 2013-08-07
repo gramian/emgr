@@ -31,5 +31,7 @@ disp('measure:');
 measure
 disp('advection:');
 advection
+disp('nbody:');
+nbody
 disp('blackhole:');
 blackhole
