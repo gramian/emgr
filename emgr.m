@@ -197,20 +197,20 @@ switch(w)
     case 'i' % identifiability gramian
         if(size(xm,1)==N), xm = [xm;ones(P,1)]; end;
         W = cell(2,1);
-        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));zeros(P,1)];
+        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));p];
         G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
-        V = emgr(F,G,[J N+P O],t,'o',0,cf,ut,us,[xs;p],um,xm);
+        V = emgr(F,G,[J N+P O],t,'o',zeros(P,1),cf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);         % observability gramian
         W{2} = V(N+1:N+P,N+1:N+P); % identifiability gramian
 
     case 'j' % joint gramian
         if(size(xm,1)==N), xm = [xm;ones(P,1)]; end;
         W = cell(2,1);
-        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));zeros(P,1)];
+        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));p];
         G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
-        V = emgr(F,G,[J N+P O],t,'x',0,cf,ut,us,[xs;p],um,xm);
+        V = emgr(F,G,[J N+P O],t,'x',zeros(P,1),cf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);                       % cross gramian
-        U = W{1}+W{1}';
+        U = spdiags((1.0/diag(W{1}))',0,N,N); % U = U-U*(W{1}-diag(diag(W{1}))*U
         W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross identifiability gramian
 
     otherwise
@@ -279,7 +279,7 @@ end
 function x = odef(f,h,T,Z,u,p,q)
 
 z = Z;
-x = zeros(numel(z),T);
+x(numel(z),T) = 0;
 
     switch(q)
         case 0 % Eulers Method
