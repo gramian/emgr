@@ -23,7 +23,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
  tic;
  Y = leapfrog(F,G,t,X,p);
- toc
+ FULL = toc
 
 %%%%%%%% Reduction %%%%%%%%
 
@@ -33,7 +33,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  WOV = WO((2*N)+1:end,(2*N)+1:end);
  [PP DD QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
  [TT DD VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
- toc
+ OFFLINE = toc
 
 %%%%%%%% Reduced %%%%%%%%
 
@@ -43,7 +43,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
  tic;
  y = leapfrog(f,g,t,x,p);
- toc
+ ONLINE = toc
 
  ERROR = norm(norm(Y - y)./norm(Y))
 
@@ -54,7 +54,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
  tic;
  y = leapfrog(f,g,t,x,p);
- toc
+ ONLINE = toc
 
  ERROR = norm(norm(Y - y)./norm(Y))
 %}

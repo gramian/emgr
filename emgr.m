@@ -63,7 +63,7 @@ O = q(3);             % number of outputs
 T = (t(3)-t(1))/t(2); % number of time steps
 h = t(2);             % time step width
 
-if (isnumeric(g) && g==1) g = @(x,u,p) x; O = N; end;
+if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
 if (nargin<6) ||(isempty(pr)), pr = 0; end;
 if (nargin<7) ||(isempty(cf)), cf = 0; end;
@@ -74,15 +74,15 @@ if (nargin<11)||(isempty(um)), um = 1; end;
 if (nargin<12)||(isempty(xm)), xm = 1; end;
 if (nargin<13)||(isempty(yd)), yd = 0; end;
 
-p = pr(:);
 P = numel(pr);        % number of parameters
+p = pr(:);
 
 if (numel(cf)<10), cf(10) = 0; end;
-if (numel(ut)==1), ut = ones(J,1)*ut; end;
-if (numel(us)==1), us = ones(J,1)*us; end;
-if (numel(xs)==1), xs = ones(N,1)*xs; end;
-if (numel(um)==1), um = ones(J,1)*um; end;
-if (numel(xm)==1), xm = ones(N,1)*xm; end;
+if (numel(ut)==1), ut(1:J,1) = ut; end;
+if (numel(us)==1), us(1:J,1) = us; end;
+if (numel(xs)==1), xs(1:N,1) = xs; end;
+if (numel(um)==1), um(1:J,1) = um; end;
+if (numel(xm)==1), xm(1:N,1) = xm; end;
 
 if(w=='c' || w=='o' || w=='x')
 
@@ -108,8 +108,8 @@ if(w=='c' || w=='o' || w=='x')
         G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
     end
 
-    if(size(ut,2)==1), ut = [ut,zeros(J,T-1)]; k = (1.0/h); else k = 1.0; end; %sparse(J,T-1)
-    if(size(us,2)==1), us = us*ones(1,T); end;
+    if(size(ut,2)==1), ut(:,2:T) = 0; k = (1.0/h); else k = 1.0; end;
+    if(size(us,2)==1), us = repmat(us,[1 T]); end;
     if(size(um,2)==1), um = scales(um,cf(3),cf(5)); end;
     if(size(xm,2)==1), xm = scales(xm,cf(4),cf(6)); end;
     C = size(um,2);
@@ -135,7 +135,9 @@ switch(w)
         for c=1:C
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
-                if(cf(9)==0), x=odef(f,h,T,xs,uu,p,cf(10)); else x=yd{1,c}; end;
+                if(cf(9)~=0), x = yd{1,c}; else
+                    x = odef(f,h,T,xs,uu,p,cf(10));                
+                end;
                 x = bsxfun(@minus,x,res(cf(1),x,X))*(1.0/um(j,c));
                 W = W + x*x';
             end
@@ -146,10 +148,10 @@ switch(w)
         for d=1:D
             for n=1:N % parfor
                 xx = xs + dirs(n,N,dy)*xm(n,d); 
-                if(cf(9)==0)
+                if(cf(9)~=0), y = yd{2,d}; else
                     x = odef(f,h,T,xx,us,p,cf(10));
                     y = cell2mat(arrayfun(@(k) g(x(:,k),us,p),1:T,'UniformOutput',0));
-                else y = yd{2,d}; end
+                end
                 o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
             end
             for n=1:N
@@ -165,10 +167,10 @@ switch(w)
         for d=1:D
             for n=1:N % parfor
                 xx = xs + dirs(n,N,dy)*xm(n,d);
-                if(cf(9)==0)
+                if(cf(9)~=0), y = yd{2,d}; else
                     x = odef(f,h,T,xx,us,p,cf(10));
                     y = cell2mat(arrayfun(@(k) g(x(:,k),us,p),1:T,'UniformOutput',0));
-                else y = yd{2,d}; end
+                end
                 o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
             end
             for c=1:C
@@ -210,7 +212,8 @@ switch(w)
         G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
         V = emgr(F,G,[J N+P O],t,'x',zeros(P,1),cf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);                       % cross gramian
-        U = spdiags((1.0/diag(W{1}))',0,N,N); % U = U-U*(W{1}-diag(diag(W{1}))*U
+        U = spdiags((1.0/diag(W{1}))',0,N,N);
+        % U = U - U*(W{1}-diag(diag(W{1}))*U
         W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross identifiability gramian
 
     otherwise
