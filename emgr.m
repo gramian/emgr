@@ -88,7 +88,7 @@ if(w=='c' || w=='o' || w=='x')
 
     if(cf(7)==1) % double run
         cf(7) = 0;
-        A = emgr(f,g,q,p,t,w,nf,ut,us,xs,um,xm,yd);
+        A = emgr(f,g,q,t,w,p,cf,ut,us,xs,um,xm,yd);
         A = sqrt(diag(A));
         B = diag(1.0./A);
         A = diag(A);
