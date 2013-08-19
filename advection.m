@@ -20,10 +20,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
  P = 5;
  A = -eye(N) + diag(ones(N-1,1),-1); A = A*(1.0/H);
- C = eye(N);
 
  LIN = @(x,u,p) p*A*x;
- OUT = @(x,u,p) C*x;
+ OUT = @(x,u,p) x;
 
 %%%%%%%% Reduction %%%%%%%%%
 
@@ -32,10 +31,10 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WO = emgr(LIN,OUT,[J N O],T,'o',P);
+ WO = emgr(LIN,1,[J N O],T,'o',P);
  [UU D VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
- c = C*UU;
+ c = UU;
  x = VV*X;
  lin = @(x,u,p) p*a*x;
  out = @(x,u,p) c*x;

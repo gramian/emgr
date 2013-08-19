@@ -88,10 +88,9 @@ if(w=='c' || w=='o' || w=='x')
 
     if(cf(7)==1) % double run
         cf(7) = 0;
-        A = emgr(f,g,q,t,w,p,cf,ut,us,xs,um,xm,yd);
-        A = sqrt(diag(A));
-        B = diag(1.0./A);
-        A = diag(A);
+        S = sqrt(diag(emgr(f,g,q,t,w,p,cf,ut,us,xs,um,xm,yd)));
+        A = spdiags(S,0,N,N);
+        B = spdiags(1.0./S,0,N,N);
 
         F = f;
         G = g;
@@ -116,8 +115,8 @@ if(w=='c' || w=='o' || w=='x')
     D = size(xm,2);
 
     if(cf(1)==0), X = xs; Y = g(xs,us,p); else X = 0; Y = 0; end;
-    if(cf(2)==1)&&(w~='o'), dx=svd(ut,'econ');                    else dx=0; end;
-    if(cf(2)==1)&&(w~='c'), dy=svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;
+    if(cf(2)==1)&&(w~='o'), dx = svd(ut,'econ');                    else dx=0; end;
+    if(cf(2)==1)&&(w~='c'), dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;
 
     if(cf(9)==1) % data driven
         if(size(yd,1)==1 && w=='o'), yd = {[];yd{:}}; end;
