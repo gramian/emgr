@@ -19,7 +19,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  X = 0:H:9.9; X = exp(-(X-1).^2)';
 
  P = 5;
- A = -eye(N) + diag(ones(N-1,1),-1); A = A*(1.0/H);
+ A = spdiags((1.0/H)*[ones(N,1) -ones(N,1)],[-1,0],N,N);
 
  LIN = @(x,u,p) p*A*x;
  OUT = @(x,u,p) x;

@@ -155,7 +155,7 @@ switch(w)
             end
             for n=1:N
                 for m=1:N
-                    W(n,m) = W(n,m) + sum(sum(o(:,:,n).*o(:,:,m)));
+                    W(n,m) = W(n,m) + sum(reshape(o(:,:,n).*o(:,:,m),[],1));
                 end
             end
         end
@@ -212,7 +212,7 @@ switch(w)
         V = emgr(F,G,[J N+P O],t,'x',zeros(P,1),cf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);                       % cross gramian
         U = spdiags((1.0/diag(W{1}))',0,N,N);
-        % U = U - U*(W{1}-diag(diag(W{1}))*U
+        % U = U - U*(W{1}-diag(diag(W{1})))*U;
         W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross identifiability gramian
 
     otherwise
