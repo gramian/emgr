@@ -124,6 +124,7 @@ if(w=='c' || w=='o' || w=='x')
         D = size(yd,2); xm = ones(N,D);
     end
 
+    y = zeros(O,T);
     o = zeros(O,T,N);
     W = zeros(N,N);
 end
@@ -135,7 +136,7 @@ switch(w)
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
                 if(cf(9)~=0), x = yd{1,c}; else
-                    x = odef(f,h,T,xs,uu,p,cf(10));                
+                    x = ode(f,h,T,xs,uu,p,cf(10));                
                 end;
                 x = bsxfun(@minus,x,res(cf(1),x,X))*(1.0/um(j,c));
                 W = W + x*x';
@@ -148,8 +149,8 @@ switch(w)
             for n=1:N % parfor
                 xx = xs + dirs(n,N,dy)*xm(n,d); 
                 if(cf(9)~=0), y = yd{2,d}; else
-                    x = odef(f,h,T,xx,us,p,cf(10));
-                    y = cell2mat(arrayfun(@(k) g(x(:,k),us,p),1:T,'UniformOutput',0));
+                    x = ode(f,h,T,xx,us,p,cf(10));
+                    for s=1:T, y(:,s) = g(x(:,s),us,p); end
                 end
                 o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
             end
@@ -167,15 +168,15 @@ switch(w)
             for n=1:N % parfor
                 xx = xs + dirs(n,N,dy)*xm(n,d);
                 if(cf(9)~=0), y = yd{2,d}; else
-                    x = odef(f,h,T,xx,us,p,cf(10));
-                    y = cell2mat(arrayfun(@(k) g(x(:,k),us,p),1:T,'UniformOutput',0));
+                    x = ode(f,h,T,xx,us,p,cf(10));
+                    for s=1:T, y(:,s) = g(x(:,s),us,p); end
                 end
                 o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
             end
             for c=1:C
                 for j=1:J % parfor
                     uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
-                    if(cf(9)==0), x=odef(f,h,T,xs,uu,p,cf(10)); else x=yd{1,c}; end;
+                    if(cf(9)==0), x=ode(f,h,T,xs,uu,p,cf(10)); else x=yd{1,c}; end;
                     x = bsxfun(@minus,x,res(cf(1),x,X))*(1.0/um(j,c));
                     W = W + x*permute(o(j,:,:),[2 3 1]);
                 end
@@ -278,7 +279,7 @@ function y = res(v,d,e)
 end
 
 %%%%%%%%
-function x = odef(f,h,T,Z,u,p,q)
+function x = ode(f,h,T,Z,u,p,q)
 
 z = Z;
 x(numel(z),T) = 0;
