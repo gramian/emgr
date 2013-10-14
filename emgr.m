@@ -150,13 +150,13 @@ switch(w)
                 xx = xs + dirs(n,N,dy)*xm(n,d); 
                 if(cf(9)~=0), y = yd{2,d}; else
                     x = ode(f,h,T,xx,us,p,cf(10));
-                    for s=1:T, y(:,s) = g(x(:,s),us,p); end
+                    for s=1:T, y(:,s) = g(x(:,s),us(:,1),p); end
                 end
                 o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
             end
             for n=1:N
                 for m=1:N
-                    W(n,m) = W(n,m) + sum(reshape(o(:,:,n).*o(:,:,m),[],1));
+                    W(n,m) = W(n,m) + sum(sum(o(:,:,n).*o(:,:,m)));
                 end
             end
         end
@@ -169,7 +169,7 @@ switch(w)
                 xx = xs + dirs(n,N,dy)*xm(n,d);
                 if(cf(9)~=0), y = yd{2,d}; else
                     x = ode(f,h,T,xx,us,p,cf(10));
-                    for s=1:T, y(:,s) = g(x(:,s),us,p); end
+                    for s=1:T, y(:,s) = g(x(:,s),us(:,1),p); end 
                 end
                 o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
             end
