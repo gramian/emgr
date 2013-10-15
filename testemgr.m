@@ -20,37 +20,39 @@ A = 0.5*(A+A');		%symmetrize system matrix
 B = rand(N,J);		%random input matrix
 C = B';			%ensure symmetric system
 
+P = A(:);		%parameter vector
+
 f = @(x,u,p) reshape(p,[N N])*x+B*u;	%parametrized linear dynamic system
 g = @(x,u,p) C*x;			%linear output function 
 
 
 disp('Computing Empirical Controllability Gramian (WC)');
 
-WC = emgr(f,g,[J N O],[S h T],'c',A(:));
+WC = emgr(f,g,[J N O],[S h T],'c',P);
 
 disp('Computing Empirical Observability Gramian (WO) ');
 
-WO = emgr(f,g,[J N O],[S h T],'o',A(:));
+WO = emgr(f,g,[J N O],[S h T],'o',P);
 
 disp('Computing Empirical Cross Gramian (WX)');
 
-WX = emgr(f,g,[J N O],[S h T],'x',A(:));
+WX = emgr(f,g,[J N O],[S h T],'x',P);
 
 disp('Computing Balanced Proper Orthogonal Decomposition (BPOD)');
 
 F = @(x,u,p) reshape(p,[N N])*x+C'*u;	%dual system
 G = @(x,u,p) B'*x;			%dual output
 
-BC = emgr(f,g,[J N O],[S h T],'c',A(:));
-BO = emgr(F,G,[O N J],[S h T],'c',A(:));
+BC = emgr(f,g,[J N O],[S h T],'c',P);
+BO = emgr(F,G,[O N J],[S h T],'c',P);
 
 disp('Computing Empirical Covariance Matrices');
 
 u = [1;2;3;4]*(1./[0.01:0.1:10]);		%custom input
 
-VC = emgr(f,g,[J N O],[S h T],'c',A(:),0,u);
-VO = emgr(f,g,[J N O],[S h T],'o',A(:),0,u);
-VX = emgr(f,g,[J N O],[S h T],'x',A(:),0,u);
+VC = emgr(f,g,[J N O],[S h T],'c',P,0,u);
+VO = emgr(f,g,[J N O],[S h T],'o',P,0,u);
+VX = emgr(f,g,[J N O],[S h T],'x',P,0,u);
 
 
 fprintf('\nSquareroot of Eigenvalues of WC*WO: ');	lambda_WCWO = sort(sqrt(eig(WC*WO)),'descend')'
@@ -63,17 +65,17 @@ fprintf('Trace of WX:               '); Tr_WX = trace(WX)
 
 fprintf('Trace of Half System Gain: '); Tr_Gn = trace(-0.5*C*inv(A)*B)
 
-W = emgr(f,g,[J N O],[S h T],'s',A(:));
+W = emgr(f,g,[J N O],[S h T],'s',P);
 Wc = W{1};				%controllability gramian
 WS = W{2};				%parameter controllability gramian
 fprintf('Error in byproduct WC from WS: '); E_WCWc = max(max(abs(WC-Wc)))
 
-W = emgr(f,g,[J N O],[S h T],'i',A(:));
+W = emgr(f,g,[J N O],[S h T],'i',P);
 Wo = W{1};				%observability gramian
 WI = W{2};				%parameter observability gramian
 fprintf('Error in byproduct WO from WI: '); E_WOWo = max(max(abs(WO-Wo)))
 
-W = emgr(f,g,[J N O],[S h T],'j',A(:));
+W = emgr(f,g,[J N O],[S h T],'j',P);
 Wx = W{1};				%cross gramian
 WJ = W{2};				%parameter cross identifiability gramian
 fprintf('Error in byproduct WX from WJ: '); E_WXWx = max(max(abs(WX-Wx)))
