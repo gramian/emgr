@@ -1,10 +1,10 @@
-function W = emgr(f,g,q,t,w,pr,cf,ut,us,xs,um,xm,yd)
+function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 % emgr - Empirical Gramian Framework ( Version: 1.5 )
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
 % SYNOPSIS:
-%    W = emgr(f,g,q,t,w,[pr],[cf],[ut],[us],[xs],[um],[xm],[yd]);
+%    W = emgr(f,g,q,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm],[yd]);
 %
 % ABOUT:
 %    emgr - Empirical Gramian Framemwork, computating empirical gramians
@@ -24,7 +24,7 @@ function W = emgr(f,g,q,t,w,pr,cf,ut,us,xs,um,xm,yd)
 %            * 'i' : empirical identifiability gramian (WI)
 %            * 'j' : empirical joint gramian (WJ)
 %        (vector) [pr = 0] - parameters
-%        (vector) [cf = 0] - options, 10 components:
+%        (vector) [nf = 0] - options, 10 components:
 %            + residual steady(0), mean(1), median(2), last(3), pod(4)
 %            + unit-normal(0), pod(1) directions
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
@@ -60,13 +60,17 @@ w = lower(w);
 J = q(1);             % number of inputs
 N = q(2);             % number of states
 O = q(3);             % number of outputs
+
+M = N;
+if(numel(q)==4) M = q(4); end;
+
 T = (t(3)-t(1))/t(2); % number of time steps
 h = t(2);             % time step width
 
 if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
 if (nargin<6) ||(isempty(pr)), pr = 0; end;
-if (nargin<7) ||(isempty(cf)), cf = 0; end;
+if (nargin<7) ||(isempty(nf)), nf = 0; end;
 if (nargin<8) ||(isempty(ut)), ut = 1; end;
 if (nargin<9) ||(isempty(us)), us = 0; end;
 if (nargin<10)||(isempty(xs)), xs = 0; end;
@@ -77,7 +81,7 @@ if (nargin<13)||(isempty(yd)), yd = 0; end;
 P = numel(pr);        % number of parameters
 p = pr(:);
 
-if (numel(cf)<10), cf(10) = 0; end;
+if (numel(nf)<10), nf(10) = 0; end;
 if (numel(ut)==1), ut(1:J,1) = ut; end;
 if (numel(us)==1), us(1:J,1) = us; end;
 if (numel(xs)==1), xs(1:N,1) = xs; end;
@@ -86,9 +90,9 @@ if (numel(xm)==1), xm(1:N,1) = xm; end;
 
 if(w=='c' || w=='o' || w=='x')
 
-    if(cf(7)==1) % double run
-        cf(7) = 0;
-        S = sqrt(diag(emgr(f,g,q,t,w,p,cf,ut,us,xs,um,xm,yd)));
+    if(nf(7)==1) % double run
+        nf(7) = 0;
+        S = sqrt(diag(emgr(f,g,q,t,w,p,nf,ut,us,xs,um,xm,yd)));
         A = spdiags(S,0,N,N);
         B = spdiags(1.0./S,0,N,N);
 
@@ -96,38 +100,38 @@ if(w=='c' || w=='o' || w=='x')
         G = g;
         f = @(x,u,p) A*F(B*x,u,p);
         g = @(x,u,p)   G(B*x,u,p);
-    end
+    end;
 
-    if(w=='c'&&cf(8)~=0) % robust parameters
+    if(w=='c'&&nf(8)~=0) % robust parameters
         J = J+P;
         if(size(us,1)==J-P), us = [us;p]; end;
         if(size(ut,1)==J-P), ut = [ut;ones(P,1)]; end;
         if(size(um,1)==J-P), um = [um;ones(P,1)]; end;
         F = f; f = @(x,u,p) F(x,u(1:J-P),u(J-P+1:J));
         G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
-    end
+    end;
 
     if(size(ut,2)==1), ut(:,2:T) = 0; k = (1.0/h); else k = 1.0; end;
     if(size(us,2)==1), us = repmat(us,[1 T]); end;
-    if(size(um,2)==1), um = scales(um,cf(3),cf(5)); end;
-    if(size(xm,2)==1), xm = scales(xm,cf(4),cf(6)); end;
+    if(size(um,2)==1), um = scales(um,nf(3),nf(5)); end;
+    if(size(xm,2)==1), xm = scales(xm,nf(4),nf(6)); end;
     C = size(um,2);
     D = size(xm,2);
 
-    if(cf(1)==0), X = xs; Y = g(xs,us,p); else X = 0; Y = 0; end;
-    if(cf(2)==1)&&(w~='o'), dx = svd(ut,'econ');                    else dx=0; end;
-    if(cf(2)==1)&&(w~='c'), dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;
+    if(nf(1)==0), X = xs; Y = g(xs(1:M),us,p); else X = 0; Y = 0; end;
+    if(nf(2)==1)&&(w~='o'), dx = svd(ut,'econ');                    else dx=0; end;
+    if(nf(2)==1)&&(w~='c'), dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;
 
-    if(cf(9)==1) % data driven
+    if(nf(9)==1) % data driven
         if(size(yd,1)==1 && w=='o'), yd = {[];yd{:}}; end;
         C = size(yd,1); um = ones(J,C);
         D = size(yd,2); xm = ones(N,D);
-    end
+    end;
 
     y = zeros(O,T);
     o = zeros(O,T,N);
     W = zeros(N,N);
-end
+end;
 
 switch(w)
 
@@ -135,31 +139,33 @@ switch(w)
         for c=1:C
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
-                if(cf(9)~=0), x = yd{1,c}; else
-                    x = ode(f,h,T,xs,uu,p,cf(10));                
+                if(nf(9)~=0), x = yd{1,c}; else
+                    x = ode(f,h,T,xs,uu,p,nf(10));                
                 end;
-                x = bsxfun(@minus,x,res(cf(1),x,X))*(1.0/um(j,c));
+                x = bsxfun(@minus,x,res(nf(1),x,X))*(1.0/um(j,c));
                 W = W + x*x';
-            end
-        end
+            end;
+        end;
         W = W*(h/C);
 
     case 'o' % observability gramian
         for d=1:D
             for n=1:N % parfor
-                xx = xs + dirs(n,N,dy)*xm(n,d); 
-                if(cf(9)~=0), y = yd{2,d}; else
-                    x = ode(f,h,T,xx,us,p,cf(10));
-                    for s=1:T, y(:,s) = g(x(:,s),us(:,1),p); end
-                end
-                o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
-            end
+                xx = xs + dirs(n,N,dy)*xm(n,d);
+                pp = p;
+                if(nf(9)~=0), y = yd{2,d}; else
+                    if(M~=N) pp = xx(M+1:N); xx = xx(1:M); end;
+                    x = ode(f,h,T,xx,us,pp,nf(10));
+                    for s=1:T, y(:,s) = g(x(:,s),us(:,1),pp); end;
+                end;
+                o(:,:,n) = bsxfun(@minus,y,res(nf(1),y,Y))*(1.0/xm(n,d));
+            end;
             for n=1:N
                 for m=1:N
                     W(n,m) = W(n,m) + sum(sum(o(:,:,n).*o(:,:,m)));
-                end
-            end
-        end
+                end;
+            end;
+        end;
         W = W*(h/D);
 
     case 'x' % cross gramian
@@ -167,50 +173,53 @@ switch(w)
         for d=1:D
             for n=1:N % parfor
                 xx = xs + dirs(n,N,dy)*xm(n,d);
-                if(cf(9)~=0), y = yd{2,d}; else
-                    x = ode(f,h,T,xx,us,p,cf(10));
-                    for s=1:T, y(:,s) = g(x(:,s),us(:,1),p); end 
-                end
-                o(:,:,n) = bsxfun(@minus,y,res(cf(1),y,Y))*(1.0/xm(n,d));
-            end
+                pp = p;
+                if(nf(9)~=0), y = yd{2,d}; else
+                    if(M~=N) pp = xx(M+1:N); xx = xx(1:M); end;
+                    x = ode(f,h,T,xx,us,pp,nf(10));
+                    for s=1:T, y(:,s) = g(x(:,s),us(:,1),pp); end;
+                end;
+                o(:,:,n) = bsxfun(@minus,y,res(nf(1),y,Y))*(1.0/xm(n,d));
+            end;
             for c=1:C
                 for j=1:J % parfor
                     uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
-                    if(cf(9)==0), x=ode(f,h,T,xs,uu,p,cf(10)); else x=yd{1,c}; end;
-                    x = bsxfun(@minus,x,res(cf(1),x,X))*(1.0/um(j,c));
-                    W = W + x*permute(o(j,:,:),[2 3 1]);
-                end
-            end
-        end
+                    xx = xs;
+                    pp = p;
+                    if(nf(9)~=0), x = yd{1,c}; else
+                        if(M~=N) pp = xs(M+1:N); xx = xs(1:M); end;
+                        x = ode(f,h,T,xx,uu,pp,nf(10));
+                    end;
+                    x = bsxfun(@minus,x,res(nf(1),x,X))*(1.0/um(j,c));
+                    W = W(1:M,:) + x*permute(o(j,:,:),[2 3 1]);
+                end;
+            end;
+        end;
         W = W*(h/(C*D));
 
     case 's' % sensitivity gramian
         W = cell(2,1);
-        W{1} = emgr(f,g,[J N O],t,'c',zeros(P,1),cf,ut,us,xs,um,xm);
+        W{1} = emgr(f,g,[J N O],t,'c',sparse(P,1),nf,ut,us,xs,um,xm);
         W{2} = eye(P);
         F = @(x,u,p) f(x,us,p*u);
         G = @(x,u,p) g(x,us,p*u);
         for q=1:P
-            V = emgr(F,G,[1 N O],t,'c',(1:P==q),cf,1,p(q),xs,1,xm);
+            V = emgr(F,G,[1 N O],t,'c',(1:P==q),nf,1,p(q),xs,1,xm);
             W{1} = W{1} + V;      % controllability gramian
             W{2}(q,q) = trace(V); % sensitivity gramian
-        end
+        end;
 
     case 'i' % identifiability gramian
         if(size(xm,1)==N), xm = [xm;ones(P,1)]; end;
         W = cell(2,1);
-        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));p];
-        G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
-        V = emgr(F,G,[J N+P O],t,'o',zeros(P,1),cf,ut,us,[xs;p],um,xm);
+        V = emgr(f,g,[J N+P O N],t,'o',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);         % observability gramian
         W{2} = V(N+1:N+P,N+1:N+P); % identifiability gramian
 
     case 'j' % joint gramian
         if(size(xm,1)==N), xm = [xm;ones(P,1)]; end;
         W = cell(2,1);
-        F = @(x,u,p) [f(x(1:N),u,x(N+1:N+P));p];
-        G = @(x,u,p)  g(x(1:N),u,x(N+1:N+P));
-        V = emgr(F,G,[J N+P O],t,'x',zeros(P,1),cf,ut,us,[xs;p],um,xm);
+        V = emgr(f,g,[J N+P O N],t,'x',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);                       % cross gramian
         U = spdiags((1.0/diag(W{1}))',0,N,N);
         % U = U - U*(W{1}-diag(diag(W{1})))*U;
@@ -218,9 +227,9 @@ switch(w)
 
     otherwise
         error('ERROR: unknown gramian type!');
-end
+end;
 
-if(w=='c' || w=='o' || (w=='x'&&cf(8)==1)), W = 0.5*(W+W'); end;
+if(w=='c' || w=='o' || (w=='x'&&nf(8)==1)), W = 0.5*(W+W'); end;
 
 end
 
@@ -236,7 +245,7 @@ function s = scales(s,d,e)
             s = s*[0.125,0.25,0.5,1.0];
         case 3 % single
             %s = s;
-    end
+    end;
 
     switch(e)
         case 0 % unit
@@ -247,7 +256,7 @@ function s = scales(s,d,e)
             s = s*s';
         case 3 % single
             %s = s;
-    end
+    end;
 end
 
 %%%%%%%%
@@ -258,7 +267,7 @@ function d = dirs(n,N,e)
             d = (1:N==n)';
         otherwise % POD
             d = e;
-    end
+    end;
 end
 
 %%%%%%%%
@@ -275,46 +284,50 @@ function y = res(v,d,e)
             y = d(:,end);
         case 4 % POD
             y = svd(d,'econ');
-    end
+    end;
+
+    y = y(size(d,1),1);
 end
 
 %%%%%%%%
-function x = ode(f,h,T,Z,u,p,q)
+function x = ode(f,h,T,z,u,p,O)
 
-z = Z;
 x(numel(z),T) = 0;
 
-    switch(q)
-        case 0 % Eulers Method
-            for t=1:T
-                z = z + h*f(z,u(:,t),p);
-                x(:,t) = z;
-            end
-        case 1 % Adams-Bashforth Method
-            m = 0.5*h*f(z,u(:,1),p);
-            z = z + h*f(z + m,u(:,1),p);
-            x(:,1) = z;
+switch(O)
 
-            for t=2:T
-                k = 0.5*h*f(z,u(:,t),p);
-                z = z + 3.0*k - m;
-                x(:,t) = z;
-                m = k;
-            end
-        case 2 % Leapfrog Method
-            N = size(z,1);
-            m = N/2;
-            n = m + 1;
-            l = f(z,u(:,1),p);
-            k = l(n:N);
+    case 0 % Eulers Method
+        for t=1:T
+            z = z + h*f(z,u(:,t),p);
+            x(:,t) = z;
+        end;
 
-            for t=1:T
-                z(1:m) = z(1:m) + h*z(n:N) + 0.5*h*h*k;
-                l = f(z,u(:,t),p);
-                z(n:N) = z(n:N) + 0.5*h*(k+l(n:N));
-                x(:,t) = z;
-                k = l(n:N);
-            end
-    end
+    case 1 % Adams-Bashforth Method
+        m = 0.5*h*f(z,u(:,1),p);
+        z = z + h*f(z + m,u(:,1),p);
+        x(:,1) = z;
+
+        for t=2:T
+            k = 0.5*h*f(z,u(:,t),p);
+            z = z + 3.0*k - m;
+            x(:,t) = z;
+            m = k;
+        end;
+
+    case 2 % Leapfrog Method
+        N = numel(z);
+        n = N/2;
+        l = f(z,u(:,1),p);
+        k = l(n+1:N);
+
+        for t=1:T
+            z(1:n) = z(1:n) + h*z(n+1:N) + 0.5*h*h*k;
+            l = f(z,u(:,t),p);
+            z(n+1:N) = z(n+1:N) + 0.5*h*(k+l(n+1:N));
+            x(:,t) = z;
+            k = l(n+1:N);
+        end;
+end;
+
 end
 
