@@ -62,7 +62,7 @@ N = q(2);             % number of states
 O = q(3);             % number of outputs
 
 M = N;
-if(numel(q)==4) M = q(4); end;
+if(numel(q)==4), M = q(4); end;
 
 T = (t(3)-t(1))/t(2); % number of time steps
 h = t(2);             % time step width
@@ -118,9 +118,15 @@ if(w=='c' || w=='o' || w=='x')
     C = size(um,2);
     D = size(xm,2);
 
-    if(nf(1)==0), X = xs; Y = g(xs(1:M),us,p); else X = 0; Y = 0; end;
-    if(nf(2)==1)&&(w~='o'), dx = svd(ut,'econ');                    else dx=0; end;
-    if(nf(2)==1)&&(w~='c'), dy = svd(odex(f,N,h,T,xs,us,p),'econ'); else dy=0; end;
+    X = xs(1:M); 
+    Y = g(xs(1:M),us,p); 
+
+    dx = 0;
+    dy = 0;
+    if(nf(2)==1),
+         dx = svd(ut,'econ');
+         dy = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
+    end;
 
     if(nf(9)==1) % data driven
         if(size(yd,1)==1 && w=='o'), yd = {[];yd{:}}; end;
@@ -154,7 +160,7 @@ switch(w)
                 xx = xs + dirs(n,N,dy)*xm(n,d);
                 pp = p;
                 if(nf(9)~=0), y = yd{2,d}; else
-                    if(M~=N) pp = xx(M+1:N); xx = xx(1:M); end;
+                    if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
                     x = ode(f,h,T,xx,us,pp,nf(10));
                     for s=1:T, y(:,s) = g(x(:,s),us(:,1),pp); end;
                 end;
@@ -175,7 +181,7 @@ switch(w)
                 xx = xs + dirs(n,N,dy)*xm(n,d);
                 pp = p;
                 if(nf(9)~=0), y = yd{2,d}; else
-                    if(M~=N) pp = xx(M+1:N); xx = xx(1:M); end;
+                    if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
                     x = ode(f,h,T,xx,us,pp,nf(10));
                     for s=1:T, y(:,s) = g(x(:,s),us(:,1),pp); end;
                 end;
@@ -187,7 +193,7 @@ switch(w)
                     xx = xs;
                     pp = p;
                     if(nf(9)~=0), x = yd{1,c}; else
-                        if(M~=N) pp = xs(M+1:N); xx = xs(1:M); end;
+                        if(M~=N), pp = xs(M+1:N); xx = xs(1:M); end;
                         x = ode(f,h,T,xx,uu,pp,nf(10));
                     end;
                     x = bsxfun(@minus,x,res(nf(1),x,X))*(1.0/um(j,c));
@@ -285,8 +291,6 @@ function y = res(v,d,e)
         case 4 % POD
             y = svd(d,'econ');
     end;
-
-    y = y(size(d,1),1);
 end
 
 %%%%%%%%
