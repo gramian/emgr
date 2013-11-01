@@ -28,9 +28,9 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + residual steady(0), mean(1), median(2), last(3), pod(4)
 %            + unit-normal(0), pod(1) directions
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
-%            + linear(0), log(1), geometric(2), single(3) init-state scale spacing
+%            + linear(0), log(1), geometric(2), single(3) state scale spacing
 %            + unit(0), [factorial(1)], dyadic(2), single(3) input rotations
-%            + unit(0), [factorial(1)], dyadic(2), single(3) init-state rotations
+%            + unit(0), [factorial(1)], dyadic(2), single(3) state rotations
 %            + single(0), double(1) run
 %            + disable(0), enable(1)
 %                * robust parameters (WC, WS only)
@@ -47,12 +47,15 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %
 % OUTPUT:
 %            (matrix)  W - Gramian matrix (WC, WO, WX only)
-%              (cell)  W - {State-,Parameter-} Gramian Matrices (WS, WI, WJ only)
+%              (cell)  W - {State-,Parameter-} Gramian Matrix (WS, WI, WJ only)
+%
+% KEYWORDS:
+%    model reduction, empirical gramian, emgr
 %
 % TODO:
 %     factorial transformations
 %
-% For further information see http://gramian.de
+% For further information see <http://gramian.de>
 %*
 
 w = lower(w);
@@ -146,7 +149,7 @@ switch(w)
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
                 if(nf(9)~=0), x = yd{1,c}; else
-                    x = ode(f,h,T,xs,uu,p,nf(10));                
+                    x = ode(f,h,T,xs,uu,p,nf(10));
                 end;
                 x = bsxfun(@minus,x,res(nf(1),x,X))*(1.0/um(j,c));
                 W = W + x*x';
@@ -206,7 +209,7 @@ switch(w)
     case 's' % sensitivity gramian
         W = cell(2,1);
         W{1} = emgr(f,g,[J N O],t,'c',sparse(P,1),nf,ut,us,xs,um,xm);
-        W{2} = eye(P);
+        W{2} = eye(P); % speye
         F = @(x,u,p) f(x,us,p*u);
         G = @(x,u,p) g(x,us,p*u);
         for q=1:P
