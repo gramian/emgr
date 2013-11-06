@@ -26,11 +26,11 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %        (vector) [pr = 0] - parameters
 %        (vector) [nf = 0] - options, 10 components:
 %            + residual steady(0), mean(1), median(2), last(3), pod(4)
-%            + unit-normal(0), pod(1) directions
+%            + unit-normal(0), pod(1), factorial(2) directions
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
 %            + linear(0), log(1), geometric(2), single(3) state scale spacing
-%            + unit(0), [factorial(1)], dyadic(2), single(3) input rotations
-%            + unit(0), [factorial(1)], dyadic(2), single(3) state rotations
+%            + unit(0), anti(1), dyadic(2), single(3) input rotations
+%            + unit(0), anti(1), dyadic(2), single(3) state rotations
 %            + single(0), double(1) run
 %            + disable(0), enable(1)
 %                * robust parameters (WC, WS only)
@@ -52,8 +52,6 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 % KEYWORDS:
 %    model reduction, empirical gramian, emgr
 %
-% TODO:
-%     factorial transformations
 %
 % For further information see <http://gramian.de>
 %*
@@ -67,8 +65,8 @@ O = q(3);             % number of outputs
 M = N;
 if(numel(q)==4), M = q(4); end;
 
-T = (t(3)-t(1))/t(2); % number of time steps
 h = t(2);             % time step width
+T = (t(3)-t(1))/h; % number of time steps
 
 if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
@@ -84,7 +82,7 @@ if (nargin<13)||(isempty(yd)), yd = 0; end;
 P = numel(pr);        % number of parameters
 p = pr(:);
 
-if (numel(nf)<10), nf(10) = 0; end;
+if (numel(nf)<10), nf(10)    = 0;  end;
 if (numel(ut)==1), ut(1:J,1) = ut; end;
 if (numel(us)==1), us(1:J,1) = us; end;
 if (numel(xs)==1), xs(1:N,1) = xs; end;
@@ -126,9 +124,13 @@ if(w=='c' || w=='o' || w=='x')
 
     dx = 0;
     dy = 0;
+
     if(nf(2)==1),
          dx = svd(ut,'econ');
          dy = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
+    elseif(nf(2)==2),
+         dx = (dec2bin(1:2^J-1)-'0')*(2.0/sqrt(2^J));
+         dy = (dec2bin(1:2^N-1)-'0')*(2.0/sqrt(2^N));
     end;
 
     if(nf(9)==1) % data driven
@@ -259,8 +261,8 @@ function s = scales(s,d,e)
     switch(e)
         case 0 % unit
             s = [-s,s];
-        case 1 % factorial
-            s = s*(2*(dec2bin(0:2^q-1)-'0')'-1)./sqrt(2^q);
+        case 1 % anti 
+            s = [1.0./s,s];
         case 2 % dyadic
             s = s*s';
         case 3 % single
@@ -274,8 +276,10 @@ function d = dirs(n,N,e)
     switch(e)
         case 0    % unit-normal
             d = (1:N==n)';
-        otherwise % POD
+        case 1    % POD
             d = e;
+        case 2    % factorial
+            d = e(:,n);
     end;
 end
 
@@ -299,7 +303,8 @@ end
 %%%%%%%%
 function x = ode(f,h,T,z,u,p,O)
 
-x(numel(z),T) = 0;
+N = numel(z);
+x(N,T) = 0;
 
 switch(O)
 
@@ -322,7 +327,6 @@ switch(O)
         end;
 
     case 2 % Leapfrog Method
-        N = numel(z);
         n = N/2;
         l = f(z,u(:,1),p);
         k = l(n+1:N);
