@@ -29,8 +29,8 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + unit-normal(0), pod(1), factorial(2) directions
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
 %            + linear(0), log(1), geometric(2), single(3) state scale spacing
-%            + unit(0), anti(1), dyadic(2), single(3) input rotations
-%            + unit(0), anti(1), dyadic(2), single(3) state rotations
+%            + unit(0), inverse(1), dyadic(2), single(3) input rotations
+%            + unit(0), inverse(1), dyadic(2), single(3) state rotations
 %            + single(0), double(1) run
 %            + disable(0), enable(1)
 %                * robust parameters (WC, WS only)
