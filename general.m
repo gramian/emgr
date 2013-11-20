@@ -9,7 +9,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
  J = 16;
- N = 128;
+ N = 160;
  O = J;
  R = O;
  T = [0 0.01 1];
@@ -22,11 +22,10 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  B = rand(N,J);
  C = B';
 
- LIN = @(x,u,p) A*x+B*u;
+ LIN = @(x,u,p) A*x + B*u;
  OUT = @(x,u,p) C*x;
 
  Lin = @(x,u,p) [A,sparse(N,N);sparse(N,N),A']*x + [B;C']*u;
- Out = @(x,u,p) x;
 
 %%%%%%%% Reduction %%%%%%%%%
 
@@ -35,7 +34,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WG = emgr(Lin,Out,[J 2*N 2*N],T,'c');
+ WG = emgr(Lin,1,[J 2*N 2*N],T,'c');
  %WC = WG(1:N,1:N);
  %WO = WG(N+1:N+N,N+1:N+N);
  WX = WG(1:N,N+1:N+N);

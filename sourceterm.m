@@ -8,17 +8,17 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Setup %%%%%%%%
 
- J = 10;
+ J = 8;
  O = J;
- N = 100;
- R = 10;
+ N = 16;
+ R = O;
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
  U = [ones(J,1) zeros(J,L-1)];
  X =  ones(N,1);
 
  rand('seed',1009);
- A = rand(N,N); A(1:N+1:end) = -0.5*N;
+ A = rand(N,N); A(1:N+1:end) = -0.55*N;
  B = rand(N,J);
  C = rand(O,N);
  P = 0.1*rand(N,1);

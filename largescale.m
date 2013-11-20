@@ -9,8 +9,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
  J = 16;
+ N = 160;
  O = J;
- N = 128;
  R = O;
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
@@ -31,9 +31,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
 
 % OFFLINE
- tic;
+ tic; 
  WX = emgr(LIN,OUT,[J N O],T,'x');
- [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
+ [UU D VV] = svd(WX,'econ'); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
  b = VV*B;
  c = C*UU;

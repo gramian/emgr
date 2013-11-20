@@ -34,8 +34,8 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + single(0), double(1) run
 %            + disable(0), enable(1)
 %                * robust parameters (WC, WS only)
-%                * data-driven pod (WO, WI only)
-%                * enforce symmetry (WX, WJ only)
+%                * data-driven pod   (WO, WI only)
+%                * enforce symmetry  (WX, WJ only)
 %            + disable(0), enable(1) data-driven gramians
 %            + solver: Euler(0), Adams-Bashforth(1), Leapfrog(2)
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
@@ -66,7 +66,7 @@ M = N;
 if(numel(q)==4), M = q(4); end;
 
 h = t(2);             % time step width
-T = (t(3)-t(1))/h; % number of time steps
+T = (t(3)-t(1))/h;    % number of time steps
 
 if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
@@ -126,8 +126,8 @@ if(w=='c' || w=='o' || w=='x')
     dy = 0;
 
     if(nf(2)==1),
-         dx = svd(ut,'econ');
-         dy = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
+         [U E V] = svd(ut,'econ'); dx = U;
+         [U E V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ'); dy = U;
     elseif(nf(2)==2),
          dx = (dec2bin(1:2^J-1)-'0')*(2.0/sqrt(2^J));
          dy = (dec2bin(1:2^N-1)-'0')*(2.0/sqrt(2^N));
@@ -277,7 +277,7 @@ function d = dirs(n,N,e)
         case 0    % unit-normal
             d = (1:N==n)';
         case 1    % POD
-            d = e;
+            d = e(:,n);
         case 2    % factorial
             d = e(:,n);
     end;
@@ -296,7 +296,7 @@ function y = res(v,d,e)
         case 3 % last
             y = d(:,end);
         case 4 % POD
-            y = svd(d,'econ');
+            [U E V] = svd(d,'econ'); y = U(1,:);
     end;
 end
 
