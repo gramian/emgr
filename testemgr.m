@@ -6,24 +6,24 @@ function testemgr(N,J)
 
 if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
 
-if(nargin<1) N=8; end	%number of states
-if(nargin<2) J=4; end	%number of inputs
-O = J;			%number of outputs
+if(nargin<1) N=8; end	% number of states
+if(nargin<2) J=4; end	% number of inputs
+O = J;			% number of outputs
 
-S = 0;			%start time
-h = 0.01;		%time step
-T = 1;			%end time
+S = 0;			% start time
+h = 0.01;		% time step
+T = 1;			% end time
 
-A = rand(N,N);		%random system matrix
-A(1:N+1:end) = -N;	%ensure stability
-A = 0.5*(A+A');		%symmetrize system matrix
-B = rand(N,J);		%random input matrix
-C = B';			%ensure symmetric system
+A = rand(N,N);		% random system matrix
+A(1:N+1:end) = -N;	% ensure stability
+A = 0.5*(A+A');		% symmetrize system matrix
+B = rand(N,J);		% random input matrix
+C = B';			% ensure symmetric system
 
-P = A(:);		%parameter vector
+P = A(:);		% parameter vector
 
-f = @(x,u,p) reshape(p,[N N])*x+B*u;	%parametrized linear dynamic system
-g = @(x,u,p) C*x;			%linear output function 
+f = @(x,u,p) reshape(p,[N N])*x+B*u;	% parametrized linear dynamic system
+g = @(x,u,p) C*x;			% linear output function 
 
 
 disp('Computing Empirical Controllability Gramian (WC)');
@@ -38,10 +38,15 @@ disp('Computing Empirical Cross Gramian (WX)');
 
 WX = emgr(f,g,[J N O],[S h T],'x',P);
 
+disp('Computing Fast Linear Cross Gramian (WY)');
+
+F = @(x,u,p) reshape(p,[N N])'*x+C'*u;	% adjoint system
+
+WY = emgr(f,F,[J N O],[S h T],'y',P);
+
 disp('Computing Balanced Proper Orthogonal Decomposition (BPOD)');
 
-F = @(x,u,p) reshape(p,[N N])*x+C'*u;	%dual system
-G = @(x,u,p) B'*x;			%dual output
+G = @(x,u,p) B'*x;			% dual output
 
 BC = emgr(f,g,[J N O],[S h T],'c',P);
 BO = emgr(F,G,[O N J],[S h T],'c',P);
@@ -66,18 +71,18 @@ fprintf('Trace of WX:               '); Tr_WX = trace(WX)
 fprintf('Trace of Half System Gain: '); Tr_Gn = trace(-0.5*C*inv(A)*B)
 
 W = emgr(f,g,[J N O],[S h T],'s',P);
-Wc = W{1};				%controllability gramian
-WS = W{2};				%parameter controllability gramian
+Wc = W{1};				% controllability gramian
+WS = W{2};				% sensitivity gramian (parameter controllability)
 fprintf('Error in byproduct WC from WS: '); E_WCWc = max(max(abs(WC-Wc)))
 
 W = emgr(f,g,[J N O],[S h T],'i',P);
-Wo = W{1};				%observability gramian
-WI = W{2};				%parameter observability gramian
+Wo = W{1};				% observability gramian
+WI = W{2};				% identifiability gramian (parameter observability)
 fprintf('Error in byproduct WO from WI: '); E_WOWo = max(max(abs(WO-Wo)))
 
 W = emgr(f,g,[J N O],[S h T],'j',P);
-Wx = W{1};				%cross gramian
-WJ = W{2};				%parameter cross identifiability gramian
+Wx = W{1};				% cross gramian
+WJ = W{2};				% cross-identifiability gramian (parameter responsivness)
 fprintf('Error in byproduct WX from WJ: '); E_WXWx = max(max(abs(WX-Wx)))
 
 

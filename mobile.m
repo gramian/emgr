@@ -22,28 +22,28 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  B = rand(N,J);
  C = B';
 
- LIN = @(x,u,p) A*tanh(x) + B*u;
+ NON = @(x,u,p) A*tanh(x) + B*u;
  OUT = @(x,u,p) C*x;
 
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
+ tic; Y = rk2(NON,OUT,T,X,U,0); FULL = toc
 
 % OFFLINE
  tic;
- WX = emgr(LIN,OUT,[J N O],T,'x');
+ WX = emgr(NON,OUT,[J N O],T,'x');
  [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
  b = VV*B;
  c = C*UU;
  x = VV*X;
- lin = @(x,u,p) a*x + b*u;
+ non = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
  OFFLINE = toc
 
 % ONLINE
- tic; y = rk2(lin,out,T,x,U,0); ONLINE = toc
+ tic; y = rk2(non,out,T,x,U,0); ONLINE = toc
  ERROR = norm(norm(Y - y)./norm(Y))
 
 %%%%%%%% Integrator %%%%%%%%

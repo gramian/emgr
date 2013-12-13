@@ -9,7 +9,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
  J = 16;
- N = 160;
+ N = 128;
  O = J;
  R = O;
  T = [0 0.01 1];

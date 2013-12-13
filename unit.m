@@ -3,15 +3,15 @@
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-disp('testemgr:')
+disp('testemgr:');
 testemgr
-disp('mobile:')
+disp('mobile:');
 mobile
 
 disp('largescale:');
 largescale
-disp('general:');
-general
+disp('adjoint:');
+adjoint
 disp('nonsym:');
 nonsym
 disp('closed:');

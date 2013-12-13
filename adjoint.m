@@ -1,5 +1,5 @@
-function general(o)
-% general (generalized cross gramian via controllability gramian)
+function adjoint(o)
+% adjoint (fast cross gramian via controllability gramian)
 % by Christian Himpe, 2013 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
@@ -9,7 +9,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
  J = 16;
- N = 160;
+ N = 128;
  O = J;
  R = O;
  T = [0 0.01 1];
@@ -23,9 +23,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  C = B';
 
  LIN = @(x,u,p) A*x + B*u;
+ ADJ = @(x,u,p) A'*x + C'*u;
  OUT = @(x,u,p) C*x;
-
- Lin = @(x,u,p) [A,sparse(N,N);sparse(N,N),A']*x + [B;C']*u;
 
 %%%%%%%% Reduction %%%%%%%%%
 
@@ -34,11 +33,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WG = emgr(Lin,1,[J 2*N 2*N],T,'c');
- %WC = WG(1:N,1:N);
- %WO = WG(N+1:N+N,N+1:N+N);
- WX = WG(1:N,N+1:N+N);
- [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
+ WY = emgr(LIN,ADJ,[J N O],T,'y');
+ [UU D VV] = svd(WY); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
  b = VV*B;
  c = C*UU;
