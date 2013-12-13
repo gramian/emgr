@@ -39,7 +39,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %                * enforce symmetry  (WX, WJ only)
 %            + disable(0), enable(1) data-driven gramians
 %            + solver: Euler(0), Adams-Bashforth(1), Leapfrog(2)
-%            + disable(0), enable(1) parameter scaling
+%            + disable(0), enable(1) parameter scaling (WS, WI, WJ only)
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
 %         (vector,scalar) [xs = 0] - steady-state
@@ -211,7 +211,7 @@ switch(w)
         end;
         W = W*(h/(C*D));
 
-    case 'y', % fast linear cross gramian
+    case 'y', % fast cross gramian
         if(J~=O), error('ERROR: non-square system!'); end;
         for c=1:C
             for j=1:J % parfor
@@ -362,7 +362,7 @@ switch(O)
             k = l(n+1:N);
         end;
 
-    case -1,
+    case -1, % Custom Solver
         x = CUSTOM_ODE(f,h,T,z,u,p,O);
 
 end;
