@@ -133,8 +133,8 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
             dx = eye(J);
             dy = eye(N);
         case 1, % pod
-            [dx E V] = svd(ut,'econ');
-            [dy E V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
+            [dx,E,V] = svd(ut,'econ');
+            [dy,E,V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
         case 2, % factorial
             dx = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JJ = size(dx,2);
             dy = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NN = size(dy,2);
@@ -157,7 +157,7 @@ switch(w)
         for c=1:C
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
-                if(nf(9)==1), x = yd{1,c}; else,
+                if(nf(9)==1), x = yd{1,c}; else
                     x = ode(f,h,T,xs,uu,p,nf(10));
                 end;
                 x = bsxfun(@minus,x,res(nf(1),x,X))*(1.0/um(j,c));
@@ -171,7 +171,7 @@ switch(w)
             for n=1:N % parfor
                 xx = xs + dy(:,n)*xm(n,d);
                 pp = p;
-                if(nf(9)==1), y = yd{2,d}; else,
+                if(nf(9)==1), y = yd{2,d}; else
                     if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
                     x = ode(f,h,T,xx,us,pp,nf(10));
                     for s=1:T, y(:,s) = g(x(:,s),us(:,1),pp); end;
@@ -193,7 +193,7 @@ switch(w)
             for n=1:N % parfor
                 xx = xs + dy(:,n)*xm(n,d);
                 pp = p;
-                if(nf(9)==1), y = yd{2,d}; else,
+                if(nf(9)==1), y = yd{2,d}; else
                     if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
                     x = ode(f,h,T,xx,us,pp,nf(10));
                     for s=1:T, y(:,s) = g(x(:,s),us(:,1),pp); end;
@@ -205,7 +205,7 @@ switch(w)
                     uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
                     xx = xs;
                     pp = p;
-                    if(nf(9)==1), x = yd{1,c}; else,
+                    if(nf(9)==1), x = yd{1,c}; else
                         if(M~=N), pp = xs(M+1:N); xx = xs(1:M); end;
                         x = ode(f,h,T,xx,uu,pp,nf(10));
                     end;
@@ -222,7 +222,7 @@ switch(w)
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
                 yy = us + bsxfun(@times,ut,dx(:,j)*(xm(j,c)*k));
-                if(nf(9)==1), x = yd{1,c}; y = yd{2,c}; else,
+                if(nf(9)==1), x = yd{1,c}; y = yd{2,c}; else
                     x = ode(f,h,T,xs,uu,p,nf(10));
                     y = ode(g,h,T,xs,yy,p,nf(10));
                 end;
@@ -311,7 +311,7 @@ function y = res(v,d,e)
         case 3, % last
             y = d(:,end);
         case 4, % POD
-            [U E V] = svd(d,'econ'); y = U(1,:);
+            [U,E,V] = svd(d,'econ'); y = U(1,:);
     end;
 end
 
