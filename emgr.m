@@ -128,12 +128,16 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
     dx = 0;
     dy = 0;
 
-    if(nf(2)==1),
-         [U E V] = svd(ut,'econ'); dx = U;
-         [U E V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ'); dy = U;
-    elseif(nf(2)==2),
-         dx = (dec2bin(1:2^J-1)-'0')*(2.0/sqrt(2^J));
-         dy = (dec2bin(1:2^N-1)-'0')*(2.0/sqrt(2^N));
+    switch(nf(2)) % directions
+        case 0, % unit-normal
+            dx = eye(J);
+            dy = eye(N);
+        case 1, % pod
+            [dx E V] = svd(ut,'econ');
+            [dy E V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
+        case 2, % factorial
+            dx = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JJ = size(dx,2);
+            dy = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NN = size(dy,2);
     end;
 
     if(nf(9)==1) % data driven
@@ -152,7 +156,7 @@ switch(w)
     case 'c', % controllability gramian
         for c=1:C
             for j=1:J % parfor
-                uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
+                uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
                 if(nf(9)==1), x = yd{1,c}; else,
                     x = ode(f,h,T,xs,uu,p,nf(10));
                 end;
@@ -165,7 +169,7 @@ switch(w)
     case 'o', % observability gramian
         for d=1:D
             for n=1:N % parfor
-                xx = xs + dirs(n,N,dy)*xm(n,d);
+                xx = xs + dy(:,n)*xm(n,d);
                 pp = p;
                 if(nf(9)==1), y = yd{2,d}; else,
                     if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
@@ -175,8 +179,9 @@ switch(w)
                 o(:,:,n) = bsxfun(@minus,y,res(nf(1),y,Y))*(1.0/xm(n,d));
             end;
             for n=1:N
-                for m=1:N
+                for m=1:n
                     W(n,m) = W(n,m) + sum(sum(o(:,:,n).*o(:,:,m)));
+                    W(m,n) = W(n,m);
                 end;
             end;
         end;
@@ -186,7 +191,7 @@ switch(w)
         if(J~=O), error('ERROR: non-square system!'); end;
         for d=1:D
             for n=1:N % parfor
-                xx = xs + dirs(n,N,dy)*xm(n,d);
+                xx = xs + dy(:,n)*xm(n,d);
                 pp = p;
                 if(nf(9)==1), y = yd{2,d}; else,
                     if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
@@ -197,7 +202,7 @@ switch(w)
             end;
             for c=1:C
                 for j=1:J % parfor
-                    uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
+                    uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
                     xx = xs;
                     pp = p;
                     if(nf(9)==1), x = yd{1,c}; else,
@@ -215,8 +220,8 @@ switch(w)
         if(J~=O), error('ERROR: non-square system!'); end;
         for c=1:C
             for j=1:J % parfor
-                uu = us + bsxfun(@times,ut,dirs(j,J,dx)*(um(j,c)*k));
-                yy = us + bsxfun(@times,ut,dirs(j,J,dx)*(xm(j,c)*k));
+                uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
+                yy = us + bsxfun(@times,ut,dx(:,j)*(xm(j,c)*k));
                 if(nf(9)==1), x = yd{1,c}; y = yd{2,c}; else,
                     x = ode(f,h,T,xs,uu,p,nf(10));
                     y = ode(g,h,T,xs,yy,p,nf(10));
@@ -231,7 +236,7 @@ switch(w)
     case 's', % sensitivity gramian
         W = cell(2,1);
         W{1} = emgr(f,g,[J N O],t,'c',sparse(P,1),nf,ut,us,xs,um,xm);
-        W{2} = eye(P); % speye
+        W{2} = eye(P);
         F = @(x,u,p) f(x,us,p*u);
         G = @(x,u,p) g(x,us,p*u);
         for q=1:P
@@ -257,7 +262,7 @@ switch(w)
         W{1} = V(1:N,1:N);                       % cross gramian
         U = spdiags((1.0/diag(W{1}))',0,N,N);
         % U = U - U*(W{1}-diag(diag(W{1})))*U;
-        W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross identifiability gramian
+        W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
 
     otherwise
         error('ERROR: unknown gramian type!');
@@ -290,19 +295,6 @@ function s = scales(s,d,e)
             s = s*s';
         case 3, % single
             %s = s;
-    end;
-end
-
-%%%%%%%% DIRECTION SELECTOR %%%%%%%%
-function d = dirs(n,N,e)
-
-    switch(e)
-        case 0, % unit-normal
-            d = (1:N==n)';
-        case 1, % POD
-            d = e(:,n);
-        case 2, % factorial
-            d = e(:,n);
     end;
 end
 
