@@ -1,9 +1,9 @@
 function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 % emgr - Empirical Gramian Framework ( Version: 1.6 )
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe 2013, 2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
-% SYNOPSIS:
+% SYNTAX:
 %    W = emgr(f,g,q,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm],[yd]);
 %
 % ABOUT:
@@ -32,13 +32,13 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + linear(0), log(1), geometric(2), single(3) state scale spacing
 %            + unit(0), inverse(1), dyadic(2), single(3) input rotations
 %            + unit(0), inverse(1), dyadic(2), single(3) state rotations
-%            + single(0), double(1) run
+%            + single(0), double(1), scaled(2) run
 %            + disable(0), enable(1) 
 %                * robust parameters (WC, WS only)
 %                * data-driven pod   (WO, WI only)
 %                * enforce symmetry  (WX, WJ only)
 %            + disable(0), enable(1) data-driven gramians
-%            + solver: Euler(0), Adams-Bashforth(1), Leapfrog(2)
+%            + solver: Euler(0), Adams-Bashforth(1), Leapfrog(2), Custom(-1)
 %            + disable(0), enable(1) parameter scaling (WS, WI, WJ only)
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
@@ -93,16 +93,21 @@ if (numel(xm)==1), xm(1:N,1) = xm; end;
 
 if(w=='c' || w=='o' || w=='x' || w=='y')
 
-    if(nf(7)==1) % double run
-        nf(7) = 0;
-        S = sqrt(diag(emgr(f,g,q,t,w,p,nf,ut,us,xs,um,xm,yd)));
-        A = spdiags(S,0,N,N);
-        B = spdiags(1.0./S,0,N,N);
+    switch(nf(7))
+        case 1 % double run
+            nf(7) = 0;
+            TX = sqrt(diag(emgr(f,g,q,t,w,p,nf,ut,us,xs,um,xm,yd)));
+            tx = 1.0./TX;
 
-        F = f;
-        G = g;
-        f = @(x,u,p) A*F(B*x,u,p);
-        g = @(x,u,p)   G(B*x,u,p);
+            F = f; f = @(x,u,p) TX.*F(tx.*x,u,p);
+            G = g; g = @(x,u,p)     G(tx.*x,u,p);
+
+        case 2 % scaled run
+            TX = xs; TX(TX==0) = 1.0; tx = 1.0./TX;
+            TU = us; TU(TU==0) = 1.0; tu = 1.0./TU;
+
+            F = f; f = @(x,u,p) TX.*F(tx.*x,tu.*u,p);
+            G = g; g = @(x,u,p)     G(tx.*x,tu.*u,p); 
     end;
 
     if(w=='c'&&nf(8)==1) % robust parameters
@@ -125,19 +130,19 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
     C = size(um,2);
     D = size(xm,2);
 
-    dx = 0;
-    dy = 0;
+    ud = 0;
+    xd = 0;
 
     switch(nf(2)) % directions
         case 0, % unit-normal
-            dx = eye(J);
-            dy = eye(N);
+            ud = eye(J);
+            xd = eye(N);
         case 1, % pod
-            [dx,E,V] = svd(ut,'econ');
-            [dy,E,V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
+            [ud,E,V] = svd(ut,'econ');
+            [xd,E,V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
         case 2, % factorial
-            dx = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JJ = size(dx,2);
-            dy = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NN = size(dy,2);
+            ud = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JJ = size(ud,2);
+            xd = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NN = size(xd,2);
     end;
 
     if(nf(9)==1) % data driven
@@ -156,7 +161,7 @@ switch(w)
     case 'c', % controllability gramian
         for c=1:C
             for j=1:J % parfor
-                uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
+                uu = us + bsxfun(@times,ut,ud(:,j)*(um(j,c)*k));
                 if(nf(9)==1), x = yd{1,c}; else
                     x = ode(f,h,T,xs,uu,p,nf(10));
                 end;
@@ -169,7 +174,7 @@ switch(w)
     case 'o', % observability gramian
         for d=1:D
             for n=1:N % parfor
-                xx = xs + dy(:,n)*xm(n,d);
+                xx = xs + xd(:,n)*xm(n,d);
                 pp = p;
                 if(nf(9)==1), y = yd{2,d}; else
                     if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
@@ -188,10 +193,10 @@ switch(w)
         W = W*(h/D);
 
     case 'x', % cross gramian
-        if(J~=O), error('ERROR: non-square system!'); end;
+        if(J~=O), error('ERROR: (emgr) non-square system!'); end;
         for d=1:D
             for n=1:N % parfor
-                xx = xs + dy(:,n)*xm(n,d);
+                xx = xs + xd(:,n)*xm(n,d);
                 pp = p;
                 if(nf(9)==1), y = yd{2,d}; else
                     if(M~=N), pp = xx(M+1:N); xx = xx(1:M); end;
@@ -202,7 +207,7 @@ switch(w)
             end;
             for c=1:C
                 for j=1:J % parfor
-                    uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
+                    uu = us + bsxfun(@times,ut,ud(:,j)*(um(j,c)*k));
                     xx = xs;
                     pp = p;
                     if(nf(9)==1), x = yd{1,c}; else
@@ -217,11 +222,11 @@ switch(w)
         W = W*(h/(C*D));
 
     case 'y', % fast cross gramian
-        if(J~=O), error('ERROR: non-square system!'); end;
+        if(J~=O), error('ERROR: (emgr) non-square system!'); end;
         for c=1:C
             for j=1:J % parfor
-                uu = us + bsxfun(@times,ut,dx(:,j)*(um(j,c)*k));
-                yy = us + bsxfun(@times,ut,dx(:,j)*(xm(j,c)*k));
+                uu = us + bsxfun(@times,ut,ud(:,j)*(um(j,c)*k));
+                yy = us + bsxfun(@times,ut,ud(:,j)*(xm(j,c)*k));
                 if(nf(9)==1), x = yd{1,c}; y = yd{2,c}; else
                     x = ode(f,h,T,xs,uu,p,nf(10));
                     y = ode(g,h,T,xs,yy,p,nf(10));
@@ -265,7 +270,7 @@ switch(w)
         W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
 
     otherwise
-        error('ERROR: unknown gramian type!');
+        error('ERROR: (emgr) unknown gramian type!');
 end;
 
 if(w=='c' || w=='o' || ((w=='x'||w=='y')&&nf(8)==1)), W = 0.5*(W+W'); end;
