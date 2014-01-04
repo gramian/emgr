@@ -51,6 +51,9 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            (matrix)  W - Gramian matrix (WC, WO, WX only)
 %              (cell)  W - {State-,Parameter-} Gramian Matrix (WS, WI, WJ only)
 %
+% SEE ALSO:
+%    gram
+%
 % KEYWORDS:
 %    model reduction, empirical gramian, emgr
 %
@@ -94,7 +97,7 @@ if (numel(xm)==1), xm(1:N,1) = xm; end;
 if(w=='c' || w=='o' || w=='x' || w=='y')
 
     switch(nf(7))
-        case 1 % double run
+        case 1, % double run
             nf(7) = 0;
             TX = sqrt(diag(emgr(f,g,q,t,w,p,nf,ut,us,xs,um,xm,yd)));
             tx = 1.0./TX;
@@ -102,7 +105,7 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
             F = f; f = @(x,u,p) TX.*F(tx.*x,u,p);
             G = g; g = @(x,u,p)     G(tx.*x,u,p);
 
-        case 2 % scaled run
+        case 2, % scaled run
             TX = xs; TX(TX==0) = 1.0; tx = 1.0./TX;
             TU = us; TU(TU==0) = 1.0; tu = 1.0./TU;
 
