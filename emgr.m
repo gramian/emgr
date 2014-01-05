@@ -106,8 +106,8 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
             G = g; g = @(x,u,p)     G(tx.*x,u,p);
 
         case 2, % scaled run
-            TX = xs; tx = TX; tx(tx~=0) = 1.0./tx(tx~=0);
-            TU = us; tu = TU; tu(tu~=0) = 1.0./tu(tu~=0);
+            TX = xs; tx = TX; tx(tx==0) = 1.0; tx = 1.0./tx;
+            TU = us; tu = TU; tu(tu==0) = 1.0; tu = 1.0./tu;
 
             F = f; f = @(x,u,p) TX.*F(tx.*x,tu.*u,p);
             G = g; g = @(x,u,p)     G(tx.*x,tu.*u,p); 
