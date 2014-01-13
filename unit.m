@@ -34,6 +34,8 @@ disp('decentral:');
 decentral
 disp('benchmark:');
 benchmark
+disp('benchmark2:');
+benchmark2
 disp('measure:');
 measure
 disp('advection:');
