@@ -1,6 +1,6 @@
 function largescale(o)
 % largescale (linear state reduction)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -28,10 +28,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,0);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic; 
+ OFFLINE = cputime; 
  WX = emgr(LIN,OUT,[J N O],T,'x');
  [UU D VV] = svd(WX,'econ'); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
@@ -40,10 +42,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = VV*X;
  lin = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(lin,out,T,x,U,0); ONLINE = toc
+ ONLINE = cputime; 
+ y = rk2(lin,out,T,x,U,0);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 
@@ -55,6 +59,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin<1 || o==0 ), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
+ subplot(1,2,1);
+ n = 2^nextpow2(L);
+ Z = fft(Y',n)/L; loglog(2*abs(Z(1:n/2+1)),'k'); hold on;
+ z = fft(y',n)/L; loglog(2*abs(z(1:n/2+1)),'r'); hold off;
+ legend('original','reduced');
+ subplot(1,2,2);
  imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N);
  if(o==2 && exist('OCTAVE_VERSION')), print -dsvg largescale.svg; end
 

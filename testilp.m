@@ -1,6 +1,6 @@
 function testilp(o)
 % testilp (test inverse lyapunov procedure)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -9,11 +9,11 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
 
 %%%%%%%% Setup %%%%%%%%
 
- J = 9;
- N = 36;
+ J = 8;
+ N = 64;
  O = J;
  R = O+O;
- [A B C] = ilp(J,N,O);
+ [A B C] = ilp(J,N,O,0,1009);
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
  U = [ones(J,1) zeros(J,L-1)];
@@ -25,10 +25,12 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,0);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WC = emgr(LIN,OUT,[J N O],T,'c');
  WO = emgr(LIN,OUT,[J N O],T,'o');
  [UU D VV] = balance(WC,WO,R);
@@ -38,10 +40,12 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
  x = UU*X;
  lin = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(lin,out,T,x,U,0); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(lin,out,T,x,U,0);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 
@@ -54,7 +58,7 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
  imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N);
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg ilp.svg; end
+ if(o==2 && exist('OCTAVE_VERSION')), print -dsvg testilp.svg; end
 
 %%%%%%%% Integrator %%%%%%%%
 

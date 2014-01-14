@@ -14,7 +14,7 @@ More information at: http://gramian.de
 License
 -------
 
-Copyright (c) 2013 Christian Himpe,
+Copyright (c) 2013,2014 Christian Himpe,
 
 All rights reserved.
 

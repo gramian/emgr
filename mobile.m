@@ -1,6 +1,6 @@
 function mobile
 % mobile (linear state reduction)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -28,10 +28,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(NON,OUT,T,X,U,0); FULL = toc
+ FULL = cputime;
+ Y = rk2(NON,OUT,T,X,U,0);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WX = emgr(NON,OUT,[J N O],T,'x');
  [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
@@ -40,10 +42,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = VV*X;
  non = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(non,out,T,x,U,0); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(non,out,T,x,U,0);
+ ONLINE = cputime - ONLINE
+
  ERROR = norm(norm(Y - y)./norm(Y))
 
 %%%%%%%% Integrator %%%%%%%%

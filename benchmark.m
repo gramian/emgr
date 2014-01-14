@@ -1,6 +1,6 @@
 function benchmark(o)
 % bench (iss model reduction benchmark)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -9,7 +9,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Download %%%%%%%%
 
  D = 'iss';
- if(exist(['/tmp/',D,'.mat'],'file')==0) unzip(['http://www.slicot.org/shared/bench-data/',D,'.zip'],'/tmp'); end
+ if(exist(['/tmp/',D,'.mat'],'file')==0) unzip(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],'/tmp'); end
  load(['/tmp/',D,'.mat']);
 
 %%%%%%%% Setup %%%%%%%%
@@ -31,10 +31,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,0);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WX = emgr(LIN,OUT,[J N O],T,'x',0,[0 0 0 0 0 0 0 0 0 2]);
  %WXP = WX(1:n,1:n);
  %[UU D VV] = svd(WXP); UU = UU(:,1:r); VV = UU';
@@ -46,10 +48,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = zeros(R,1);
  lin = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(lin,out,T,x,U,0); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(lin,out,T,x,U,0);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 

@@ -1,6 +1,6 @@
 function robust(o)
 % robust (reduction)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -30,22 +30,24 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,Q); FULL = toc;
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,Q);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WC = emgr(LIN,OUT,[J N O],T,'c',P,[0 0 0 0 0 0 0 1 0 0],1,0,0,[ones(J,1);3*ones(N,1)]);
  WO = emgr(LIN,OUT,[J N O],T,'o',P);
  [UU D VV] = squareroot(WC,WO,R);
  x = UU*X;
  lin = @(x,u,p) UU*LIN(VV*x,u,p);
  out = @(x,u,p) OUT(VV*x,u,p);
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic;
+ ONLINE = cputime;
  y = rk2(lin,out,T,x,U,Q);
- ONLINE = toc
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 

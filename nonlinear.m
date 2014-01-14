@@ -1,6 +1,6 @@
 function nonlinear(o)
 % nonlinear reduction
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -29,10 +29,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%
 
 % FULL
- tic; Y = rk2(NON,OUT,T,X,U,P); FULL = toc
+ FULL = cputime;
+ Y = rk2(NON,OUT,T,X,U,P);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WJ = emgr(NON,OUT,[J N O],T,'j',P,0,1,0,X);
  [UU D VV] = svd(WJ{1}); UU = UU(:,1:R);   VV = VV(:,1:R)';
  [PP D QQ] = svd(WJ{2}); PP = PP(1:R*R,:); QQ = QQ(1:R*R,:)';
@@ -40,10 +42,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  p = PP*P;
  non = @(x,u,p) VV*NON(UU*x,u,QQ*p);
  out = @(x,u,p) OUT(UU*x,u,QQ*p);
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(non,out,T,x,U,p); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(non,out,T,x,U,p);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 

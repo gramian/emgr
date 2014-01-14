@@ -1,6 +1,6 @@
 function nbody(s)
 % nbody (n-body reduction)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -21,19 +21,19 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Original %%%%%%%%
 
- tic;
+ FULL = cputime;
  Y = leapfrog(F,G,t,X,p);
- FULL = toc
+ FULL = cputime - FULL
 
 %%%%%%%% Reduction %%%%%%%%
 
- tic;
+ OFFLINE = cputime;
  WO = emgr(F,G,q,t,'o',p,[0 0 0 0 0 0 0 0 0 2]);
  WOP = WO(1:(2*N),1:(2*N));
  WOV = WO((2*N)+1:end,(2*N)+1:end);
  [PP DD QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
  [TT DD VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 %%%%%%%% Reduced %%%%%%%%
 
@@ -41,9 +41,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  g = @(x,u,p) PP*x(1:2*R);
  x = [QQ*X(1:2*N);QQ*X((2*N)+1:end)];
 
- tic;
+ ONLINE = cputime;
  y = leapfrog(f,g,t,x,p);
- ONLINE = toc
+ ONLINE = cputime - ONLINE
 
  ERROR = norm(norm(Y - y)./norm(Y))
 
@@ -52,9 +52,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  g = @(x,u,p) TT*x(1:2*R);
  x = [VV*X(1:2*N);VV*X((2*N)+1:end)];
 
- tic;
+ ONLINE = cputime;
  y = leapfrog(f,g,t,x,p);
- ONLINE = toc
+ ONLINE = cputime - ONLINE
 
  ERROR = norm(norm(Y - y)./norm(Y))
 %}
@@ -76,6 +76,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 	d = d + 2;
  end
 
+ ylim([-0.6 0.6]);
  hold off;
 
  if(s==2 && exist('OCTAVE_VERSION')), print -dpng nbody.png; end

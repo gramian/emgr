@@ -1,6 +1,6 @@
 function energy(o)
 % energy reduction (nonlinear output)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -25,17 +25,21 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,P); FULL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,P);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WI = emgr(LIN,OUT,[1 N 1],T,'i',P);
  [PP D QQ] = svd(WI{2}); PP = PP(1,:); QQ = QQ(1,:)';
  p = QQ*PP*P;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(LIN,OUT,T,X,U,p); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(LIN,OUT,T,X,U,p);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 

@@ -1,6 +1,6 @@
 function bayinv(o)
 % bayinv (bayesian inverse problem combined reduction)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -36,14 +36,15 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  Y = rk2(NON,OUT,T,X,U,P);
 
 % FULL
- tic;
+ FULL = cputime;
  j = @(q,o) norm(Y-rk2(NON,OUT,T,X,U,q));
  r = fminunc(j,Q,OPT);
- y = rk2(NON,OUT,T,X,U,r); FULL = toc
+ y = rk2(NON,OUT,T,X,U,r);
+ FULL = cputime - FULL
  ERROR_FULL = norm(norm(Y - y)./norm(Y))
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WJ = emgr(NON,OUT,[J N O],T,'j',Q,[0 0 0 0 0 0 0 0 0 1],1,0,X);
  [TT D VV] = svd(WJ{1}); TT = TT(:,1:R);   VV = VV(:,1:R)';
  [PP D QQ] = svd(WJ{2}); PP = PP(1:R*R,:); QQ = QQ(1:R*R,:)';
@@ -51,13 +52,14 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  q = PP*Q;
  non = @(x,u,p) VV*NON(TT*x,u,QQ*p);
  out = @(x,u,p) OUT(TT*x,u,QQ*p);
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic;
+ ONLINE = cputime;
  j = @(q,o) norm(Y-rk2(non,out,T,x,U,q));
  r = fminunc(j,q,OPT);
- y = rk2(non,out,T,x,U,r); ONLINE = toc
+ y = rk2(non,out,T,x,U,r);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 

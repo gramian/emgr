@@ -1,6 +1,6 @@
 function blackhole(o)
 % stable orbit parameter identification inside event horizon of black hole
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -48,7 +48,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  p0 = plot3(0,0,0,'*','Color','black');				%singularity
  p1 = plot3(Y(1,end),Y(2,end),Y(3,end),'*','Color','red');		%planet
  p2 = plot3(Y(1,:),Y(2,:),Y(3,:),'Color','red');			%planet orbit
- p3 = plot3(Y(4,end),Y(5,end),Y(6,end),'*','Color','blue');		%photon
+ p3 = plot3(Y(4,end),Y(5,end),Y(6,end),'*','Color','blue');	%photon
  p4 = plot3(Y(4,:),Y(5,:),Y(6,:),'Color','blue');			%photon orbit
  lg = legend([p0 p2 p4],'singularity','planet orbit','photon orbit'); set(lg,'FontSize',5);
  hold off;

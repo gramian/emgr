@@ -1,6 +1,6 @@
 function advection(o)
 % pde transport equation reduction
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -27,10 +27,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,P); FULL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,P);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WO = emgr(LIN,1,[J N O],T,'o',P);
  [UU D VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
@@ -38,10 +40,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = VV*X;
  lin = @(x,u,p) p*a*x;
  out = @(x,u,p) c*x;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(lin,out,T,x,U,P); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(lin,out,T,x,U,P);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%
 

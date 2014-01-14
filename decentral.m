@@ -1,6 +1,6 @@
 function decentral(o)
 % decentral (-ized control)
-% by Christian Himpe, 2013  (http://gramian.de )
+% by Christian Himpe, 2013,2014 (http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -27,10 +27,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,0); FULL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,0);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WX = cell(J,O);
  for V=1:J
   for W=1:O
@@ -51,17 +53,17 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
   PM(c(K,1),:) = 0;
   PM(:,c(K,2)) = 0;
  end
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic;
+ ONLINE = cputime;
  y = zeros(O,L);
  for K=1:J
   lin = @(x,u,p) A*x + B(:,c(K,1))*u;
   out = @(x,u,p) C(c(K,2),:)*x;
   y(K,:) = rk2(lin,out,T,X,U(c(K,1),:),0);
  end
- ONLINE = toc
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%
 

@@ -1,6 +1,6 @@
 function sourceterm(o)
 % sourceterm reduction
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -29,17 +29,21 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Parameter Reduction %%%%%%%%%
 
 % FULL
- tic; Y = rk2(LIN,OUT,T,X,U,P); ORIGINAL = toc
+ FULL = cputime;
+ Y = rk2(LIN,OUT,T,X,U,P);
+ FULL = cputime - FULL
 
 % OFFLINE
- tic;
+ OFFLINE = cputime;
  WS = emgr(LIN,OUT,[J N O],T,'s',P,1,1,0,X);
  [PP D QQ] = svd(WS{2}); PP = PP(1:R,:); QQ = QQ(1:R,:)';
  p = QQ*PP*P;
- OFFLINE = toc
+ OFFLINE = cputime - OFFLINE
 
 % ONLINE
- tic; y = rk2(LIN,OUT,T,X,U,p); ONLINE = toc
+ ONLINE = cputime;
+ y = rk2(LIN,OUT,T,X,U,p);
+ ONLINE = cputime - ONLINE
 
 %%%%%%%% Output %%%%%%%%
 
@@ -52,7 +56,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
  imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N);
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg source.svg; end
+ if(o==2 && exist('OCTAVE_VERSION')), print -dsvg sourceterm.svg; end
 
 %%%%%%%% Integrator %%%%%%%%
 
