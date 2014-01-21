@@ -70,8 +70,8 @@ O = q(3);             % number of outputs
 M = N;
 if(numel(q)==4), M = q(4); end;
 
-h = t(2);             % time step width
-T = (t(3)-t(1))/h;    % number of time steps
+h = t(2);                 % time step width
+T = round((t(3)-t(1))/h); % number of time steps
 
 if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
@@ -363,7 +363,7 @@ switch(O)
         end;
 
     case -1, % Custom Solver
-        x = CUSTOM_ODE(f,h,T,z,u,p,O);
+        x = CUSTOM_ODE(f,h,T,z,u,p);
 
 end;
 

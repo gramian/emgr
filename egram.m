@@ -1,6 +1,6 @@
 function W = egram(a,b,c,w,varargin)
 % egram (shortcut encapsulation)
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013,2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
