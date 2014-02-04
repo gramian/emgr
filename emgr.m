@@ -20,7 +20,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            * 'c' : empirical controllability gramian (WC)
 %            * 'o' : empirical observability gramian (WO)
 %            * 'x' : empirical cross gramian (WX)
-%            * 'y' : fast linear cross gramian (WY)
+%            * 'y' : fast cross gramian (WY)
 %            * 's' : empirical sensitivity gramian (WS)
 %            * 'i' : empirical identifiability gramian (WI)
 %            * 'j' : empirical joint gramian (WJ)
@@ -58,7 +58,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %    model reduction, empirical gramian, emgr
 %
 %
-% For further information see <http://gramian.de>
+% Further information: <http://gramian.de>
 %*
 
 w = lower(w);
@@ -74,6 +74,12 @@ h = t(2);                 % time step width
 T = round((t(3)-t(1))/h); % number of time steps
 
 if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
+
+if (exist('ut') && isa(ut,'function_handle')), 
+    uf = ut;
+    ut = zeros(J,T);
+    for l=1:T, ut(:,l) = uf(l*h); end;
+end;
 
 if (nargin<6) ||(isempty(pr)), pr = 0; end;
 if (nargin<7) ||(isempty(nf)), nf = 0; end;
@@ -154,9 +160,12 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
         D = size(yd,2); xm = ones(N,D);
     end;
 
-    y = zeros(O,T);
-    o = zeros(O,T,N);
-    W = zeros(N,N);
+    if(w=='o'||w=='x')
+        y = zeros(O,T);
+        o = zeros(O,T,N);
+    end;
+
+    W = zeros(N,N); 
 end;
 
 switch(w)
@@ -196,7 +205,7 @@ switch(w)
         W = W*(h/D);
 
     case 'x', % cross gramian
-        if(J~=O), error('ERROR: (emgr) non-square system!'); end;
+        if(J~=O), error('ERROR! emgr: non-square system!'); end;
         for d=1:D
             for n=1:N % parfor
                 xx = xs + xd(:,n)*xm(n,d);
@@ -225,7 +234,7 @@ switch(w)
         W = W*(h/(C*D));
 
     case 'y', % fast cross gramian
-        if(J~=O), error('ERROR: (emgr) non-square system!'); end;
+        if(J~=O), error('ERROR! emgr: non-square system!'); end;
         for c=1:C
             for j=1:J % parfor
                 uu = us + bsxfun(@times,ut,ud(:,j)*(um(j,c)*k));
@@ -262,6 +271,8 @@ switch(w)
         W{1} = V(1:N,1:N);         % observability gramian
         W{2} = V(N+1:N+P,N+1:N+P); % identifiability gramian
 
+        % W{2} = V(N+1:N+P,N+1:N+P) - V(N+1:N+P,1:N)*inv(W{1})*V(1:N,N+1:N+P);
+
     case 'j', % joint gramian
         xp = ones(P,1); if(nf(11)~=0), xp = p; end;
         if(size(xm,1)==N), xm = [xm;xp]; end;
@@ -272,8 +283,10 @@ switch(w)
         % U = U - U*(W{1}-diag(diag(W{1})))*U;
         W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
 
+        % W{2} = V(N+1:N+P,N+1:N+P) - V(N+1:N+P,1:N)*inv(W{1})*V(1:N,N+1:N+P);
+
     otherwise
-        error('ERROR: (emgr) unknown gramian type!');
+        error('ERROR! emgr: unknown gramian type!');
 end;
 
 if(w=='c' || w=='o' || ((w=='x'||w=='y')&&nf(8)==1)), W = 0.5*(W+W'); end;

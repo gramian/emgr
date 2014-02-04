@@ -5,7 +5,7 @@ function y = CUSTOM_ODE(f,h,T,z,u,p)
 %*
 
  if(exist('OCTAVE_VERSION'))
-  y = lsode(@(y,t) f(y,u(1+min(round(t*T),h*T)),p),z,linspace(0,h,T))';
+  y = lsode(@(y,t) f(y,u(1+min(round(t*T),h*T)),p),z,linspace(0,h*T,T))';
  else,
   y = deval(ode45(@(t,y) f(y,u(1+min(round(t*T),h*T)),p),[0 h*T],z),linspace(0,h*T,T));
  end;
