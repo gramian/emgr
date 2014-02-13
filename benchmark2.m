@@ -35,7 +35,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 % OFFLINE
  OFFLINE = cputime;
  WX = emgr(NON,OUT,[J N O],T,'x');
- [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)'; diag(D)
+ [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
  x = VV*X;
  non = @(x,u,p) VV*NON(UU*x,u,p);
  out = @(x,u,p) OUT(UU*x,u,p);
