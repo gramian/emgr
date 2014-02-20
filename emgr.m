@@ -20,7 +20,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            * 'c' : empirical controllability gramian (WC)
 %            * 'o' : empirical observability gramian (WO)
 %            * 'x' : empirical cross gramian (WX)
-%            * 'y' : fast cross gramian (WY)
+%            * 'y' : empirical approximate cross gramian (WY)
 %            * 's' : empirical sensitivity gramian (WS)
 %            * 'i' : empirical identifiability gramian (WI)
 %            * 'j' : empirical joint gramian (WJ)
@@ -35,11 +35,12 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + single(0), double(1), scaled(2) run
 %            + default(0) 
 %                * active|passive robust parameters (1|2, only: WC, WS, WY)
-%                * data-driven pod   (1, only: WO, WI)
+%                * data-driven POD   (1, only: WO, WI)
 %                * enforce symmetry  (1, only: WX, WJ)
 %            + default(0), data-driven gramians(1)
 %            + solver: Euler(0),Two-Step(1),Leapfrog(2),Midpoint(3),Custom(-1)
 %            + default(0), parameter scaling (1, only WS, WI, WJ)
+%            + default(0), use schur-complement (1, only WI)
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
 %         (vector,scalar) [xs = 0] - steady-state
@@ -93,7 +94,7 @@ if (nargin<13)||(isempty(yd)), yd = 0; end;
 P = numel(pr);        % number of parameters
 p = pr(:);
 
-if (numel(nf)<11), nf(11)    = 0;  end;
+if (numel(nf)<12), nf(12)    = 0;  end;
 if (numel(ut)==1), ut(1:J,1) = ut; end;
 if (numel(us)==1), us(1:J,1) = us; end;
 if (numel(xs)==1), xs(1:N,1) = xs; end;
@@ -132,7 +133,7 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
                 G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
             case 2, % passive parameters
                 if(size(um,1)==J), um = [um;ones(P,1)]; end;
-            end;
+        end;
     end;
 
     X = xs(1:M);
@@ -152,7 +153,7 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
         case 1, % pod
             [ud,E,V] = svd(ut,'econ');
             [xd,E,V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
-        case 2, % factorial
+        case 2, % (factorial)
             ud = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JJ = size(ud,2);
             xd = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NN = size(xd,2);
     end;
@@ -179,7 +180,7 @@ switch(w)
                 uu = us + bsxfun(@times,ut,ud(:,j)*um(j,c));
                 pp = p;
                 if(nf(9)==1), x = yd{1,c}; else
-                    if(nf(8)==2) pp = um(J+1:end,c); end;
+                    if(nf(8)==2), pp = p.*um(J+1:end,c); end;
                     x = ode(f,h,T,xs,uu,pp,nf(10));
                 end;
                 x = bsxfun(@minus,x,res(nf(1),x,X))*(1.0/um(j,c));
@@ -238,7 +239,7 @@ switch(w)
         end;
         W = W*(h/(C*D));
 
-    case 'y', % fast cross gramian
+    case 'y', % approximate cross gramian
         if(J~=O && nf(8)==0), error('ERROR! emgr: non-square system!'); end;
         for c=1:C
             for j=1:J % parfor
@@ -246,7 +247,7 @@ switch(w)
                 yy = us + bsxfun(@times,ut,ud(:,j)*xm(j,c));
                 pp = p;
                 if(nf(9)==1), x = yd{1,c}; y = yd{2,c}; else
-                    if(nf(8)==2) pp = um(J+1:end,c); end;
+                    if(nf(8)==2), pp = p.*um(J+1:end,c); end;
                     x = ode(f,h,T,xs,uu,pp,nf(10));
                     y = ode(g,h,T,xs,yy,pp,nf(10));
                 end;
@@ -277,8 +278,11 @@ switch(w)
         V = emgr(f,g,[J N+P O N],t,'o',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);         % observability gramian
         W{2} = V(N+1:N+P,N+1:N+P); % approximate identifiability gramian
-
-        % W{2} = V(N+1:N+P,N+1:N+P) - V(N+1:N+P,1:N)*inv(W{1})*V(1:N,N+1:N+P);
+        if(nf(12)==1),
+            U = spdiags((1.0/diag(W{1}))',0,N,N);
+            U = U - U*(W{1}-diag(diag(W{1})))*U;
+	    W{2} = W{2} - V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P);
+        end;
 
     case 'j', % joint gramian
         xp = ones(P,1); if(nf(11)~=0), xp = p; end;
@@ -287,10 +291,9 @@ switch(w)
         V = emgr(f,g,[J N+P O N],t,'x',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);                       % cross gramian
         U = spdiags((1.0/diag(W{1}))',0,N,N);
-        % U = U - U*(W{1}-diag(diag(W{1})))*U;
+        U = U - U*(W{1}-diag(diag(W{1})))*U;
+        U = 0.5*(U+U');
         W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
-
-        % W{2} = V(N+1:N+P,N+1:N+P) - V(N+1:N+P,1:N)*inv(W{1})*V(1:N,N+1:N+P);
 
     otherwise
         error('ERROR! emgr: unknown gramian type!');
@@ -391,7 +394,6 @@ switch(O)
     case -1, % Custom Solver
         global CUSTOM_ODE;
         x = CUSTOM_ODE(f,h,T,z,u,p);
-
 end;
 
 end
