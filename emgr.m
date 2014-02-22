@@ -38,7 +38,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %                * data-driven POD   (1, only: WO, WI)
 %                * enforce symmetry  (1, only: WX, WJ)
 %            + default(0), data-driven gramians(1)
-%            + solver: Euler(0),Two-Step(1),Leapfrog(2),Midpoint(3),Custom(-1)
+%            + solver: Euler(0),Two-Step(1),Leapfrog(2),Ralston(3),Custom(-1)
 %            + default(0), parameter scaling (1, only WS, WI, WJ)
 %            + default(0), use schur-complement (1, only WI)
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
@@ -360,9 +360,10 @@ switch(O)
             x(:,t) = z;
         end;
 
-    case 3, % Midpoint Rule
+    case 3, % Ralstons Method
         for t=1:T
-            z = z + h*f(z + 0.5*h*f(z,u(:,t),p),u(:,t),p);
+            k = h*f(z,u(:,t),p);
+            z = z + 0.25*k + 0.75*h*f(z + (2.0/3.0)*k,u(:,t),p);
             x(:,t) = z;
         end;
 

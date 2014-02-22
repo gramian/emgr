@@ -59,12 +59,6 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin<1 || o==0 ), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- subplot(1,2,1);
- n = 2^nextpow2(L);
- Z = fft(Y',n)/L; loglog(2*abs(Z(1:n/2+1)),'k'); hold on;
- z = fft(y',n)/L; loglog(2*abs(z(1:n/2+1)),'r'); hold off;
- legend('original','reduced');
- subplot(1,2,2);
  imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N);
  if(o==2 && exist('OCTAVE_VERSION')), print -dsvg largescale.svg; end
 
