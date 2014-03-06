@@ -58,7 +58,6 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 % KEYWORDS:
 %    model reduction, empirical gramian, emgr
 %
-%
 % Further information: <http://gramian.de>
 %*
 
@@ -67,20 +66,13 @@ w = lower(w);
 J = q(1);             % number of inputs
 N = q(2);             % number of states
 O = q(3);             % number of outputs
-
 M = N;
 if(numel(q)==4), M = q(4); end;
 
+if(isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
+
 h = t(2);                 % time step width
 T = round((t(3)-t(1))/h); % number of time steps
-
-if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
-
-if (exist('ut') && isa(ut,'function_handle')), 
-    uf = ut;
-    ut = zeros(J,T);
-    for l=1:T, ut(:,l) = uf(l*h); end;
-end;
 
 if (nargin<6) ||(isempty(pr)), pr = 0; end;
 if (nargin<7) ||(isempty(nf)), nf = 0; end;
@@ -93,6 +85,12 @@ if (nargin<13)||(isempty(yd)), yd = 0; end;
 
 P = numel(pr);        % number of parameters
 p = pr(:);
+
+if (exist('ut') && isa(ut,'function_handle')), 
+    uf = ut;
+    ut = zeros(J,T);
+    for l=1:T, ut(:,l) = uf(l*h); end;
+end;
 
 if (numel(nf)<12), nf(12)    = 0;  end;
 if (numel(ut)==1), ut(1:J,1) = ut; end;
@@ -279,8 +277,9 @@ switch(w)
         W{1} = V(1:N,1:N);         % observability gramian
         W{2} = V(N+1:N+P,N+1:N+P); % approximate identifiability gramian
         if(nf(12)==1),
-            U = spdiags((1.0/diag(W{1}))',0,N,N);
-            U = U - U*(W{1}-diag(diag(W{1})))*U;
+            D = diag(W{1});
+            U = spdiags(1.0./D(:),0,N,N);
+            U = U - U*(W{1}-diag(D))*U;
 	    W{2} = W{2} - V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P);
         end;
 
@@ -290,10 +289,11 @@ switch(w)
         W = cell(2,1);
         V = emgr(f,g,[J N+P O N],t,'x',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);                       % cross gramian
-        U = spdiags((1.0/diag(W{1}))',0,N,N);
-        U = U - U*(W{1}-diag(diag(W{1})))*U;
-        U = 0.5*(U+U');
-        W{2} = V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
+        X = W{1}+W{1}';
+        D = diag(X);
+        U = spdiags(1.0./D(:),0,N,N);
+        U = U - U*(X-diag(D))*U;
+        W{2} = -0.25*V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
 
     otherwise
         error('ERROR! emgr: unknown gramian type!');
@@ -393,7 +393,7 @@ switch(O)
         end;
 
     case -1, % Custom Solver
-        global CUSTOM_ODE;
+        %global CUSTOM_ODE
         x = CUSTOM_ODE(f,h,T,z,u,p);
 end;
 

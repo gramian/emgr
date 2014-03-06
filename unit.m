@@ -5,15 +5,11 @@
 
 disp('testemgr:');
 testemgr
-disp('mobile:');
-mobile
 
 disp('largescale:');
 largescale
 disp('adjoint:');
 adjoint
-disp('nonsym:');
-nonsym
 disp('closed:');
 closed
 disp('hierarchy:');
