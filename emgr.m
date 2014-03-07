@@ -139,10 +139,8 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
     if(w=='y'), Y = X; end;
 
     if(size(us,2)==1), us = repmat(us,[1 T]); end;
-    if(size(um,2)==1), um = scales(um,nf(3),nf(5)); end;
-    if(size(xm,2)==1), xm = scales(xm,nf(4),nf(6)); end;
-    C = size(um,2);
-    D = size(xm,2);
+    if(size(um,2)==1), um = scales(um,nf(3),nf(5)); end; C = size(um,2);
+    if(size(xm,2)==1), xm = scales(xm,nf(4),nf(6)); end; D = size(xm,2);
 
     switch(nf(2)) % directions
         case 0, % unit-normal
@@ -152,8 +150,8 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
             [ud,E,V] = svd(ut,'econ');
             [xd,E,V] = svd(ode(f,h,T,xs,us,p,cf(10)),'econ');
         case 2, % (factorial)
-            ud = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JJ = size(ud,2);
-            xd = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NN = size(xd,2);
+            ud = (dec2bin(1:2^J-1)-'0')'*(2.0/sqrt(2^J)); % JE = size(ud,2);
+            xd = (dec2bin(1:2^N-1)-'0')'*(2.0/sqrt(2^N)); % NE = size(xd,2);
     end;
 
     if(nf(9)==1) % data driven
@@ -293,7 +291,7 @@ switch(w)
         D = diag(X);
         U = spdiags(1.0./D(:),0,N,N);
         U = U - U*(X-diag(D))*U;
-        W{2} = -0.25*V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
+        W{2} = -0.5*V(1:N,N+1:N+P)'*U*V(1:N,N+1:N+P); % cross-identifiability gramian
 
     otherwise
         error('ERROR! emgr: unknown gramian type!');
@@ -342,7 +340,7 @@ function y = res(v,d,e)
         case 3, % last
             y = d(:,end);
         case 4, % POD
-            [U,E,V] = svd(d,'econ'); y = U(1,:);
+            [U,E,V] = svd(d,'econ'); y = U(:,1);
     end;
 end
 
