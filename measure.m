@@ -1,6 +1,6 @@
 function measure(o)
 % nonlinearity measure
-% by Christian Himpe, 2013,2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -32,7 +32,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  WL = emgr(LIN,OUT,[J N O],T,'x');
 
 % NONLINEAR
- K = 100;
+ K = 50;
  y = zeros(3,K);
  Q = 2.0/K;
  P = 0;
@@ -59,8 +59,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  I_S_O = sqrt(sum(abs(y).^2,2))
 
 % PLOT
- if(nargin<1 || o==0 ), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
+ l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(y));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(y); caxis([0 max(max(y))]); colorbar; colormap(cmap); set(gca,'YTick',1:3); set(gca,'YTickLabel',{'I','S','O'}); set(gca,'XTickLabel',0:2/5:2);
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg measure.svg; end
+ imagesc(y); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ set(gca,'YTick',1:3,'xtick',[],'YTickLabel',{'I','S','O'},'XTickLabel',0:2/5:2); set(cbr,'YTick',[0 cmax]);
+ if(nargin>0), print -dsvg measure.svg; end
+

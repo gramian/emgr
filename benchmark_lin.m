@@ -1,6 +1,6 @@
-function benchmark(o)
-% bench (iss model reduction benchmark)
-% by Christian Himpe, 2013,2014 ( http://gramian.de )
+function benchmark_lin(o)
+% benchmark (iss model reduction benchmark)
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -31,13 +31,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- FULL = cputime;
+ tic;
  Y = rk2(LIN,OUT,T,X,U,0);
- FULL = cputime - FULL
+ FULL = toc
 
 % OFFLINE
- OFFLINE = cputime;
- WX = emgr(LIN,OUT,[J N O],T,'x',0,[0 0 0 0 0 0 0 0 0 2]);
+ tic;
+ WX = emgr(LIN,OUT,[J N O],T,'x',0,[0 0 0 0 0 0 0 0 0 0 0 2]);
  %WXP = WX(1:n,1:n);
  %[UU D VV] = svd(WXP); UU = UU(:,1:r); VV = UU';
  WXV = WX(n+1:N,n+1:N);
@@ -48,12 +48,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = zeros(R,1);
  lin = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
- OFFLINE = cputime - OFFLINE
+ OFFLINE = toc
 
 % ONLINE
- ONLINE = cputime;
+ tic;
  y = rk2(lin,out,T,x,U,0);
- ONLINE = cputime - ONLINE
+ ONLINE = toc
 
 %%%%%%%% Output %%%%%%%%
 
@@ -61,12 +61,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  ERROR = norm(norm(Y - y)./norm(Y))
  RELER = abs(Y - y)./abs(Y);
 
-% PLOT
- if(nargin<1 || o==0 ), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
+% PLOT 
+ l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N);
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg benchmark.svg; end
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
+ if(nargin>0), print -dsvg benchmark_lin.svg; end
 
 %%%%%%%% Integrator %%%%%%%%
 
@@ -80,3 +80,4 @@ function y = rk2(f,g,t,x,u,p)
   x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
   y(:,t) = g(x,u(:,t),p);
  end
+

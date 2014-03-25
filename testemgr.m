@@ -1,89 +1,57 @@
-function testemgr(N,J)
+function testemgr(J)
 % testemgr
-% by Christian Himpe, 2013 ( http://gramian.de )
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
 if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
 
-if(nargin<1) N=8; end	% number of states
-if(nargin<2) J=4; end	% number of inputs
+if(nargin<1) J=4; end	% number of inputs
+N = J*J;		% number of states
 O = J;			% number of outputs
 
 S = 0;			% start time
 h = 0.01;		% time step
-T = 1;			% end time
+T = 1.0;		% end time
 
 A = rand(N,N);		% random system matrix
 A(1:N+1:end) = -N;	% ensure stability
 A = 0.5*(A+A');		% symmetrize system matrix
 B = rand(N,J);		% random input matrix
-C = B';			% ensure symmetric system
-
+C = B';			% ensure state-space symmetric system
 P = A(:);		% parameter vector
 
 f = @(x,u,p) reshape(p,[N N])*x+B*u;	% parametrized linear dynamic system
+F = @(x,u,p) reshape(p,[N N])'*x+C'*u;	% adjoint dynamic system
 g = @(x,u,p) C*x;			% linear output function 
 
+G = -0.5*trace(C*inv(A)*B);		% System Gain	
 
-disp('Computing Empirical Controllability Gramian (WC)');
-
+disp('Computing Empirical Controllability Gramian (WC) and gain error: '); 
 WC = emgr(f,g,[J N O],[S h T],'c',P);
+abs(trace(WC)-G)
 
-disp('Computing Empirical Observability Gramian (WO) ');
-
+disp('Computing Empirical Observability Gramian (WO) and gain error: ');
 WO = emgr(f,g,[J N O],[S h T],'o',P);
+abs(trace(WO)-G)
 
-disp('Computing Empirical Cross Gramian (WX)');
-
+disp('Computing Empirical Cross Gramian (WX) and gain error: ');
 WX = emgr(f,g,[J N O],[S h T],'x',P);
+abs(trace(WO)-G)
 
-disp('Computing Fast Linear Cross Gramian (WY)');
-
-F = @(x,u,p) reshape(p,[N N])'*x+C'*u;	% adjoint system
-
+disp('Computing Empirical Approximate Cross Gramian (WY) and gain error: ');
 WY = emgr(f,F,[J N O],[S h T],'y',P);
+abs(trace(WY)-G)
 
-disp('Computing Balanced Proper Orthogonal Decomposition (BPOD)');
+disp('Computing Empirical Sensitivity Gramian (WS) and gain error: ');
+WS = emgr(f,g,[J N O],[S h T],'s',P);
+abs(trace(WS{1})-G)
 
-G = @(x,u,p) B'*x;			% dual output
+disp('Computing Empirical Identifiability Gramian (WI) and gain error: ');
+WI = emgr(f,g,[J N O],[S h T],'i',P);
+abs(trace(WI{1})-G)
 
-BC = emgr(f,g,[J N O],[S h T],'c',P);
-BO = emgr(F,G,[O N J],[S h T],'c',P);
-
-disp('Computing Empirical Covariance Matrices');
-
-u = [1;2;3;4]*(1./[0.01:0.1:10]);		%custom input
-
-VC = emgr(f,g,[J N O],[S h T],'c',P,0,u);
-VO = emgr(f,g,[J N O],[S h T],'o',P,0,u);
-VX = emgr(f,g,[J N O],[S h T],'x',P,0,u);
-
-
-fprintf('\nSquareroot of Eigenvalues of WC*WO: ');	lambda_WCWO = sort(sqrt(eig(WC*WO)),'descend')'
-
-fprintf('Absolute Value of Eigenvalues of WX: '); lambda_WX   = sort(abs(eig(WX)),'descend')'
-
-fprintf('Squareroot of Eigenvalues of Balanced POD: '); lambda_BPOD = sort(sqrt(eig(BO*BC)),'descend')'
-
-fprintf('Trace of WX:               '); Tr_WX = trace(WX)
-
-fprintf('Trace of Half System Gain: '); Tr_Gn = trace(-0.5*C*inv(A)*B)
-
-W = emgr(f,g,[J N O],[S h T],'s',P);
-Wc = W{1};				% controllability gramian
-WS = W{2};				% sensitivity gramian (parameter controllability)
-fprintf('Error in byproduct WC from WS: '); E_WCWc = max(max(abs(WC-Wc)))
-
-W = emgr(f,g,[J N O],[S h T],'i',P);
-Wo = W{1};				% observability gramian
-WI = W{2};				% identifiability gramian (parameter observability)
-fprintf('Error in byproduct WO from WI: '); E_WOWo = max(max(abs(WO-Wo)))
-
-W = emgr(f,g,[J N O],[S h T],'j',P);
-Wx = W{1};				% cross gramian
-WJ = W{2};				% cross-identifiability gramian (parameter responsivness)
-fprintf('Error in byproduct WX from WJ: '); E_WXWx = max(max(abs(WX-Wx)))
-
-
+disp('Computing Empirical Joint Gramian (WJ) and gain error: ');
+WJ = emgr(f,g,[J N O],[S h T],'j',P);
+abs(trace(WJ{1})-G)
 

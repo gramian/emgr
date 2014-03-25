@@ -1,6 +1,6 @@
 function nbody(s)
 % nbody (n-body reduction)
-% by Christian Himpe, 2013,2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -21,19 +21,19 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Original %%%%%%%%
 
- FULL = cputime;
+ tic;
  Y = leapfrog(F,G,t,X,p);
- FULL = cputime - FULL
+ FULL = toc
 
 %%%%%%%% Reduction %%%%%%%%
 
- OFFLINE = cputime;
- WO = emgr(F,G,q,t,'o',p,[0 0 0 0 0 0 0 0 0 2]);
+ tic;
+ WO = emgr(F,G,q,t,'o',p,[0 0 0 0 0 0 0 0 0 0 0 2]);
  WOP = WO(1:(2*N),1:(2*N));
  WOV = WO((2*N)+1:end,(2*N)+1:end);
  [PP DD QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
  [TT DD VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
- OFFLINE = cputime - OFFLINE
+ OFFLINE = toc
 
 %%%%%%%% Reduced %%%%%%%%
 
@@ -41,9 +41,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  g = @(x,u,p) PP*x(1:2*R);
  x = [QQ*X(1:2*N);QQ*X((2*N)+1:end)];
 
- ONLINE = cputime;
+ tic;
  y = leapfrog(f,g,t,x,p);
- ONLINE = cputime - ONLINE
+ ONLINE = toc
 
  ERROR = norm(norm(Y - y)./norm(Y))
 
@@ -52,16 +52,14 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  g = @(x,u,p) TT*x(1:2*R);
  x = [VV*X(1:2*N);VV*X((2*N)+1:end)];
 
- ONLINE = cputime;
+ tic;
  y = leapfrog(f,g,t,x,p);
- ONLINE = cputime - ONLINE
+ ONLINE = toc
 
  ERROR = norm(norm(Y - y)./norm(Y))
 %}
 
 %%%%%%%% Plot %%%%%%%%
-
- if(nargin<1 || s==0 ) return; end
 
  figure('PaperSize',[1.5,2.8],'PaperPosition',[0,0,2.8,1.5]);
 
@@ -79,7 +77,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  ylim([-0.6 0.6]);
  hold off;
 
- if(s==2 && exist('OCTAVE_VERSION')), print -dpng nbody.png; end
+ if(nargin>0), print -dpng nbody.png; end
 
 %%%%%%%% Acceleration %%%%%%%%
 

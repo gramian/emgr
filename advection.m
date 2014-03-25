@@ -1,6 +1,6 @@
 function advection(o)
 % pde transport equation reduction
-% by Christian Himpe, 2013,2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -22,30 +22,31 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  A = spdiags((1.0/H)*[ones(N,1) -ones(N,1)],[-1,0],N,N);
 
  LIN = @(x,u,p) p*A*x;
+ ADJ = @(x,u,p) p*A'*x + u; 
  OUT = @(x,u,p) x;
 
 %%%%%%%% Reduction %%%%%%%%%
 
 % FULL
- FULL = cputime;
+ tic;
  Y = rk2(LIN,OUT,T,X,U,P);
- FULL = cputime - FULL
+ FULL = toc
 
 % OFFLINE
- OFFLINE = cputime;
- WO = emgr(LIN,1,[J N O],T,'o',P);
+ tic;
+ WO = emgr(ADJ,1,[N N O],T,'c',P);
  [UU D VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
  c = UU;
  x = VV*X;
  lin = @(x,u,p) p*a*x;
  out = @(x,u,p) c*x;
- OFFLINE = cputime - OFFLINE
+ OFFLINE = toc
 
 % ONLINE
- ONLINE = cputime;
+ tic;
  y = rk2(lin,out,T,x,U,P);
- ONLINE = cputime - ONLINE
+ ONLINE = toc
 
 %%%%%%%% Output %%%%%%%
 
@@ -55,9 +56,10 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 % PLOT
  if(nargin<1 || o==0 ), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
- figure('PaperSize',[4.8,4.8],'PaperPosition',[0,0,4.8,4.8]);
- imagesc(y); colormap(cmap); set(gca,'YTick',0); ylabel('X');
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg advection.svg; end
+ figure('PaperSize',[4.8,5.6],'PaperPosition',[0,0,5.6,4.8]);
+ imagesc(y); colormap(cmap); 
+ set(gca,'YTick',0,'xtick',[]); ylabel('X');
+ if(nargin>0), print -dsvg advection.svg; end
 
 %%%%%%%% Integrator %%%%%%%%
 
@@ -71,3 +73,4 @@ function y = rk2(f,g,t,x,u,p)
   x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
   y(:,t) = g(x,u(:,t),p);
  end
+

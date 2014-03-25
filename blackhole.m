@@ -1,6 +1,6 @@
 function blackhole(o)
 % stable orbit parameter identification inside event horizon of black hole
-% by Christian Himpe, 2013,2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -31,33 +31,32 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  fprintf('Parameters: E,L,Q,a,e,eps,mu\n');
 
 % PLANET
- WS = emgr(@orbit,@bl2c,[0 4 3],t,'s',pu,[1 0 0 0 0 0 0 0 0 0],1,0,xu);
+ WS = emgr(@orbit,@bl2c,[0 4 3],t,'s',pu,[1 0 0 0 0 0 0 0 0 0 0 0],1,0,xu);
  PLANET_SENSITIVITY = diag(WS{2})
 
 % PHOTON
- WS = emgr(@orbit,@bl2c,[0 4 3],t,'s',pp,[1 0 0 0 0 0 0 0 0 0],1,0,xp);
+ WS = emgr(@orbit,@bl2c,[0 4 3],t,'s',pp,[1 0 0 0 0 0 0 0 0 0 0 0],1,0,xp);
  PHOTON_SENSITIVITY = diag(WS{2})
 
 %%%%%%%% Output %%%%%%%%
-
- if(nargin<1 || o==0 ) return; end
 
  figure('PaperSize',[7,7],'PaperPosition',[0,0,7,7]);
  grid on;
  hold on;
  p0 = plot3(0,0,0,'*','Color','black');				%singularity
- p1 = plot3(Y(1,end),Y(2,end),Y(3,end),'*','Color','red');		%planet
- p2 = plot3(Y(1,:),Y(2,:),Y(3,:),'Color','red');			%planet orbit
+ p1 = plot3(Y(1,end),Y(2,end),Y(3,end),'*','Color','red');	%planet
+ p2 = plot3(Y(1,:),Y(2,:),Y(3,:),'Color','red');		%planet orbit
  p3 = plot3(Y(4,end),Y(5,end),Y(6,end),'*','Color','blue');	%photon
- p4 = plot3(Y(4,:),Y(5,:),Y(6,:),'Color','blue');			%photon orbit
+ p4 = plot3(Y(4,:),Y(5,:),Y(6,:),'Color','blue');		%photon orbit
  lg = legend([p0 p2 p4],'singularity','planet orbit','photon orbit'); set(lg,'FontSize',5);
  hold off;
  xl = ceil(10*max([abs(Y(1,:)),abs(Y(4,:))]))*0.1;
  yl = ceil(10*max([abs(Y(2,:)),abs(Y(5,:))]))*0.1;
  zl = ceil(10*max([abs(Y(3,:)),abs(Y(6,:))]))*0.1;
  set(gca,'Xlim',[-xl xl],'Ylim',[-yl yl],'Zlim',[-zl zl]);
+ camorbit(-30,-60);
 
- if(o==2 && ~exist('OCTAVE_VERSION')), camorbit(-30,-60); print -dpng blackhole.png; end
+ if(nargin>1), print -dpng blackhole.png; end
 
 %%%%%%%% Orbit %%%%%%%%
 

@@ -1,6 +1,6 @@
 function hierarchy(o)
 % hierarchical network reduction
-% by Christian Himpe, 2013,2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
@@ -15,10 +15,10 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  O = M^D;
  N = (M^(D+1)-1)/(M-1);
  R = M^(D-1);
- T = [0 1 10];
+ T = [0 1 100];
  L = (T(3)-T(1))/T(2);
- U = [1.0 zeros(1,L-1)];
- X =    zeros(N,1);
+ U = exp(-0.0005*(T(2):T(3)).^2);
+ X = zeros(N,1);
 
  rand('seed',1009);
  A = trasm(D,M);
@@ -34,12 +34,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%
 
 % FULL
- FULL = cputime;
+ tic;
  Y = rk1(LIN,OUT,T,X,U,0);
- FULL = cputime - FULL
+ FULL = toc
 
 % OFFLINE
- OFFLINE = cputime;
+ tic;
  WC = emgr(LIN,OUT,[J N O],T,'c');
  WO = emgr(ADJ,AOU,[O N J],T,'c');
  [UU D VV] = squareroot(WC,WO,R);
@@ -49,12 +49,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = UU*X;
  lin = @(x,u,p) a*x + b*u;
  out = @(x,u,p) c*x;
- OFFLINE = cputime - OFFLINE
+ OFFLINE = toc
 
 % ONLINE
- ONLINE = cputime;
+ tic;
  y = rk1(lin,out,T,x,U,0);
- ONLINE = cputime - ONLINE
+ ONLINE = toc
 
 %%%%%%%% Output %%%%%%%%
 
@@ -63,11 +63,11 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  RELER = abs(Y - y);
 
 % PLOT
- if(nargin<1 || o==0 ), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
- figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]); 
- imagesc(RELER); caxis([0 max(max(RELER))]); colorbar; colormap(cmap); set(gca,'YTick',1:N); set(gca,'XTick',1:1:L);
- if(o==2 && exist('OCTAVE_VERSION')), print -dsvg hierarchy.svg; end
+ l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
+ figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
+ if(nargin>0), print -dsvg hierarchy.svg; end
 
 %%%%%%%% Tree Assembler %%%%%%%%
 
@@ -91,7 +91,7 @@ function y = rk1(f,g,t,x,u,p)
  y = zeros(numel(g(x,u(:,1),p)),T);
 
  for t=1:T
-  x = x + h*f(x,u(:,t),p); % Eulers Method
+  x = x + h*f(x,u(:,t),p);
   y(:,t) = g(x,u(:,t),p);
  end
 

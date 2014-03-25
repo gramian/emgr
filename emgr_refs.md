@@ -18,13 +18,16 @@
 
 ## Balanced Truncation ##
 
++ P.T. Kabamba. [Balanced gains and their significance for L2 model reduction](http://dx.doi.org/10.1109/TAC.1985.1104017). IEEE Transactions on Automatic Control, 30(7):115--122, jul 1985.
 + A.M. Davidson. [Balanced systems and model reduction](http://dx.doi.org/10.1049/el:19860362). Electronics Letters, 22(10):531--532, may 1986.
 + A.J. Laub, M. Heath, C. Paige, and R. Ward. [Computation of system balancing transformations and other applications of simultaneous diagonalization algorithms](http://dx.doi.org/10.1109/TAC.1987.1104549). IEEE Transactions on Automatic Control, 32(2):115--122, feb 1987.
 + D.F. Enns. [Model reduction with balanced realizations: An error bound and a frequency weighted generalization](http://dx.doi.org/10.1109/CDC.1984.272286). The 23rd IEEE Conference on Decision and Control, 23: 531--532, 1986.
 + R.W. Aldhaheri. [Model order reduction via real Schur-form decomposition](http://dx.doi.org/10.1080/00207179108953642). International. Journal of Control, 53(3):709--716, apr 1991.
++ W.Q. Liu, V. Sreeram and K.L. Teo. [Model reduction for state-space symmetric systems](http://dx.doi.org/10.1016/S0167-6911(98)00024-3). Systems & Control Letters, 34(4):209--215, jul 1998. 
 + P.M. Van Dooren. [Gramian based model reduction of large-scale dynamical systems](http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=FADB990DED82A32F6250D51B11FD38B0?doi=10.1.1.29.2500&rep=rep1&type=pdf). Numerical analysis 1999 (Dundee), 420:231--247, 2000.
-+ A. Keil and J.L. Gouze. [Model reduction of modular systems using balancing methods](http://campar.in.tum.de/twiki/pub/Main/AndreasKeil/keil2003modelreduction.pdf). Technical Report, 2003.
 + K. Willcox and J. Peraire. [Balanced model reduction via the proper orthogonal decomposition](http://dx.doi.org/10.2514/2.1570). AIAA journal, 40(11):2323--2330, nov 2002.
++ A. Keil and J.L. Gouze. [Model reduction of modular systems using balancing methods](http://campar.in.tum.de/twiki/pub/Main/AndreasKeil/keil2003modelreduction.pdf). Technical Report, 2003.
++ A. Barbagallo, V.F. De Felice and K.K. Nagarajan. [Reduced order modelling of a couette flow using Balanced Proper Orthogonal Decomposition](http://dokumente.unibw.de/pub/bscw.cgi/S50cf6918/d2700941/BarbaDefelNagar.pdf). ERCOFTAC, 2008.
 
 ## Cross Gramian II ##
 
@@ -76,5 +79,6 @@
 + A. Gheondea and R.J. Ober: [A Trace Formula for the Hankel Operator](http://dx.doi.org/10.1090/S0002-9939-99-04669-9). Procedings of the American Mathematical Society, 127(7):2007-2012, feb 1999
 + S.C. Smith. [On generating random systems: a gramian approach](http://dx.doi.org/10.1109/ACC.2003.1243494). Proceedings of the American Control Conference, 3:2743--2748, jun 2003.
 + Y. Quan, H. Zhang, and L. Cai. [Modeling and control based on a new neural network model](http://dx.doi.org/10.1109/ACC.2001.946022). Proceedings of the American Control Conference, 3:1928--1929, jun 2001.
++ M. Wu, B. Yin, A. Vosoughi, C. Studer, J.R. Cavallaro, C. Dick. [Approximate Matrix Inversion for High-Throughput Data Detection in the Large-Scale MIMO Uplink](http://dx.doi.org/10.1109/ISCAS.2013.6572301). Proceedings IEEE ISCAS Beijing China, 2013.
 
 ###### <http://gramian.de> ######
