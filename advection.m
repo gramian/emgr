@@ -29,7 +29,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % FULL
  tic;
- Y = rk2(LIN,OUT,T,X,U,P);
+ Y = ab2(LIN,OUT,T,X,U,P);
  FULL = toc
 
 % OFFLINE
@@ -45,7 +45,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % ONLINE
  tic;
- y = rk2(lin,out,T,x,U,P);
+ y = ab2(lin,out,T,x,U,P);
  ONLINE = toc
 
 %%%%%%%% Output %%%%%%%
@@ -54,7 +54,6 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  ERROR = norm(norm(Y - y)./norm(Y))
 
 % PLOT
- if(nargin<1 || o==0 ), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[4.8,5.6],'PaperPosition',[0,0,5.6,4.8]);
  imagesc(y); colormap(cmap); 
@@ -63,14 +62,19 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Integrator %%%%%%%%
 
-function y = rk2(f,g,t,x,u,p)
+function y = ab2(f,g,t,x,u,p)
 
  h = t(2);
- T = (t(3)-t(1))/h;
- y = zeros(numel(g(x,u(:,1),p)),T);
+ T = t(3)/h;
+ m = 0.5*h*f(x,u(:,1),p);
+ x = x + h*f(x + m,u(:,1),p);
+ y(:,1) = g(x,u(:,1),p);
+ y(end,T) = 0;
 
- for t=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
-  y(:,t) = g(x,u(:,t),p);
- end
+ for t=2:T
+     k = (0.5*h)*f(x,u(:,t),p);
+     x = x + 3*k - m;
+     y(:,t) = g(x,u(:,1),p);
+     m = k;
+ end;
 

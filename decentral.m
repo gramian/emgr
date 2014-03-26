@@ -28,7 +28,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % FULL
  tic;
- Y = rk2(LIN,OUT,T,X,U,0);
+ Y = ab2(LIN,OUT,T,X,U,0);
  FULL = toc
 
 % OFFLINE
@@ -61,7 +61,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  for K=1:J
   lin = @(x,u,p) A*x + B(:,c(K,1))*u;
   out = @(x,u,p) C(c(K,2),:)*x;
-  y(K,:) = rk2(lin,out,T,X,U(c(K,1),:),0);
+  y(K,:) = ab2(lin,out,T,X,U(c(K,1),:),0);
  end
  ONLINE = toc
 
@@ -80,14 +80,19 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 %%%%%%%% Integrator %%%%%%%%
 
-function y = rk2(f,g,t,x,u,p)
+function y = ab2(f,g,t,x,u,p)
 
  h = t(2);
- T = (t(3)-t(1))/h;
- y = zeros(numel(g(x,u(:,1),p)),T);
+ T = t(3)/h;
+ m = 0.5*h*f(x,u(:,1),p);
+ x = x + h*f(x + m,u(:,1),p);
+ y(:,1) = g(x,u(:,1),p);
+ y(end,T) = 0;
 
- for t=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
-  y(:,t) = g(x,u(:,t),p);
- end
+ for t=2:T
+     k = (0.5*h)*f(x,u(:,t),p);
+     x = x + 3*k - m;
+     y(:,t) = g(x,u(:,1),p);
+     m = k;
+ end;
 

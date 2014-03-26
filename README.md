@@ -1,10 +1,10 @@
 ![emgr Logo](emgr.png) emgr
 ===========================
-Empirical Gramian Framework
+Empirical Gramian Framework (Version 2.0)
 
-Empirical gramians can be computed for linear and nonlinear control systems for purposes of model order reduction (MOR) or system identification. 
+Empirical gramians can be computed for linear and nonlinear control systems for purposes of model order reduction (MOR), system identification or uncertainty quantification. 
 Model reduction using empirical gramians can be applied to the state space, to the parameter space or to both through combined reduction. 
-For state reduction the empirical controllability gramian and the empirical observability gramian, for balanced truncation, are available, or alternatively the empirical cross gramian for direct truncation. 
+For state reduction the empirical controllability gramian and the empirical observability gramian, for balanced truncation, are available, or alternatively the empirical cross gramian and approximate empirical gramian for direct truncation. 
 For parameter reduction, parameter identification and sensitivity analysis the empirical sensitivity gramian (controllability of parameters) or the empirical identifiability gramian (observability of parameters) are provided. 
 Combined state and parameter reduction is enabled by the empirical joint gramian, which computes controllability and observability of states and parameter concurrently. 
 The emgr framework is a compact open source toolbox for (empirical) GRAMIAN-based model reduction and compatible with OCTAVE and MATLAB. 
@@ -14,7 +14,7 @@ More information at: http://gramian.de
 License
 -------
 
-Copyright (c) 2013,2014 Christian Himpe,
+Copyright (c) 2013-2014 Christian Himpe,
 
 All rights reserved.
 

@@ -78,13 +78,14 @@ function y = ab2(f,g,t,x,u,p)
 
  h = t(2);
  T = t(3)/h;
- m = f(x,u(:,1),p);
- x = x + (0.5*h)*(m + f(x + h*m,u(:,1),p));
+ m = 0.5*h*f(x,u(:,1),p);
+ x = x + h*f(x + m,u(:,1),p);
  y(:,1) = g(x,u(:,1),p);
+ y(end,T) = 0;
 
  for t=2:T
      k = (0.5*h)*f(x,u(:,t),p);
-     x = x + 3.0*k - m;
+     x = x + 3*k - m;
      y(:,t) = g(x,u(:,1),p);
      m = k;
  end;
