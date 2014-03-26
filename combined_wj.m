@@ -15,7 +15,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
  U = [ones(J,1) zeros(J,L-1)];
- X = zeros(N,1);
+ X = ones(N,1);
 
  rand('seed',1009);
  A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
@@ -35,7 +35,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WJ = emgr(NON,OUT,[J N O],T,'j',P);
+ WJ = emgr(NON,OUT,[J N O],T,'j',P,0,1,0,X); WJ{2}
  [UU D VV] = svd(WJ{1}); UU = UU(:,1:R);   VV = UU';
  [PP D QQ] = svd(WJ{2}); PP = PP(1:R*R,:); QQ = PP';
  x = VV*X;

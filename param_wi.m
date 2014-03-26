@@ -15,7 +15,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  T = [0 0.01 1];
  L = (T(3)-T(1))/T(2);
  U = [ones(J,1) zeros(J,L-1)];
- X = zeros(N,1);
+ X = ones(N,1);
 
  rand('seed',1009);
  A = rand(N,N); A(1:N+1:end) = -0.55*N;
@@ -35,8 +35,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WS = emgr(LIN,OUT,[J N O],T,'i',P);
- [PP D QQ] = svd(WS{2}); PP = PP(1:R,:); QQ = QQ(1:R,:)';
+ WI = emgr(LIN,OUT,[J N O],T,'i',P,0,1,0,X); WI{2}
+ [PP D QQ] = svd(WI{2}); PP = PP(1:R,:); QQ = QQ(1:R,:)';
  p = QQ*PP*P;
  OFFLINE = toc
 
