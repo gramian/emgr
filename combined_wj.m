@@ -35,7 +35,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WJ = emgr(NON,OUT,[J N O],T,'j',P,0,1,0,X); WJ{2}
+ WJ = emgr(NON,OUT,[J N O],T,'j',P,0,1,0,X);
  [UU D VV] = svd(WJ{1}); UU = UU(:,1:R);   VV = UU';
  [PP D QQ] = svd(WJ{2}); PP = PP(1:R*R,:); QQ = PP';
  x = VV*X;
