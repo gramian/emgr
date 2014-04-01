@@ -329,7 +329,8 @@ function x = fastinv(m)
 
     d = diag(m);
     n = numel(d);
-    x = spdiags(1.0./d(:),0,n,n);
+    x = speye(n);
+    x(1:n+1:end) = 1.0./d(:);
     x = x - x*(m-diag(d))*x;
 end
 
@@ -380,7 +381,7 @@ switch(O)
         end;
 
     case -1, % Custom Solver
-        %global CUSTOM_ODE
+        % global CUSTOM_ODE; % Uncomment to use as handle
         x = CUSTOM_ODE(f,h,T,z,u,p);
 end;
 
