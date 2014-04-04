@@ -60,12 +60,12 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 
 w = lower(w);
 
-J = q(1);             % number of inputs
-N = q(2);             % number of states
-O = q(3);             % number of outputs
-if(numel(q)==4), M = q(4); else M = N; end;
+J = q(1); % number of inputs
+N = q(2); % number of states
+O = q(3); % number of outputs
+if (numel(q)==4), M = q(4); else M = N; end;
 
-if(isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
+if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
 h = t(2);                 % time step width
 T = round((t(3)-t(1))/h); % number of time steps
@@ -79,10 +79,10 @@ if (nargin<11)||(isempty(um)), um = 1.0; end;
 if (nargin<12)||(isempty(xm)), xm = 1.0; end;
 if (nargin<13)||(isempty(yd)), yd = 0; end;
 
-P = numel(pr);        % number of parameters
+P = numel(pr); % number of parameters
 p = pr(:);
 
-if (exist('ut') && isa(ut,'function_handle')), 
+if (isa(ut,'function_handle')),
     uf = ut;
     ut = zeros(J,T);
     for l=1:T, ut(:,l) = uf(l*h); end;
@@ -160,7 +160,7 @@ if(w=='c' || w=='o' || w=='x' || w=='y')
         o = zeros(O,T,N);
     end;
 
-    W = zeros(N,N); 
+    W = zeros(N,N); % preallocate gramian
 end;
 
 switch(w)
@@ -252,31 +252,32 @@ switch(w)
 
     case 's', % sensitivity gramian
         W = cell(2,1);
-        W{1} = emgr(f,g,[J N O],t,'c',sparse(P,1),nf,ut,us,xs,um,xm);
+        W{1} = emgr(f,g,[J N O],t,'c',zeros(P,1),nf,ut,us,xs,um,xm);
         W{2} = eye(P);
         F = @(x,u,p) f(x,us,p*u);
         G = @(x,u,p) g(x,us,p*u);
         for q=1:P
-            if(nf(9)==0), up = 1; else up = p(q); end;
-            V = emgr(F,G,[1 N O],t,'c',(1:P==q),nf,1,p(q),xs,up,xm);
-            W{1} = W{1} + V;      % controllability gramian
+            if(nf(9)==0), pm = 1.0; else pm = p(q); end;
+            if(size(um,1)==J+P), pm = um(q,:); end;
+            V = emgr(F,G,[1 N O],t,'c',(1:P==q),nf,1.0,p(q),xs,pm,xm);
+            W{1} = W{1} + V;      % approximate controllability gramian
             W{2}(q,q) = trace(V); % sensitivity gramian
         end;
 
     case 'i', % identifiability gramian
-        if(nf(9)==0), xp = ones(P,1); else xp = p; end; 
-        if(size(xm,1)==N), xm = [xm;xp]; end;
+        if(nf(9)==0), pm = ones(P,1); else pm = p; end; 
+        if(size(xm,1)==N), xm = [xm;pm]; end;
         W = cell(2,1);
         V = emgr(f,g,[J N+P O N],t,'o',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N);         % observability gramian
         W{2} = V(N+1:N+P,N+1:N+P); % approximate identifiability gramian
-        if(nf(10)==1), 
-            W{2} = W{2} - V(1:N,N+1:N+P)'*fastinv(W{1})*V(1:N,N+1:N+P);
+        if(nf(10)==1),
+            W{2} = W{2} - V(N+1:N+P,1:N)*fastinv(W{1})*V(1:N,N+1:N+P);
         end;
 
     case 'j', % joint gramian
-        if(nf(9)==0), xp = ones(P,1); else xp = p; end;
-        if(size(xm,1)==N), xm = [xm;xp]; end;
+        if(nf(9)==0), pm = ones(P,1); else pm = p; end;
+        if(size(xm,1)==N), xm = [xm;pm]; end;
         W = cell(2,1);
         V = emgr(f,g,[J N+P O N],t,'x',p,nf,ut,us,[xs;p],um,xm);
         W{1} = V(1:N,1:N); % cross gramian
