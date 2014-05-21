@@ -11,7 +11,7 @@ The emgr framework is a compact open source toolbox for (empirical) GRAMIAN-base
 
 More information at: http://gramian.de
 
-https://zenodo.org/badge/doi/10.5281/zenodo.8623.png
+![DOI badge](http://zenodo.org/badge/doi/10.5281/zenodo.8623.png)
 
 License
 -------
