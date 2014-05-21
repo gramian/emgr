@@ -1,5 +1,5 @@
 function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
-% emgr - Empirical Gramian Framework ( Version: 2.0 )
+% emgr - Empirical Gramian Framework ( Version: 2.1 )
 % by Christian Himpe 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
@@ -11,7 +11,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %    for model reduction and system identification.
 %    Compatible with OCTAVE and MATLAB.
 %
-% INPUTS:
+% ARGUMENTS:
 %   (func handle)  f - system function handle; signature: xdot = f(x,u,p)
 %   (func handle)  g - output function handle; signature:    y = g(x,u,p)
 %        (vector)  q - system dimensions [inputs,states,outputs]
@@ -37,7 +37,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + default(0), parameter scaling(1); only WS,WI,WJ
 %            + default(0), schur complement(1) for param extract; only: WI
 %            + default(0), enforce symmetry(1)
-%            + Euler(0),Two-Step(1),Leapfrog(2),Ralston(3),Custom(-1) solver
+%            + RK1(0),AB2(1),Leapfrog(2),Ralston(3),ARK3(4),Custom(-1) Solver
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
 %         (vector,scalar) [xs = 0] - steady-state
@@ -45,7 +45,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %  (matrix,vector,scalar) [xm = 1] - init-state scales
 %           (cell,matrix) [yd = 0] - observed data
 %
-% OUTPUT:
+% RETURNS:
 %            (matrix)  W - Gramian Matrix (WC, WO, WX only)
 %              (cell)  W - {State-,Parameter-} Gramian (WS, WI, WJ only)
 %
@@ -63,11 +63,10 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
     N = q(2); % number of states
     O = q(3); % number of outputs
     M = N; if(numel(q)==4), M = q(4); end;
-
-    if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
-
     h = t(2);                 % time step width
     T = round((t(3)-t(1))/h); % number of time steps
+
+    if (isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
 
     if(nargin<6) ||(isempty(pr)), pr = 0.0; end;
     if(nargin<7) ||(isempty(nf)), nf = 0.0; end;
@@ -130,6 +129,9 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
         if(size(us,2)==1), us = repmat(us,[1 T]); end;
         if(size(um,2)==1), um = scales(um,nf(2),nf(4)); end;
         if(size(xm,2)==1), xm = scales(xm,nf(3),nf(5)); end;
+
+        if(w=='y' && (size(xm,1)==N || size(xm,2)~=size(um,2)) ), xm = um; end;
+
         C = size(um,2); % number of input scales
         D = size(xm,2); % number of state scales
 
@@ -159,7 +161,8 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
             o = zeros(O,T,N);
         end;
 
-        W = zeros(N,N); % preallocate gramian
+        if(w=='x'), R = M; else R = N; end;
+        W = zeros(R,N); % preallocate gramian
     end;
 
     switch(w)
@@ -176,7 +179,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                     W = W + x*x';
                 end;
             end;
-            W = W*(h/C);
+            W = W * (h/C);
 
         case 'o', % observability gramian
             for d=1:D
@@ -197,7 +200,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                 end;
             end;
 
-            W = W*(h/D);
+            W = W * (h/D);
 
         case 'x', % cross gramian
             if(J~=O),error('ERROR! emgr: non-square system!');end;
@@ -219,11 +222,11 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                             x = ode(f,h,T,xs(1:M),uu,pp,nf(12));
                         end;
                         x = bsxfun(@minus,x,res(x,X))*(1.0/um(j,c));
-                        W = W(1:M,:) + x*permute(o(j,:,:),[2 3 1]);
+                        W = W(1:M,:) + (x*permute(o(j,:,:),[2 3 1]));
                     end;
                 end;
             end;
-            W = W*(h/(C*D));
+            W = W * (h/(C*D));
 
         case 'y', % approximate cross gramian
             if(J~=O && nf(8)==0),error('ERROR! emgr: non-square system!');end;
@@ -241,7 +244,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                     W = W + x*y';
                 end;
             end;
-            W = W*(h/C);
+            W = W * (h/C);
 
         case 's', % sensitivity gramian
             W = cell(2,1);
@@ -335,20 +338,20 @@ function x = ode(f,h,T,z,u,p,O)
 
     switch(O)
 
-        case 0, % Eulers Method
+        case 0, % Eulers Method (RK1)
             for t=1:T
                 z = z + h*f(z,u(:,t),p);
                 x(:,t) = z;
             end;
 
-        case 3, % Ralstons Method
+        case 3, % Ralstons Method (RK2)
             for t=1:T
                 k = h*f(z,u(:,t),p);
                 z = z + 0.25*k + (0.75*h)*f(z + (2.0/3.0)*k,u(:,t),p);
                 x(:,t) = z;
             end;
 
-        case 1, % Adams-Bashforth Method
+        case 1, % (Multi-Step) Adams-Bashforth Method (AB2)
             m = (0.5*h)*f(z,u(:,1),p);
             z = z + h*f(z + m,u(:,1),p);
             x(:,1) = z;
@@ -360,7 +363,24 @@ function x = ode(f,h,T,z,u,p,O)
                 m = k;
             end;
 
-        case 2, % Leapfrog Method
+        case 4, % Accelerated (Two-Step) Runge Kutta 3 (ARK3)
+            j = h*f(z,u(:,1),p);
+            k = h*f(z+(5.0/12.0)*j,u(:,1),p);
+            l = (4.0*h)*f(z+0.5*j,u(:,1),p);
+            m = h*f(z-j+0.5*l,u(:,1),p);
+            z = z + (1.0/6.0)*(j + l + m);
+            x(:,1) = z;
+
+            for t=2:T
+                l = h*f(z,u(:,t),p);
+                m = h*f(z+(5.0/12.0)*l,u(:,t),p);
+                z = z + ( 0.5*(l+j) + (m-k) );
+                x(:,t) = z;
+                j = l;
+                k = m;
+            end;
+
+        case 2, % Leapfrog Method (Symplectic)
             n = N/2;
             l = f(z,u(:,1),p);
             k = l(n+1:N);
