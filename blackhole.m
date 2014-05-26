@@ -54,7 +54,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  yl = ceil(10*max([abs(Y(2,:)),abs(Y(5,:))]))*0.1;
  zl = ceil(10*max([abs(Y(3,:)),abs(Y(6,:))]))*0.1;
  set(gca,'Xlim',[-xl xl],'Ylim',[-yl yl],'Zlim',[-zl zl]);
- camorbit(-30,-60);
+ view(-30,30);
 
  if(nargin>1), print -dpng blackhole.png; end
 

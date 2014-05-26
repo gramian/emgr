@@ -1,5 +1,5 @@
 function advection(o)
-% pde transport equation reduction
+% finite difference discretized pde transport equation reduction
 % by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
@@ -54,11 +54,12 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  ERROR = norm(norm(Y - y)./norm(Y))
 
 % PLOT
+ if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
- figure('PaperSize',[4.8,5.6],'PaperPosition',[0,0,5.6,4.8]);
- imagesc(y); colormap(cmap); 
+ figure('PaperSize',[2.4,2.6],'PaperPosition',[0,0,2.6,2.4]);
+ imagesc(sparse(y)); colormap(cmap); 
  set(gca,'YTick',0,'xtick',[]); ylabel('X');
- if(nargin>0), print -dsvg advection.svg; end
+ print -dpng advection.png;
 
 %%%%%%%% Integrator %%%%%%%%
 

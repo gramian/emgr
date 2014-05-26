@@ -20,13 +20,13 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            * 'c' : empirical controllability gramian (WC)
 %            * 'o' : empirical observability gramian (WO)
 %            * 'x' : empirical cross gramian (WX)
-%            * 'y' : empirical approximate cross gramian (WY)
+%            * 'y' : empirical linear cross gramian (WY)
 %            * 's' : empirical sensitivity gramian (WS)
 %            * 'i' : empirical identifiability gramian (WI)
 %            * 'j' : empirical joint gramian (WJ)
 %        (vector) [pr = 0] - parameters
 %        (vector) [nf = 0] - options, 12 components:
-%            + residual steady(0), mean(1), median(2), last(3), pod(4)
+%            + residual steady(0), mean(1), median(2), last(3), pod(4), zero(5)
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
 %            + linear(0), log(1), geometric(2), single(3) state scale spacing
 %            + unit(0), inverse(1), dyadic(2), single(3) input rotations
@@ -146,6 +146,8 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                 res = @(d,e) d(:,end);
             case 4, % principal direction
                 res = @(d,e) prd(d);
+            case 5, % zero
+                res = @(d,e) zeros(N,1);
         end;
 
         if(nf(7)==1) % data driven
@@ -165,8 +167,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
         W = zeros(R,N); % preallocate gramian
     end;
 
-    switch(w)
-
+    switch(w) % empirical gramian types
         case 'c', % controllability gramian
             for c=1:C
                 for j=1:J % parfor
@@ -176,7 +177,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                         x = ode(f,h,T,xs,uu,pp,nf(12));
                     end;
                     x = bsxfun(@minus,x,res(x,X))*(1.0/um(j,c));
-                    W = W + x*x';
+                    W = W + (x*x');
                 end;
             end;
             W = W * (h/C);
@@ -199,7 +200,6 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                     end;
                 end;
             end;
-
             W = W * (h/D);
 
         case 'x', % cross gramian
@@ -228,7 +228,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
             end;
             W = W * (h/(C*D));
 
-        case 'y', % approximate cross gramian
+        case 'y', % linear cross gramian
             if(J~=O && nf(8)==0),error('ERROR! emgr: non-square system!');end;
             for c=1:C
                 for j=1:J % parfor
@@ -241,7 +241,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                     end;
                     x = bsxfun(@minus,x,res(x,X))*(1.0/um(j,c));
                     y = bsxfun(@minus,y,res(y,Y))*(1.0/xm(j,c));
-                    W = W + x*y';
+                    W = W + (x*y');
                 end;
             end;
             W = W * (h/C);

@@ -35,8 +35,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic; 
- WX = emgr(LIN,ADJ,[J N O],T,'y');
- [UU D VV] = svd(WX); UU = UU(:,1:R); VV = VV(:,1:R)';
+ WY = emgr(LIN,ADJ,[J N O],T,'y');
+ [UU D VV] = svd(WY); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
  b = VV*B;
  c = C*UU;
@@ -56,12 +56,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  ERROR = norm(norm(Y - y)./norm(Y))
  RELER = abs(Y - y)./abs(Y);
 
-% PLOT 
+% PLOT
+ if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
  imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
- if(nargin>0), print -dsvg state_wy.svg; end
+ print -dsvg state_wy.svg;
 
 %%%%%%%% Integrator %%%%%%%%
 
