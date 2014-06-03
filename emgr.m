@@ -1,5 +1,5 @@
 function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
-% emgr - Empirical Gramian Framework ( Version: 2.1 )
+% emgr - Empirical Gramian Framework ( Version: 2.2 )
 % by Christian Himpe 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
@@ -29,13 +29,13 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            + residual steady(0), mean(1), median(2), last(3), pod(4), zero(5)
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
 %            + linear(0), log(1), geometric(2), single(3) state scale spacing
-%            + unit(0), inverse(1), dyadic(2), single(3) input rotations
-%            + unit(0), inverse(1), dyadic(2), single(3) state rotations
+%            + unit(0), reciproce(1), dyadic(2), single(3) input rotations
+%            + unit(0), reciproce(1), dyadic(2), single(3) state rotations
 %            + single(0), double(1), scaled(2) run
 %            + default(0), data-driven gramians(1)
 %            + default(0), active(1) passive(2) robust params; only: WC,WS,WY
 %            + default(0), parameter scaling(1); only WS,WI,WJ
-%            + default(0), schur complement(1) for param extract; only: WI
+%            + default(0), use mean / schur complement(1); only: WS,WI
 %            + default(0), enforce symmetry(1)
 %            + RK1(0),AB2(1),Leapfrog(2),Ralston(3),ARK3(4),Custom(-1) Solver
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
@@ -46,14 +46,14 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %           (cell,matrix) [yd = 0] - observed data
 %
 % RETURNS:
-%            (matrix)  W - Gramian Matrix (WC, WO, WX only)
+%            (matrix)  W - Gramian Matrix (WC, WO, WX, WY only)
 %              (cell)  W - {State-,Parameter-} Gramian (WS, WI, WJ only)
 %
 % SEE ALSO:
 %    gram
 %
 % KEYWORDS:
-%    model reduction, empirical gramian, emgr
+%    model reduction, empirical gramian, cross gramian, mor, emgr
 %
 % Further information: <http://gramian.de>
 %*
@@ -62,7 +62,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
     J = q(1); % number of inputs
     N = q(2); % number of states
     O = q(3); % number of outputs
-    M = N; if(numel(q)==4), M = q(4); end;
+    M = N; if(numel(q)==4), M = q(4); end; % only used by WI and WJ
     h = t(2);                 % time step width
     T = round((t(3)-t(1))/h); % number of time steps
 
@@ -70,7 +70,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 
     if(nargin<6) ||(isempty(pr)), pr = 0.0; end;
     if(nargin<7) ||(isempty(nf)), nf = 0.0; end;
-    if(nargin<8) ||(isempty(ut)), ut = 1.0/h; end;
+    if(nargin<8) ||(isempty(ut)), ut = 1.0/h; end; % unit impulse
     if(nargin<9) ||(isempty(us)), us = 0.0; end;
     if(nargin<10)||(isempty(xs)), xs = 0.0; end;
     if(nargin<11)||(isempty(um)), um = 1.0; end;
@@ -80,7 +80,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
     P = numel(pr); % number of parameters
     p = pr(:);
 
-    if (isa(ut,'function_handle')),
+    if(isa(ut,'function_handle')),
         uf = ut;
         ut = zeros(J,T);
         for l=1:T, ut(:,l) = uf(l*h); end;
@@ -94,6 +94,21 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
     if(numel(xm)==1), xm(1:N,1) = xm; end;
 
     if(w=='c' || w=='o' || w=='x' || w=='y')
+
+        switch(nf(1)) % residuals
+            case 0, % steady state
+                res = @(d,e) e;
+            case 1, % mean state
+                res = @(d,e) mean(d,2);
+            case 2, % median state
+                res = @(d,e) median(d,2);
+            case 3, % final state
+                res = @(d,e) d(:,end);
+            case 4, % principal direction
+                res = @(d,e) prd(d);
+            case 5, % zero
+                res = @(d,e) zeros(N,1);
+        end;
 
         switch(nf(6))
             case 1, % double run
@@ -124,7 +139,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
         end;
 
         X = xs(1:M);
-        Y = g(xs(1:M),us(:,1),p); if(w=='y'), Y = X; end;
+        if(w=='c'||w=='y'), Y = X; else Y = g(xs(1:M),us(:,1),p); end;
 
         if(size(us,2)==1), us = repmat(us,[1 T]); end;
         if(size(um,2)==1), um = scales(um,nf(2),nf(4)); end;
@@ -135,21 +150,6 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
         C = size(um,2); % number of input scales
         D = size(xm,2); % number of state scales
 
-        switch(nf(1)) % residuals
-            case 0, % steady state
-                res = @(d,e) e;
-            case 1, % mean state
-                res = @(d,e) mean(d,2);
-            case 2, % median state
-                res = @(d,e) median(d,2);
-            case 3, % final state
-                res = @(d,e) d(:,end);
-            case 4, % principal direction
-                res = @(d,e) prd(d);
-            case 5, % zero
-                res = @(d,e) zeros(N,1);
-        end;
-
         if(nf(7)==1) % data driven
             if(size(yd,1)==1 && w=='o'), yd = {[];yd{:}}; end;
             C = size(yd,1);
@@ -158,10 +158,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
             xm = ones(N,D);
         end;
 
-        if(w=='o'||w=='x')
-            y = zeros(O,T);
-            o = zeros(O,T,N);
-        end;
+        if(w=='o'||w=='x'), y = zeros(O,T); o = zeros(O,T,N); end;
 
         if(w=='x'), R = M; else R = N; end;
         W = zeros(R,N); % preallocate gramian
@@ -222,7 +219,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                             x = ode(f,h,T,xs(1:M),uu,pp,nf(12));
                         end;
                         x = bsxfun(@minus,x,res(x,X))*(1.0/um(j,c));
-                        W = W(1:M,:) + (x*permute(o(j,:,:),[2 3 1]));
+                        W = W + (x*permute(o(j,:,:),[2 3 1]));
                     end;
                 end;
             end;
@@ -259,6 +256,9 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                 W{1} = W{1} + V;      % approximate controllability gramian
                 W{2}(q,q) = trace(V); % sensitivity gramian
             end;
+            if(nf(10)==1)
+                W{2} = W{2} - mean(diag(W{2}));
+            end;
 
         case 'i', % identifiability gramian
             if(nf(9)==0), pm = ones(P,1); else pm = p; end; 
@@ -267,7 +267,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
             V = emgr(f,g,[J N+P O N],t,'o',p,nf,ut,us,[xs;p],um,xm);
             W{1} = V(1:N,1:N);         % observability gramian
             W{2} = V(N+1:N+P,N+1:N+P); % approximate identifiability gramian
-            if(nf(10)==1),
+            if(nf(10)==1)
                 W{2} = W{2} - V(N+1:N+P,1:N)*fastinv(W{1})*V(1:N,N+1:N+P);
             end;
 
@@ -304,7 +304,7 @@ function s = scales(s,d,e)
     switch(e)
         case 0, % unit
             s = [-s,s];
-        case 1, % anti
+        case 1, % reciproce
             s = [1.0./s,s];
         case 2, % dyadic
             s = s*s';

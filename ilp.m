@@ -9,39 +9,39 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 if(nargin==5) rand('seed',r); randn('seed',r); end;
 
 % Gramian Eigenvalues
- WC = exp(-N + N*rand(N,1));
- WO = exp(-N + N*rand(N,1));
+ WC = exp( rand(N,1) );
+ WO = exp( rand(N,1) );
 
 % Gramian Eigenvectors
- X = randn(N,N);
- [U E V] = svd(X);
+ [P S Q] = svd(randn(N));
 
-% Balancing Trafo
- [P D Q] = svd(diag(WC.*WO));
- W = -D;
+% Balancing Transformation
+ WC = P*diag(WC)*P';
+ WO = Q*diag(WO)*Q';
+ [U D V] = svd(WC*WO);
 
 % Input and Output
  B = randn(N,J);
 
- if(nargin>=4 && s~=0)
+ if(nargin>=4 && s~=0),
         C = B';
- else
+ else,
         C = randn(O,N);
  end
 
 % Scale Output Matrix
  BB = sum(B.*B,2);  % = diag(B*B')
  CC = sum(C.*C,1)'; % = diag(C'*C)
- C = bsxfun(@times,C,sqrt(BB./CC)');
+ SC = sqrt(BB./CC)';
+ C = bsxfun(@times,C,SC);
 
 % Solve System Matrix
- f = @(x,u,p) W*x+B*u;
+ f = @(x,u,p) -D*x+B*u;
  g = @(x,u,p) C*x;
- A = -emgr(f,g,[J N O],[0 0.01 1],'c');
+ A = -emgr(f,g,[J N O],[0 0.01 1],'c') - (1e-13)*eye(N);
 
 % Unbalance System
- T = U'*P';
- A = T*A*T';
- B = T*B;
- C = C*T';
+ A = V*A*U';
+ B = V*B;
+ C = C*U';
 
