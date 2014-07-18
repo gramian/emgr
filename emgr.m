@@ -26,16 +26,16 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
 %            * 'j' : empirical joint gramian (WJ)
 %        (vector) [pr = 0] - parameters
 %        (vector) [nf = 0] - options, 12 components:
-%            + residual steady(0), mean(1), median(2), last(3), pod(4), zero(5)
+%            + steady(0),mean(1),median(2),last(3),pod(4),zero(5),pca(6) center
 %            + linear(0), log(1), geometric(2), single(3) input scale spacing
 %            + linear(0), log(1), geometric(2), single(3) state scale spacing
 %            + unit(0), reciproce(1), dyadic(2), single(3) input rotations
 %            + unit(0), reciproce(1), dyadic(2), single(3) state rotations
 %            + single(0), double(1), scaled(2) run
 %            + default(0), data-driven gramians(1)
-%            + default(0), active(1) passive(2) robust params; only: WC,WS,WY
+%            + default(0), active(1), passive(2) robust params; only: WC,WS,WY
 %            + default(0), parameter scaling(1); only WS,WI,WJ
-%            + default(0), use mean / schur complement(1); only: WS,WI
+%            + default(0), use mean(1) only: WS, schur complement(1); only: WI
 %            + default(0), enforce symmetry(1)
 %            + RK1(0),AB2(1),Leapfrog(2),Ralston(3),ARK3(4),Custom(-1) Solver
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
@@ -108,6 +108,8 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                 res = @(d,e) prd(d);
             case 5, % zero
                 res = @(d,e) zeros(N,1);
+            case 6, % pca
+                res = @(d,e) prd(d-mean(d,2));
         end;
 
         switch(nf(6))
@@ -134,6 +136,7 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
                 if(size(um,1)==J-P), um = [um;ones(P,1)]; end;
                 F = f; f = @(x,u,p) F(x,u(1:J-P),u(J-P+1:J));
                 G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
+
             case 2, % passive parameters
                 if(size(um,1)==J), um = [um;ones(P,1)]; end;
         end;
@@ -159,12 +162,11 @@ function W = emgr(f,g,q,t,w,pr,nf,ut,us,xs,um,xm,yd)
         end;
 
         if(w=='o'||w=='x'), y = zeros(O,T); o = zeros(O,T,N); end;
-
         if(w=='x'), R = M; else R = N; end;
         W = zeros(R,N); % preallocate gramian
     end;
 
-    switch(w) % empirical gramian types
+    switch(w) % by empirical gramian types
         case 'c', % controllability gramian
             for c=1:C
                 for j=1:J % parfor
@@ -316,8 +318,7 @@ end
 %%%%%%%% PRINCIPAL DIRECTION %%%%%%%%
 function x = prd(d)
 
-    [U,D,V] = svd(d,'econ');
-    x = U(:,1);
+    [x,D,V] = svds(d,1);
 end
 
 %%%%%%%% FAST INVERSION %%%%%%%%
@@ -337,7 +338,6 @@ function x = ode(f,h,T,z,u,p,O)
     x(N,T) = 0.0;
 
     switch(O)
-
         case 0, % Eulers Method (RK1)
             for t=1:T
                 z = z + h*f(z,u(:,t),p);
@@ -380,7 +380,7 @@ function x = ode(f,h,T,z,u,p,O)
                 k = m;
             end;
 
-        case 2, % Leapfrog Method (Symplectic)
+        case 2, % (Symplectic) Leapfrog Method
             n = N/2;
             l = f(z,u(:,1),p);
             k = l(n+1:N);

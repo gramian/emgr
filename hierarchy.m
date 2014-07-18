@@ -59,7 +59,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Output %%%%%%%%
 
 % TERMINAL
- ERROR = norm(norm(Y - y)./norm(Y))
+  norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
+ ERROR = norm2(Y - y)./norm2(Y)
  RELER = abs(Y - y);
 
 % PLOT

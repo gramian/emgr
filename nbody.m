@@ -9,11 +9,10 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
  N = 5;
- t = [0 0.01 2];
+ T = [0 0.01 2];
  q = [0 4*N 2*N];
  R = 4;
  p = ones(N,1);
- T = (t(3)-t(1))/t(2);
 
  X = [1.449;0.0; 0.400;-0.345; -1.125;0.448; -1.125;-0.448; 0.400;0.345; 0.0;-0.922; -1.335;0.810; -0.919;-0.349; 0.919;-0.349; 1.335;0.810]; %5-body eight-figure
  F = @(x,u,p) [x((2*N)+1:end);acc(x(1:2*N),u,p)];
@@ -22,13 +21,13 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Original %%%%%%%%
 
  tic;
- Y = leapfrog(F,G,t,X,p);
+ Y = leapfrog(F,G,T,X,p);
  FULL = toc
 
 %%%%%%%% Reduction %%%%%%%%
 
  tic;
- WO = emgr(F,G,q,t,'o',p,[0 0 0 0 0 0 0 0 0 0 0 2]);
+ WO = emgr(F,G,q,T,'o',p,[0 0 0 0 0 0 0 0 0 0 0 2]);
  WOP = WO(1:(2*N),1:(2*N));
  WOV = WO((2*N)+1:end,(2*N)+1:end);
  [PP DD QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
@@ -42,10 +41,11 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = [QQ*X(1:2*N);QQ*X((2*N)+1:end)];
 
  tic;
- y = leapfrog(f,g,t,x,p);
+ y = leapfrog(f,g,T,x,p);
  ONLINE = toc
 
- ERROR = norm(norm(Y - y)./norm(Y))
+ norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
+ ERROR = norm2(Y - y)/norm2(Y)
 
 %{
  f = @(x,u,p) [x((2*R)+1:end);VV*acc(TT*x(1:2*R),u,p)];
@@ -53,10 +53,11 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  x = [VV*X(1:2*N);VV*X((2*N)+1:end)];
 
  tic;
- y = leapfrog(f,g,t,x,p);
+ y = leapfrog(f,g,T,x,p);
  ONLINE = toc
 
- ERROR = norm(norm(Y - y)./norm(Y))
+ norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
+ ERROR = norm2(Y - y)./norm2(Y)
 %}
 
 %%%%%%%% Plot %%%%%%%%

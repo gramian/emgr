@@ -36,7 +36,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 % OFFLINE
  tic; 
  WY = emgr(LIN,ADJ,[J N O],T,'y');
- [UU D VV] = svd(WY); UU = UU(:,1:R); VV = VV(:,1:R)';
+ [UU D VV] = svd(WY); UU = UU(:,1:R); VV = UU';
  a = VV*A*UU;
  b = VV*B;
  c = C*UU;
@@ -53,7 +53,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Output %%%%%%%%
 
 % TERMINAL
- ERROR = norm(norm(Y - y)./norm(Y))
+ norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
+ ERROR = norm2(Y - y)./norm2(Y)
  RELER = abs(Y - y)./abs(Y);
 
 % PLOT
