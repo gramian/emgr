@@ -12,7 +12,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  J = 0;
  O = N;
  R = N/10;
- T = [0 0.01 1];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
  U = zeros(1,L);
  H = 0.1;
@@ -22,7 +22,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  A = spdiags((1.0/H)*[ones(N,1) -ones(N,1)],[-1,0],N,N);
 
  LIN = @(x,u,p) p*A*x;
- ADJ = @(x,u,p) p*A'*x + u; 
+ ADJ = @(x,u,p) p*A'*x + u;
  OUT = @(x,u,p) x;
 
 %%%%%%%% Reduction %%%%%%%%%
@@ -34,7 +34,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WO = emgr(ADJ,1,[N N O],T,'c',P);
+ WO = emgr(ADJ,1,[N,N,O],T,'c',P);
  [UU D VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
  a = VV*A*UU;
  c = UU;
@@ -58,7 +58,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)];
  figure('PaperSize',[2.4,2.6],'PaperPosition',[0,0,2.6,2.4]);
- imagesc(sparse(y)); colormap(cmap); 
+ imagesc(sparse(y)); colormap(cmap);
  set(gca,'YTick',0,'xtick',[]); ylabel('X');
  print -dpng advection.png;
 

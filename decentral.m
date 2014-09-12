@@ -11,9 +11,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  J = 4;
  O = J;
  N = 32;
- T = [0 0.01 1];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
- U = [ones(J,1) zeros(J,L-1)];
+ U = [ones(J,1),zeros(J,L-1)];
  X =  ones(N,1);
 
  rand('seed',1009);
@@ -38,7 +38,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
   for W=1:O
    lin = @(x,u,p) A*x + B(:,V)*u;
    out = @(x,u,p) C(W,:)*x;
-   WX{V,W} = emgr(lin,out,[1 N 1],T,'x');
+   WX{V,W} = emgr(lin,out,[1,N,1],T,'x');
   end
  end
 
@@ -76,7 +76,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg decentral.svg;
 

@@ -12,7 +12,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  N = 64;
  O = J;
  R = O;
- T = [0 0.01 1];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
  U = [ones(J,1) zeros(J,L-1)];
  X =  zeros(N,1);
@@ -23,7 +23,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  C = B';
 
  LIN = @(x,u,p) A*x + B*u;
- OUT = @(x,u,p) C*x; 
+ OUT = @(x,u,p) C*x;
 
 %%%%%%%% Reduction %%%%%%%%%
 
@@ -33,9 +33,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  ORIGINAL = toc
 
 % OFFLINE
- tic; 
- WC = emgr(LIN,OUT,[J N O],T,'c');
- WO = emgr(LIN,OUT,[J N O],T,'o');
+ tic;
+ WC = emgr(LIN,OUT,[J,N,O],T,'c');
+ WO = emgr(LIN,OUT,[J,N,O],T,'o');
  [UU D VV] = balance(WC,WO,R);
  a = UU*A*VV;
  b = UU*B;
@@ -46,7 +46,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  OFFLINE = toc
 
 % ONLINE
- tic; 
+ tic;
  y = ab2(lin,out,T,x,U,0);
  ONLINE = toc
 
@@ -61,7 +61,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg state_bt.svg;
 

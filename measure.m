@@ -11,7 +11,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  J = 1;
  O = J;
  N = 8;
- T = [0 0.01 1];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
  X = zeros(N,1);
 
@@ -29,7 +29,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%%
 
 % LINEAR
- WL = emgr(LIN,OUT,[J N O],T,'x');
+ WL = emgr(LIN,OUT,[J,N,O],T,'x');
 
 % NONLINEAR
  K = 50;
@@ -38,9 +38,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  P = 0;
 
  for(I=1:K)
-  Wi = emgr(NIN,OUT,[J N O],T,'c',P);
-  Ws = emgr(NST,OUT,[J N O],T,'x',P);
-  Wo = emgr(LIN,NOU,[J N O],T,'o',P);
+  Wi = emgr(NIN,OUT,[J,N,O],T,'c',P);
+  Ws = emgr(NST,OUT,[J,N,O],T,'x',P);
+  Wo = emgr(LIN,NOU,[J,N,O],T,'o',P);
 
   Ni = sum(sum(abs(WL-Wi)));
   Ns = sum(sum(abs(WL-Ws)));
@@ -62,7 +62,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(y));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(y); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(y); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:3,'xtick',[],'YTickLabel',{'I','S','O'},'XTickLabel',0:2/5:2); set(cbr,'YTick',[0 cmax]);
  print -dsvg measure.svg;
 

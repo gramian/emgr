@@ -12,12 +12,12 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
  J = 8;
  N = 64;
  O = J;
- R = 2*O;
- [A B C] = ilp(J,N,O,0,1009);
- T = [0 0.01 1];
+ R = 3*O;
+ [A,B,C] = ilp(J,N,O,0,1009);
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
- U = [ones(J,1) zeros(J,L-1)];
- X = zeros(N,1);
+ U = [ones(J,1),zeros(J,L-1)];
+ X =  zeros(N,1);
 
  LIN = @(x,u,p) A*x + B*u;
  OUT = @(x,u,p) C*x;
@@ -31,8 +31,8 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
 
 % OFFLINE
  tic;
- WC = emgr(LIN,OUT,[J N O],T,'c');
- WO = emgr(LIN,OUT,[J N O],T,'o');
+ WC = emgr(LIN,OUT,[J,N,O],T,'c');
+ WO = emgr(LIN,OUT,[J,N,O],T,'o');
  [UU D VV] = balance(WC,WO,R);
  a = UU*A*VV;
  b = UU*B;
@@ -58,7 +58,7 @@ if(exist('ilp')~=2)  disp('ilp generator is required. Download at http://gramian
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg benchmark_ilp.svg;
 

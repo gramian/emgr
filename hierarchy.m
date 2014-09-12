@@ -15,7 +15,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  O = M^D;
  N = (M^(D+1)-1)/(M-1);
  R = M^(D-1);
- T = [0 1 100];
+ T = [0.0,1.0,100.0];
  L = (T(3)-T(1))/T(2);
  U = exp(-0.0005*(T(2):T(3)).^2);
  X = zeros(N,1);
@@ -23,7 +23,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  rand('seed',1009);
  A = trasm(D,M);
  B = sparse(N,1); B(1,1) = D;
- C = [sparse(O,N-O) speye(O)];
+ C = [sparse(O,N-O),speye(O)];
 
  LIN = @(x,u,p) A*x + B*u;
  OUT = @(x,u,p) C*x;
@@ -40,8 +40,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WC = emgr(LIN,OUT,[J N O],T,'c');
- WO = emgr(ADJ,AOU,[O N J],T,'c');
+ WC = emgr(LIN,OUT,[J,N,O],T,'c');
+ WO = emgr(ADJ,AOU,[O,N,J],T,'c');
  [UU D VV] = squareroot(WC,WO,R);
  a = UU*A*VV;
  b = UU*B;
@@ -67,7 +67,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg hierarchy.svg;
 

@@ -12,16 +12,16 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  N = 64;
  O = 1;
  R = 8;
- T = [0 0.01 1.0];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
  U = ones(1,L);
  X = zeros(N,1);
 
  g = @(x) exp(x)+x-1.0;
- 
+
  A1 = spdiags(ones(N-1,1),-1,N,N)-speye(N);
  A2 = spdiags([ones(N-1,1);0],0,N,N)-spdiags(ones(N,1),1,N,N);
- 
+
  NON = @(x,u,p) g(A1*x)-g(A2*x) + [u;sparse(N-1,1)];
  OUT = @(x,u,p) x(1);
 
@@ -34,7 +34,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WX = emgr(NON,OUT,[J N O],T,'x');
+ WX = emgr(NON,OUT,[J,N,O],T,'x');
  [UU D VV] = svd(WX); UU = UU(:,1:R); VV = UU';
  x = VV*X;
  non = @(x,u,p) VV*NON(UU*x,u,p);
@@ -57,7 +57,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc([RELER;RELER;RELER]); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc([RELER;RELER;RELER]); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'Yticklabel',{'','1',''},'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg benchmark_non.svg;
 

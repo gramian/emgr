@@ -1,4 +1,4 @@
-function [U,D] = lanczos(A,k)
+function [U,D] = lanczos(A,k,m,e)
 % lanczos (lanczos sparse pod)
 % by Christian Himpe, 2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
@@ -15,14 +15,16 @@ function [U,D] = lanczos(A,k)
 %
 %*
 
-n = size(A,2);
-m = 2*k;
+if(nargin<3), m = k+1; end; % for smaller matrices use 2*k
+if(nargin<4), e = 1e-12; end;
 
-a = zeros(m,1); 
-b = zeros(m+1,1); 
+n = size(A,2);
+
+a = zeros(m,1);
+b = zeros(m+1,1);
 r = zeros(n,1);
 
-Q = zeros(n,m+1); 
+Q = zeros(n,m+1);
 Q(:,1) = 0.5*rand(n,1);
 Q(:,1) = Q(:,1)*(1.0/norm(Q(:,1),2));
 
@@ -50,7 +52,7 @@ for I=1:m
         [D,X] = sort(diag(d),'descend');
 
         o = abs(sum(D(1:k)));
-        if( abs(o-p) < 1e-8 || I>=n), break; end; %if sum of current and previous eigenvals is below tolerance
+        if( abs(o-p)<e || I>=n), break; end; %if sum of current and previous eigenvals is below tolerance
         p = o;
 
         m = m + 20;
@@ -61,7 +63,8 @@ for I=1:m
 
 end;
 
-U = Q(:,1:I)*u(:,X(1:k));
+[U,dummy] = qr( Q(:,1:I)*u(:,X(1:k)),0);
+U = real(U);
 D = sqrt(D(1:k));
 
 end

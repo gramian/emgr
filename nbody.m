@@ -9,8 +9,8 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Setup %%%%%%%%
 
  N = 5;
- T = [0 0.01 2];
- q = [0 4*N 2*N];
+ T = [0.0,0.01,2.0];
+ q = [0,4*N,2*N];
  R = 4;
  p = ones(N,1);
 
@@ -27,7 +27,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 %%%%%%%% Reduction %%%%%%%%
 
  tic;
- WO = emgr(F,G,q,T,'o',p,[0 0 0 0 0 0 0 0 0 0 0 2]);
+ WO = emgr(F,G,q,T,'o',p,[0,0,0,0,0,0,0,0,0,0,0,2]);
  WOP = WO(1:(2*N),1:(2*N));
  WOV = WO((2*N)+1:end,(2*N)+1:end);
  [PP DD QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'

@@ -12,9 +12,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  O = J;
  N = 64;
  R = O;
- T = [0 0.01 1];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
- U = [ones(J,1) zeros(J,L-1)];
+ U = [ones(J,1),zeros(J,L-1)];
  X = ones(N,1);
 
  rand('seed',1009);
@@ -35,9 +35,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WI = emgr(LIN,OUT,[J N O],T,'i',P,0,1,0,X);
- [PP D QQ] = svd(WI{2}); PP = PP(1:R,:); QQ = QQ(1:R,:)';
- p = QQ*PP*P;
+ WI = emgr(LIN,OUT,[J,N,O],T,'i',P,0,1,0,X);
+ [PP D QQ] = svd(WI{2}); PP = PP(:,1:R); QQ = PP';
+ p = PP*QQ*P;
  OFFLINE = toc
 
 % ONLINE
@@ -56,7 +56,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg param_wi.svg;
 

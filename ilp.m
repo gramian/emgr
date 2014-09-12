@@ -1,4 +1,4 @@
-function [A B C] = ilp(J,N,O,s,r)
+function [A,B,C] = ilp(J,N,O,s,r)
 % ilp (inverse lyapunov procedure)
 % by Christian Himpe, 2013-2014 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
@@ -38,7 +38,7 @@ if(nargin==5) rand('seed',r); randn('seed',r); end;
 % Solve System Matrix
  f = @(x,u,p) -D*x+B*u;
  g = @(x,u,p) C*x;
- A = -emgr(f,g,[J N O],[0 0.01 1],'c') - (1e-13)*eye(N);
+ A = -emgr(f,g,[J,N,O],[0 0.01 1],'c') - (1e-13)*eye(N);
 
 % Unbalance System
  A = V*A*U';

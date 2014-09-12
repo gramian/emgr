@@ -20,9 +20,9 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  O = 3;
  R = 54;
  r = R/2;
- T = [0 0.01 1];
+ T = [0.0,0.01,1.0];
  L = (T(3)-T(1))/T(2);
- U = [ones(J,1) zeros(J,L-1)];
+ U = [ones(J,1),zeros(J,L-1)];
  X = zeros(N,1);
 
  LIN = @(x,u,p) A*x + B*u;
@@ -37,7 +37,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
 
 % OFFLINE
  tic;
- WX = emgr(LIN,OUT,[J N O],T,'x',0,[0 0 0 0 0 0 0 0 0 0 0 2]);
+ WX = emgr(LIN,OUT,[J,N,O],T,'x',0,[0,0,0,0,0,0,0,0,0,0,0,2]);
  %WXP = WX(1:n,1:n);
  %[UU D VV] = svd(WXP); UU = UU(:,1:r); VV = UU';
  WXV = WX(n+1:N,n+1:N);
@@ -66,7 +66,7 @@ if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramia
  if(nargin==0), return; end
  l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
  figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap); 
+ imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
  set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
  print -dsvg benchmark_lin.svg;
 
