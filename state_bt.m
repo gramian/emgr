@@ -1,94 +1,104 @@
 function state_bt(o)
-% state_bt (linear state reduction)
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% state_bt (balanced truncation linear state reduction)
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
 
-%%%%%%%% Setup %%%%%%%%
+%% Setup
 
- J = 8;
- N = 64;
- O = J;
- R = O;
- T = [0.0,0.01,1.0];
- L = (T(3)-T(1))/T(2);
- U = [ones(J,1) zeros(J,L-1)];
- X =  zeros(N,1);
+J = 8;
+N = 64;
+O = J;
+T = [0.0,0.01,1.0];
+L = (T(3)-T(1))/T(2);
+U = [ones(J,1),zeros(J,L-1)];
+X =  zeros(N,1);
 
- rand('seed',1009);
- A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
- B = rand(N,J);
- C = B';
+rand('seed',1009);
+A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
+B = rand(N,J);
+C = B';
 
- LIN = @(x,u,p) A*x + B*u;
- OUT = @(x,u,p) C*x;
+LIN = @(x,u,p) A*x + B*u;
+OUT = @(x,u,p) C*x;
 
-%%%%%%%% Reduction %%%%%%%%%
+norm1 = @(y) T(2)*sum(abs(y(:)));
+norm2 = @(y) sqrt(T(2)*dot(y(:),y(:)));
+norm8 = @(y) max(y(:));
 
-% FULL
- tic;
- Y = ab2(LIN,OUT,T,X,U,0);
- ORIGINAL = toc
+%% Main
 
-% OFFLINE
- tic;
- WC = emgr(LIN,OUT,[J,N,O],T,'c');
- WO = emgr(LIN,OUT,[J,N,O],T,'o');
- [UU D VV] = balance(WC,WO,R);
- a = UU*A*VV;
- b = UU*B;
- c = C*VV;
- x = UU*X;
- lin = @(x,u,p) a*x + b*u;
- out = @(x,u,p) c*x;
- OFFLINE = toc
+Y = irk3(LIN,OUT,T,X,U,0); % Full Order
 
-% ONLINE
- tic;
- y = ab2(lin,out,T,x,U,0);
- ONLINE = toc
+tic;
+WC = emgr(LIN,OUT,[J,N,O],T,'c');
+WO = emgr(LIN,OUT,[J,N,O],T,'o');
+[VV D UU] = balance(WC,WO);
+OFFLINE = toc
 
-%%%%%%%% Output %%%%%%%%
+for I=1:N-1
+    uu = UU(:,1:I);
+    vv = VV(1:I,:);
+    a = vv*A*uu;
+    b = vv*B;
+    c = C*uu;
+    x = vv*X;
+    lin = @(x,u,p) a*x + b*u;
+    out = @(x,u,p) c*x;
+    y = irk3(lin,out,T,x,U,0); % Reduced Order
+    l1(I) = norm1(Y-y)/norm1(Y);
+    l2(I) = norm2(Y-y)/norm2(Y);
+    l8(I) = norm8(Y-y)/norm8(Y);
+end;
 
-% TERMINAL
- norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
- ERROR = norm2(Y - y)./norm2(Y)
- RELER = abs(Y - y)./abs(Y);
+%% Output
 
-% PLOT
- if(nargin==0), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
- figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
- set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
- print -dsvg state_bt.svg;
+if(nargin==0), return; end
+figure();
+semilogy(1:N-1,l1,'r','linewidth',2); hold on;
+semilogy(1:N-1,l2,'g','linewidth',2);
+semilogy(1:N-1,l8,'b','linewidth',2); hold off;
+xlim([1,N-1]);
+ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
+pbaspect([2,1,1]);
+legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
 
-%%%%%%%% Balancer %%%%%%%%
+%% ======== Balancer ========
 
-function [X Y Z] = balance(WC,WO,R)
+function [X Y Z] = balance(WC,WO)
 
- L = chol(WC+eye(size(WC,1)))-eye(size(WC,1));
- [U Y V] = svd(L*WO*L');
- X = diag(sqrt(diag(Y(1:R,1:R)))) * V(:,1:R)' / L';
- Z = L'*U(:,1:R)*diag(1./sqrt(diag(Y(1:R,1:R))));
+    [L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
+    [L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
+    [U Y V] = svd(LO'*LC);
+    X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
+    Z =   LC*V*diag(1.0./sqrt(diag(Y)));
 
-%%%%%%%% Integrator %%%%%%%%
+%% ======== Integrator ========
 
-function y = ab2(f,g,t,x,u,p)
+function y = irk3(f,g,t,x,u,p)
 
- h = t(2);
- T = t(3)/h;
- m = 0.5*h*f(x,u(:,1),p);
- x = x + h*f(x + m,u(:,1),p);
- y(:,1) = g(x,u(:,1),p);
- y(end,T) = 0;
+    h = t(2);
+    T = round(t(3)/h);
 
- for t=2:T
-     k = (0.5*h)*f(x,u(:,t),p);
-     x = x + 3*k - m;
-     y(:,t) = g(x,u(:,1),p);
-     m = k;
- end;
+    k1 = h*f(x,u(:,1),p);
+    k2 = h*f(x + 0.5*k1,u(:,1),p);
+    k3r = h*f(x + 0.75*k2,u(:,1),p);
+    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
 
+    y(:,1) = g(x,u(:,1),p);
+    y(end,T) = 0;
+
+    for t=2:T
+        l1 = h*f(x,u(:,t),p);
+        l2 = h*f(x + 0.5*l1,u(:,t),p);
+        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        y(:,t) = g(x,u(:,t),p);
+        k1 = l1;
+        k2 = l2;
+    end;

@@ -1,79 +1,89 @@
 function param_ws(o)
-% param_ws (parameter reduction)
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% param_ws (sensitivity gramian parameter reduction)
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
 
-%%%%%%%% Setup %%%%%%%%
+%% Setup
 
- J = 8;
- O = J;
- N = 64;
- R = O;
- T = [0.0,0.01,1.0];
- L = (T(3)-T(1))/T(2);
- U = [ones(J,1),zeros(J,L-1)];
- X = ones(N,1);
+J = 8;
+O = J;
+N = 64;
+T = [0.0,0.01,1.0];
+L = (T(3)-T(1))/T(2);
+U = [ones(J,1),zeros(J,L-1)];
+X = ones(N,1);
 
- rand('seed',1009);
- A = rand(N,N); A(1:N+1:end) = -0.55*N;
- B = rand(N,J);
- C = rand(O,N);
- P = 0.01*rand(N,1);
+rand('seed',1009);
+A = rand(N,N); A(1:N+1:end) = -0.55*N;
+B = rand(N,J);
+C = rand(O,N);
+P = 0.01*rand(N,1);
 
- LIN = @(x,u,p) A*x+B*u+p;
- OUT = @(x,u,p) C*x;
+LIN = @(x,u,p) A*x+B*u+p;
+OUT = @(x,u,p) C*x;
 
-%%%%%%%% Parameter Reduction %%%%%%%%%
+norm1 = @(y) T(2)*sum(abs(y(:)));
+norm2 = @(y) sqrt(T(2)*dot(y(:),y(:)));
+norm8 = @(y) max(y(:));
 
-% FULL
- tic;
- Y = ab2(LIN,OUT,T,X,U,P);
- FULL = toc
+%% Main
 
-% OFFLINE
- tic;
- WS = emgr(LIN,OUT,[J,N,O],T,'s',P,0,1,0,X);
- [PP D QQ] = svd(full(WS{2})); PP = PP(:,1:R); QQ = PP';
- p = PP*QQ*P;
- OFFLINE = toc
+Y = irk3(LIN,OUT,T,X,U,P); % Full Order
 
-% ONLINE
- tic;
- y = ab2(LIN,OUT,T,X,U,p);
- ONLINE = toc
+tic;
+WS = emgr(LIN,OUT,[J,N,O],T,'s',P,0,1,0,X);
+[PP D QQ] = svd(full(WS{2}));
+OFFLINE = toc
 
-%%%%%%%% Output %%%%%%%%
+for I=1:N-1
+    pp = PP(:,1:I);
+    qq = pp';
+    p = pp*qq*P;
+    y = irk3(LIN,OUT,T,X,U,p); % Reduced Order
+    l1(I) = norm1(Y-y)/norm1(Y);
+    l2(I) = norm2(Y-y)/norm2(Y);
+    l8(I) = norm8(Y-y)/norm8(Y);
+end;
 
-% TERMINAL
- norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
- ERROR = norm2(Y - y)./norm2(Y)
- RELER = abs(Y - y)./abs(Y);
+%% Output
 
-% PLOT
- if(nargin==0), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
- figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
- set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
- print -dsvg param_ws.svg;
+if(nargin==0), return; end
+figure();
+semilogy(1:N-1,l1,'r','linewidth',2); hold on;
+semilogy(1:N-1,l2,'g','linewidth',2);
+semilogy(1:N-1,l8,'b','linewidth',2); hold off;
+xlim([1,N-1]);
+ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
+pbaspect([2,1,1]);
+legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
 
-%%%%%%%% Integrator %%%%%%%%
+%% ======== Integrator ========
 
-function y = ab2(f,g,t,x,u,p)
+function y = irk3(f,g,t,x,u,p)
 
- h = t(2);
- T = t(3)/h;
- m = 0.5*h*f(x,u(:,1),p);
- x = x + h*f(x + m,u(:,1),p);
- y(:,1) = g(x,u(:,1),p);
- y(end,T) = 0;
+    h = t(2);
+    T = round(t(3)/h);
 
- for t=2:T
-     k = (0.5*h)*f(x,u(:,t),p);
-     x = x + 3*k - m;
-     y(:,t) = g(x,u(:,1),p);
-     m = k;
- end;
+    k1 = h*f(x,u(:,1),p);
+    k2 = h*f(x + 0.5*k1,u(:,1),p);
+    k3r = h*f(x + 0.75*k2,u(:,1),p);
+    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
+
+    y(:,1) = g(x,u(:,1),p);
+    y(end,T) = 0;
+
+    for t=2:T
+        l1 = h*f(x,u(:,t),p);
+        l2 = h*f(x + 0.5*l1,u(:,t),p);
+        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        y(:,t) = g(x,u(:,t),p);
+        k1 = l1;
+        k2 = l2;
+    end;

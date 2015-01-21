@@ -1,77 +1,81 @@
 function hierarchy(o)
 % hierarchy (hierarchical network reduction)
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
 
-%%%%%%%% Setup %%%%%%%%
+%% Setup
 
- D = 3;		%Tree depth
- M = 2;		%Children per node
+D = 3;		%Tree depth
+M = 4;		%Children per node
 
- J = 1;
- O = M^D;
- N = (M^(D+1)-1)/(M-1);
- R = M^(D-1);
- T = [0.0,1.0,100.0];
- L = (T(3)-T(1))/T(2);
- U = exp(-0.0005*(T(2):T(3)).^2);
- X = zeros(N,1);
+J = 1;
+O = M^D;
+N = (M^(D+1)-1)/(M-1);
+T = [0.0,0.01,1.0];
+L = (T(3)-T(1))/T(2);
+U = exp(-0.0005*(1:L).^2);
+X = zeros(N,1);
 
- rand('seed',1009);
- A = trasm(D,M);
- B = sparse(N,1); B(1,1) = D;
- C = [sparse(O,N-O),speye(O)];
+rand('seed',1009);
+A = trasm(D,M);
+B = sparse(N,1); B(1,1) = D;
+C = [sparse(O,N-O),speye(O)];
 
- LIN = @(x,u,p) A*x + B*u;
- OUT = @(x,u,p) C*x;
+LIN = @(x,u,p) A*x + B*u;
+OUT = @(x,u,p) C*x;
 
- ADJ = @(x,u,p) A'*x + C'*u;
- AOU = @(x,u,p) B'*x;
+ADJ = @(x,u,p) A'*x + C'*u;
+AOU = @(x,u,p) B'*x;
 
-%%%%%%%% Reduction %%%%%%%%
+norm1 = @(y) T(2)*sum(abs(y(:)));
+norm2 = @(y) sqrt(T(2)*dot(y(:),y(:)));
+norm8 = @(y) max(y(:));
 
-% FULL
- tic;
- Y = rk1(LIN,OUT,T,X,U,0);
- FULL = toc
+%% Main
 
-% OFFLINE
- tic;
- WC = emgr(LIN,OUT,[J,N,O],T,'c');
- WO = emgr(ADJ,AOU,[O,N,J],T,'c');
- [UU D VV] = squareroot(WC,WO,R);
- a = UU*A*VV;
- b = UU*B;
- c = C*VV;
- x = UU*X;
- lin = @(x,u,p) a*x + b*u;
- out = @(x,u,p) c*x;
- OFFLINE = toc
+Y = irk3(LIN,OUT,T,X,U,0); % Full Order
 
-% ONLINE
- tic;
- y = rk1(lin,out,T,x,U,0);
- ONLINE = toc
+tic;
+WC = emgr(LIN,OUT,[J,N,O],T,'c');
+WO = emgr(ADJ,AOU,[O,N,J],T,'c');
+[VV D UU] = balance(WC,WO);
+OFFLINE = toc
 
-%%%%%%%% Output %%%%%%%%
+for I=1:N-1
+    uu = UU(:,1:I);
+    vv = VV(1:I,:);
+    a = vv*A*uu;
+    b = vv*B;
+    c = C*uu;
+    x = vv*X;
+    lin = @(x,u,p) a*x + b*u;
+    out = @(x,u,p) c*x;
+    y = irk3(lin,out,T,x,U,0); % Reduced Order
+    l1(I) = norm1(Y-y)/norm1(Y);
+    l2(I) = norm2(Y-y)/norm2(Y);
+    l8(I) = norm8(Y-y)/norm8(Y);
+end;
 
-% TERMINAL
-  norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
- ERROR = norm2(Y - y)./norm2(Y)
- RELER = abs(Y - y);
+%% Output
 
-% PLOT
- if(nargin==0), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
- figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
- set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
- print -dsvg hierarchy.svg;
+if(nargin==0), return; end
+figure();
+semilogy(1:N-1,l1,'r','linewidth',2); hold on;
+semilogy(1:N-1,l2,'g','linewidth',2);
+semilogy(1:N-1,l8,'b','linewidth',2); hold off;
+xlim([1,N-1]);
+ylim([1e-18,1]);
+pbaspect([2,1,1]);
+legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
 
-%%%%%%%% Tree Assembler %%%%%%%%
+%% ======== Tree Assembler ========
 
 function A = trasm(d,c)
 
@@ -84,25 +88,36 @@ function A = trasm(d,c)
   A(b+1:b+c,1+I) = rand(c,1)+1;
  end
 
-%%%%%%%% Integrator %%%%%%%%
+%% ======== Balancer ========
 
-function y = rk1(f,g,t,x,u,p)
-
- h = t(2);
- T = (t(3)-t(1))/h;
- y = zeros(numel(g(x,u(:,1),p)),T);
-
- for t=1:T
-  x = x + h*f(x,u(:,t),p);
-  y(:,t) = g(x,u(:,t),p);
- end
-
-%%%%%%%% Balancer %%%%%%%%
-
-function [X Y Z] = squareroot(WC,WO,R)
+function [X Y Z] = balance(WC,WO)
 
  [L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
  [L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
  [U Y V] = svd(LO'*LC);
- X = ( LO*U(:,1:R)*diag(1.0./sqrt(diag(Y(1:R,1:R)))) )';
- Z =   LC*V(:,1:R)*diag(1.0./sqrt(diag(Y(1:R,1:R))));
+ X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
+ Z =   LC*V*diag(1.0./sqrt(diag(Y)));
+
+%% ======== Integrator ========
+
+function y = irk3(f,g,t,x,u,p)
+
+    h = t(2);
+    T = round(t(3)/h);
+
+    k1 = h*f(x,u(:,1),p);
+    k2 = h*f(x + 0.5*k1,u(:,1),p);
+    k3r = h*f(x + 0.75*k2,u(:,1),p);
+    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
+
+    y(:,1) = g(x,u(:,1),p);
+    y(end,T) = 0;
+
+    for t=2:T
+        l1 = h*f(x,u(:,t),p);
+        l2 = h*f(x + 0.5*l1,u(:,t),p);
+        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        y(:,t) = g(x,u(:,t),p);
+        k1 = l1;
+        k2 = l2;
+    end;

@@ -1,68 +1,68 @@
 function measure(o)
 % measure (nonlinearity measure)
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
 
-%%%%%%%% Setup %%%%%%%%
+%% Setup
 
- J = 1;
- O = J;
- N = 8;
- T = [0.0,0.01,1.0];
- L = (T(3)-T(1))/T(2);
- X = zeros(N,1);
+J = 1;
+O = J;
+N = 8;
+T = [0.0,0.01,1.0];
+L = (T(3)-T(1))/T(2);
+X = zeros(N,1);
 
- rand('seed',1009);
- A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
- B = rand(N,J);
- C = B';
+rand('seed',1009);
+A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
+B = rand(N,J);
+C = B';
 
- LIN = @(x,u,p) A*x + B*u;
- OUT = @(x,u,p) C*x;
- NIN = @(x,u,p) A*x + B*asinh(p*u);
- NST = @(x,u,p) A*asinh(p*x) + B*u;
- NOU = @(x,u,p) C*asinh(p*x);
+LIN = @(x,u,p) A*x + B*u;
+OUT = @(x,u,p) C*x;
+NIN = @(x,u,p) A*x + B*asinh(p*u);
+NST = @(x,u,p) A*asinh(p*x) + B*u;
+NOU = @(x,u,p) C*asinh(p*x);
 
-%%%%%%%% Reduction %%%%%%%%%
+%% Main
 
-% LINEAR
- WL = emgr(LIN,OUT,[J,N,O],T,'x');
+tic;
+WL = emgr(LIN,OUT,[J,N,O],T,'x'); % Linear Reference
 
-% NONLINEAR
- K = 50;
- y = zeros(3,K);
- Q = 2.0/K;
- P = 0;
 
- for(I=1:K)
-  Wi = emgr(NIN,OUT,[J,N,O],T,'c',P);
-  Ws = emgr(NST,OUT,[J,N,O],T,'x',P);
-  Wo = emgr(LIN,NOU,[J,N,O],T,'o',P);
+K = 20;
+y = zeros(3,K);
+Q = 2.0/K;
+P = 0;
 
-  Ni = sum(sum(abs(WL-Wi)));
-  Ns = sum(sum(abs(WL-Ws)));
-  No = sum(sum(abs(WL-Wo)));
+for(I=1:K)
+    Wi = emgr(NIN,OUT,[J,N,O],T,'c',P); % Input Nonlinearity
+    Ws = emgr(NST,OUT,[J,N,O],T,'x',P); % State Nonlinearity
+    Wo = emgr(LIN,NOU,[J,N,O],T,'o',P); % Output Nonlinearity
 
-  y(:,I) = [Ni;Ns;No];
-  P = P + Q;
- end
+    Ni = sum(sum(abs(WL-Wi)));
+    Ns = sum(sum(abs(WL-Ws)));
+    No = sum(sum(abs(WL-Wo)));
 
-% NORMALIZE
- y = y./trace(WL);
+    y(:,I) = [Ni;Ns;No];
+    P = P + Q;
+end
+OFFLINE = toc
 
-%%%%%%%% Output %%%%%%%%
+y = y./trace(WL);
 
-% TERMINAL
- I_S_O = sqrt(sum(abs(y).^2,2))
+%% Output
 
-% PLOT
- if(nargin==0), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(y));
- figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(y); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
- set(gca,'YTick',1:3,'xtick',[],'YTickLabel',{'I','S','O'},'XTickLabel',0:2/5:2); set(cbr,'YTick',[0 cmax]);
- print -dsvg measure.svg;
-
+if(nargin==0), return; end
+figure();
+semilogy(linspace(0,2,K),y(1,:),'r','linewidth',2); hold on;
+semilogy(linspace(0,2,K),y(2,:),'g','linewidth',2);
+semilogy(linspace(0,2,K),y(3,:),'b','linewidth',2); hold off;
+pbaspect([2,1,1]);
+legend('Input ','State ','Output ','location','northeast');
+if(o==1), print('-dsvg',[mfilename(),'.svg']); end;

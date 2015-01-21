@@ -1,85 +1,112 @@
 function benchmark_lin(o)
 % benchmark (iss model reduction benchmark)
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
 
-%%%%%%%% Download %%%%%%%%
+%% Download
 
- D = 'iss';
- if(exist(['/tmp/',D,'.mat'],'file')==0) unzip(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],'/tmp'); end
- load(['/tmp/',D,'.mat']);
+D = 'iss';
+if(exist(['/tmp/',D,'.mat'],'file')==0)
+    unzip(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],'/tmp');
+end
+load(['/tmp/',D,'.mat']);
 
-%%%%%%%% Setup %%%%%%%%
+%% Setup
 
- N = 270;
- n = N/2;
- J = 3;
- O = 3;
- R = 54;
- r = R/2;
- T = [0.0,0.01,1.0];
- L = (T(3)-T(1))/T(2);
- U = [ones(J,1),zeros(J,L-1)];
- X = zeros(N,1);
+N = 270;
+n = N/2;
+J = 3;
+O = 3;
+T = [0.0,0.01,1.0];
+L = (T(3)-T(1))/T(2);
+U = [ones(J,1),zeros(J,L-1)];
+X = zeros(N,1);
 
- LIN = @(x,u,p) A*x + B*u;
- OUT = @(x,u,p) C*x;
+LIN = @(x,u,p) A*x + B*u;
+OUT = @(x,u,p) C*x;
 
-%%%%%%%% Reduction %%%%%%%%%
+norm1 = @(y) T(2)*sum(abs(y(:)));
+norm2 = @(y) sqrt(T(2)*dot(y(:),y(:)));
+norm8 = @(y) max(y(:));
 
-% FULL
- tic;
- Y = rk2(LIN,OUT,T,X,U,0);
- FULL = toc
+%% Main
 
-% OFFLINE
- tic;
- WX = emgr(LIN,OUT,[J,N,O],T,'x',0,[0,0,0,0,0,0,0,0,0,0,0,2]);
- %WXP = WX(1:n,1:n);
- %[UU D VV] = svd(WXP); UU = UU(:,1:r); VV = UU';
- WXV = WX(n+1:N,n+1:N);
- [UU D VV] = svd(WXV); UU = UU(:,1:r); VV = UU';
- a = [zeros(r,r),eye(r);VV*A(n+1:N,1:n)*UU,VV*A(n+1:N,n+1:N)*UU];
- b = [zeros(r,J);VV*B(n+1:N,:)];
- c = [zeros(O,r),C(:,n+1:N)*UU];
- x = zeros(R,1);
- lin = @(x,u,p) a*x + b*u;
- out = @(x,u,p) c*x;
- OFFLINE = toc
+Y = irk3(LIN,OUT,T,X,U,0); % Full Order
 
-% ONLINE
- tic;
- y = rk2(lin,out,T,x,U,0);
- ONLINE = toc
+tic;
+WX = emgr(LIN,OUT,[J,N,O],T,'x',0,[0,0,0,0,0,0,0,0,0,0,0,2]);
+%WXP = WX(1:n,1:n);
+%[UU D VV] = svd(WXP);
+WXV = WX(n+1:N,n+1:N);
+[UU D VV] = svd(WXV);
+OFFLINE = toc
 
-%%%%%%%% Output %%%%%%%%
+for I=1:n-1
+    uu = UU(:,1:I);
+    vv = uu';
+    a = [zeros(I,I),eye(I);vv*A(n+1:N,1:n)*uu,vv*A(n+1:N,n+1:N)*uu];
+    b = [zeros(I,J);vv*B(n+1:N,:)];
+    c = [zeros(O,I),C(:,n+1:N)*uu];
+    x = zeros(2*I,1);
+    lin = @(x,u,p) a*x + b*u;
+    out = @(x,u,p) c*x;
+    y = irk3(lin,out,T,x,U,0); % Reduced Order
+    l1(I) = norm1(Y-y)/norm1(Y);
+    l2(I) = norm2(Y-y)/norm2(Y);
+    l8(I) = norm8(Y-y)/norm8(Y);
+end;
 
-% TERMINAL
- norm2 = @(y) sqrt(T(2)*sum(sum(y.*y)));
- ERROR = norm2(Y - y)./norm2(Y)
- RELER = abs(Y - y)./abs(Y);
+%% Output
 
-% PLOT
- if(nargin==0), return; end
- l = (1:-0.01:0)'; cmap = [l,l,ones(101,1)]; cmax = max(max(RELER));
- figure('PaperSize',[2.4,6.4],'PaperPosition',[0,0,6.4,2.4]);
- imagesc(RELER); caxis([0 cmax]); cbr = colorbar; colormap(cmap);
- set(gca,'YTick',1:N,'xtick',[]); set(cbr,'YTick',[0 cmax],'YTickLabel',{'0',sprintf('%0.1e',cmax)});
- print -dsvg benchmark_lin.svg;
+if(nargin==0), return; end
+figure();
+semilogy(2:2:N-2,l1,'r','linewidth',2); hold on;
+semilogy(2:2:N-2,l2,'g','linewidth',2);
+semilogy(2:2:N-2,l8,'b','linewidth',2); hold off;
+xlim([2,N-2]);
+ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
+pbaspect([2,1,1]);
+legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
 
-%%%%%%%% Integrator %%%%%%%%
+%% ======== Balancer ========
 
-function y = rk2(f,g,t,x,u,p)
+function [X Y Z] = balance(WC,WO)
 
- h = t(2);
- T = (t(3)-t(1))/h;
- y = zeros(numel(g(x,u(:,1),p)),T);
+ [L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
+ [L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
+ [U Y V] = svd(LO'*LC);
+ X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
+ Z =   LC*V*diag(1.0./sqrt(diag(Y)));
 
- for t=1:T
-  x = x + h*f(x + 0.5*h*f(x,u(:,t),p),u(:,t),p); %Improved Eulers Method
-  y(:,t) = g(x,u(:,t),p);
- end
+%% ======== Integrator ========
+
+function y = irk3(f,g,t,x,u,p)
+
+    h = t(2);
+    T = round(t(3)/h);
+
+    k1 = h*f(x,u(:,1),p);
+    k2 = h*f(x + 0.5*k1,u(:,1),p);
+    k3r = h*f(x + 0.75*k2,u(:,1),p);
+    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
+
+    y(:,1) = g(x,u(:,1),p);
+    y(end,T) = 0;
+
+    for t=2:T
+        l1 = h*f(x,u(:,t),p);
+        l2 = h*f(x + 0.5*l1,u(:,t),p);
+        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        y(:,t) = g(x,u(:,t),p);
+        k1 = l1;
+        k2 = l2;
+    end;
+
 

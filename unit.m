@@ -1,7 +1,9 @@
 % unit
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
+
+emgr('version')
 
 disp('testemgr:'); testemgr
 

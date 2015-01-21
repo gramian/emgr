@@ -1,6 +1,6 @@
 function [X Y Z] = balance_co(WC,WO)
 % balance_co (balance controllability and observability gramians)
-% by Christian Himpe, 2014 ( http://gramian.de )
+% by Christian Himpe, 2014-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 

@@ -1,10 +1,15 @@
 function testemgr(J)
 % testemgr
-% by Christian Himpe, 2013-2014 ( http://gramian.de )
+% by Christian Himpe, 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
+
+rand('seed',1009);
 
 if(nargin<1) J=4; end	% number of inputs
 N = J*J;		% number of states
@@ -23,11 +28,11 @@ P = A(:);		% parameter vector
 
 f = @(x,u,p) reshape(p,[N N])*x+B*u;	% parametrized linear dynamic system
 F = @(x,u,p) reshape(p,[N N])'*x+C'*u;	% adjoint dynamic system
-g = @(x,u,p) C*x;			% linear output function 
+g = @(x,u,p) C*x;			% linear output function
 
-G = -0.5*trace(C*inv(A)*B);		% System Gain	
+G = -0.5*trace(C*inv(A)*B);		% System Gain
 
-disp('Computing Empirical Controllability Gramian (WC) and gain error: '); 
+disp('Computing Empirical Controllability Gramian (WC) and gain error: ');
 WC = emgr(f,g,[J N O],[S h T],'c',P);
 abs(trace(WC)-G)
 
@@ -37,9 +42,9 @@ abs(trace(WO)-G)
 
 disp('Computing Empirical Cross Gramian (WX) and gain error: ');
 WX = emgr(f,g,[J N O],[S h T],'x',P);
-abs(trace(WO)-G)
+abs(trace(WX)-G)
 
-disp('Computing Empirical Approximate Cross Gramian (WY) and gain error: ');
+disp('Computing Empirical Linear Cross Gramian (WY) and gain error: ');
 WY = emgr(f,F,[J N O],[S h T],'y',P);
 abs(trace(WY)-G)
 
