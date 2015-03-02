@@ -1,6 +1,6 @@
 ![emgr Logo](emgr.png) emgr
 ===========================
-Empirical Gramian Framework (Version 2.9)
+Empirical Gramian Framework (Version 3.0)
 
 Empirical gramians can be computed for linear and nonlinear control systems for purposes of model order reduction (MOR), system identification or uncertainty quantification. 
 Model reduction using empirical gramians can be applied to the state space, to the parameter space or to both through combined reduction. 
@@ -11,7 +11,7 @@ The emgr framework is a compact open source toolbox for (empirical) GRAMIAN-base
 
 More information at: http://gramian.de
 
-![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.14127.png)
+![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.15776.png)
 
 Citation
 --------
