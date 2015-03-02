@@ -5,11 +5,13 @@
 
 emgr('version')
 
-disp('testemgr:'); testemgr
+disp('vernval:'); vernval
 
 disp('state_wx:'); state_wx
 disp('state_wy:'); state_wy
+disp('nonsym_wx'); nonsym_wx
 disp('state_bt:'); state_bt
+disp('gains_wx'); gains_wx
 disp('hierarchy:'); hierarchy
 disp('param_ws:'); param_ws
 disp('param_wi:'); param_wi
@@ -17,8 +19,8 @@ disp('combined_wj:'); combined_wj
 disp('benchmark_ilp:'); benchmark_ilp
 disp('benchmark_lin:'); benchmark_lin
 disp('benchmark_non:'); benchmark_non
-disp('decentral:'); decentral
 disp('measure:'); measure
+disp('decentral:'); decentral
 disp('advection:'); advection
 disp('nbody:'); nbody
 disp('blackhole:'); blackhole

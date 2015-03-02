@@ -30,7 +30,7 @@ OUT = @(x,u,p) x;
 
 %% Main
 
-Y = irk3(LIN,OUT,T,X,U,P); % Full Order
+Y = rk3(LIN,OUT,T,X,U,P); % Full Order
 
 tic;
 WO = emgr(ADJ,1,[N,N,O],T,'c',P);
@@ -42,7 +42,7 @@ lin = @(x,u,p) p*a*x;
 out = @(x,u,p) c*x;
 OFFLINE = toc
 
-y = irk3(lin,out,T,x,U,P);
+y = rk3(lin,out,T,x,U,P);
 
 %% Output
 
@@ -50,31 +50,41 @@ if(nargin==0), return; end
 cmax = max(y(:));
 figure();
 imagesc(sparse(y)); caxis([0 cmax]);
-colormap([(1:-0.01:0)',(1:-0.01:0)',ones(101,1)]);
+colormap(antijet);
 set(gca,'YTick',0,'xtick',[]); ylabel('X');
 daspect([1,1,1]);
-if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
+if(o==1), print('-dpng',[mfilename(),'.png']); end;
 
 %% ======== Integrator ========
 
-function y = irk3(f,g,t,x,u,p)
+function y = rk3(f,g,t,x,u,p)
 
     h = t(2);
     T = round(t(3)/h);
-
-    k1 = h*f(x,u(:,1),p);
-    k2 = h*f(x + 0.5*k1,u(:,1),p);
-    k3r = h*f(x + 0.75*k2,u(:,1),p);
-    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
 
     y(:,1) = g(x,u(:,1),p);
     y(end,T) = 0;
 
     for t=2:T
-        l1 = h*f(x,u(:,t),p);
-        l2 = h*f(x + 0.5*l1,u(:,t),p);
-        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        k1 = h*f(x,u(:,1),p);
+        k2 = h*f(x + 0.5*k1,u(:,1),p);
+        k3r = h*f(x + 0.75*k2,u(:,1),p);       
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
         y(:,t) = g(x,u(:,t),p);
-        k1 = l1;
-        k2 = l2;
     end;
+
+%% ======== Colormap ========
+
+function m = antijet(n)
+% antijet colormap
+% by Christian Himpe 2014
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
+
+if(nargin<1 || isempty(n)), n = 256; end;
+L = linspace(0,1,n);
+
+R = -0.5*sin( L*(1.37*pi)+0.13*pi )+0.5;
+G = -0.4*cos( L*(1.5*pi) )+0.4;
+B = 0.3*sin( L*(2.11*pi) )+0.3;
+
+m = [R;G;B]';

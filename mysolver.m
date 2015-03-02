@@ -10,5 +10,5 @@ function y = CUSTOM_ODE(f,h,T,x,u,p)
  if(exist('OCTAVE_VERSION'))
   y = lsode(@(y,t) f(y,u(:,1+min(round(t*H),T-1)),p),x,t)';
  else,
-  y = deval(ode45(@(t,y) f(y,u(:,1+min(round(t*H),T-1)),p),[0 h*T],x),t);
+  [tdummy,y] = ode45(@(t,y) f(y,u(:,1+min(round(t*H),T-1)),p),t,x); y = y';
  end;

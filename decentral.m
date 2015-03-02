@@ -51,14 +51,24 @@ if(nargin==0), return; end
 figure();
 imagesc(PM);
 
-L = linspace(0,1,256);
+colormap(antijet); colorbar;
+set(gca,'XTick',1:1:J,'YTick',1:1:O);
+if(o==1), print('-dpng',[mfilename(),'.png']); end;
+
+%% ======== Colormap ========
+
+function m = antijet(n)
+% antijet colormap
+% by Christian Himpe 2014
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
+
+if(nargin<1 || isempty(n)), n = 256; end;
+L = linspace(0,1,n);
+
 R = -0.5*sin( L*(1.37*pi)+0.13*pi )+0.5;
 G = -0.4*cos( L*(1.5*pi) )+0.4;
 B = 0.3*sin( L*(2.11*pi) )+0.3;
-antijet = [R;G;B]';
 
-colormap(antijet); colorbar;
-set(gca,'XTick',1:1:J,'YTick',1:1:O);
-pbaspect([2,1,1]);
-if(o==1), print('-dpng',[mfilename(),'.png']); end;
+m = [R;G;B]';
+
 

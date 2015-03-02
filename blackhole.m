@@ -27,8 +27,8 @@ pp = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05]; % E,L,Q,a,e
 
 %% Main
 
-Y = [irk3(@(x,u,p) orbit(x,u,p,0,1),@bl2c,t,xu,u,pu);... % Full Order Planet
-     irk3(@(x,u,p) orbit(x,u,p,0,0),@bl2c,t,xp,u,pp)];   % Full Order Photon
+Y = [rk3(@(x,u,p) orbit(x,u,p,0,1),@bl2c,t,xu,u,pu);... % Full Order Planet
+     rk3(@(x,u,p) orbit(x,u,p,0,0),@bl2c,t,xp,u,pp)];   % Full Order Photon
 
 fprintf('Parameters: E,L,Q,a,e\n');
 
@@ -92,24 +92,18 @@ function y = bl2c(x,u,p)
 
 %% ======== Integrator ========
 
-function y = irk3(f,g,t,x,u,p)
+function y = rk3(f,g,t,x,u,p)
 
     h = t(2);
     T = round(t(3)/h);
-
-    k1 = h*f(x,u(:,1),p);
-    k2 = h*f(x + 0.5*k1,u(:,1),p);
-    k3r = h*f(x + 0.75*k2,u(:,1),p);
-    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
 
     y(:,1) = g(x,u(:,1),p);
     y(end,T) = 0;
 
     for t=2:T
-        l1 = h*f(x,u(:,t),p);
-        l2 = h*f(x + 0.5*l1,u(:,t),p);
-        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        k1 = h*f(x,u(:,1),p);
+        k2 = h*f(x + 0.5*k1,u(:,1),p);
+        k3r = h*f(x + 0.75*k2,u(:,1),p);
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
         y(:,t) = g(x,u(:,t),p);
-        k1 = l1;
-        k2 = l2;
     end;

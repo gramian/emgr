@@ -26,7 +26,7 @@ G = @(x,u,p)  x(1:2*N);
 
 %% Main
 
-Y = irk3(F,G,T,X,zeros(1,200),p); % Full Order
+Y = rk3(F,G,T,X,zeros(1,200),p); % Full Order
 
 tic;
 WO = emgr(F,G,q,T,'o',p);
@@ -40,13 +40,13 @@ OFFLINE = toc
 f = @(x,u,p) [x((2*R)+1:end);QQ*acc(PP*x(1:2*R),u,p)];
 g = @(x,u,p) PP*x(1:2*R);
 x = [QQ*X(1:2*N);QQ*X((2*N)+1:end)];
-y = irk3(f,g,T,x,zeros(1,200),p);
+y = rk3(f,g,T,x,zeros(1,200),p);
 
 %{
 f = @(x,u,p) [x((2*R)+1:end);VV*acc(TT*x(1:2*R),u,p)];
 g = @(x,u,p) TT*x(1:2*R);
 x = [VV*X(1:2*N);VV*X((2*N)+1:end)];
-y = irk3(f,g,T,x,zeros(1,200),p);
+y = rk3(f,g,T,x,zeros(1,200),p);
 %}
 
 %%%%%%%% Plot %%%%%%%%
@@ -57,8 +57,12 @@ hold on;
 cmap = hsv(N+1);
 d = 1;
 for c=1:N
-    plot(y(d,:),y(d+1,:),'--','Color',cmap(c,:));
-    plot(y(d,end),y(d+1,end),'*','Color',cmap(c,:));
+    plot(y(d,:),y(d+1,:),'--','Color',cmap(c,:),'linewidth',2);
+    d = d + 2;
+end
+d = 1;
+for c=1:N
+    plot(y(d,end),y(d+1,end),'*','Color',cmap(c,:),'linewidth',2);
     d = d + 2;
 end
 hold off;
@@ -86,26 +90,20 @@ function y = acc(x,u,p)
 
     y = y(:);
 
-%% ======== Leapfrog ========
+%% ======== Improved Runge-Kutta ========
 
-function y = irk3(f,g,t,x,u,p)
+function y = rk3(f,g,t,x,u,p)
 
     h = t(2);
     T = round(t(3)/h);
-
-    k1 = h*f(x,u(:,1),p);
-    k2 = h*f(x + 0.5*k1,u(:,1),p);
-    k3r = h*f(x + 0.75*k2,u(:,1),p);
-    x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r; % Ralston RK3
 
     y(:,1) = g(x,u(:,1),p);
     y(end,T) = 0;
 
     for t=2:T
-        l1 = h*f(x,u(:,t),p);
-        l2 = h*f(x + 0.5*l1,u(:,t),p);
-        x = x + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
+        k1 = h*f(x,u(:,1),p);
+        k2 = h*f(x + 0.5*k1,u(:,1),p);
+        k3r = h*f(x + 0.75*k2,u(:,1),p);
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
         y(:,t) = g(x,u(:,t),p);
-        k1 = l1;
-        k2 = l2;
     end;

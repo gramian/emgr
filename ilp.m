@@ -4,9 +4,15 @@ function [A,B,C] = ilp(J,N,O,s,r)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
 
-if(exist('emgr')~=2) disp('emgr framework is required. Download at http://gramian.de/emgr.m'); return; end
+if(exist('emgr')~=2)
+    disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+    return;
+end
 
-if(nargin==5) rand('seed',r); randn('seed',r); end;
+if(nargin==5)
+    rand('seed',r);
+    randn('seed',r);
+end;
 
 % Gramian Eigenvalues
  WC = exp( rand(N,1) );
@@ -36,9 +42,9 @@ if(nargin==5) rand('seed',r); randn('seed',r); end;
  C = bsxfun(@times,C,SC);
 
 % Solve System Matrix
- f = @(x,u,p) -D*x+B*u;
+ f = @(x,u,p) -0.01*D*x+B*u;
  g = @(x,u,p) C*x;
- A = -emgr(f,g,[J,N,O],[0 0.01 1],'c') - (1e-13)*eye(N);
+ A = -emgr(f,g,[J,N,O],[0,0.01,1.0],'c');
 
 % Unbalance System
  A = V*A*U';
