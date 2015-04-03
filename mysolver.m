@@ -1,5 +1,5 @@
-function y = CUSTOM_ODE(f,h,T,x,u,p)
-% CUSTOM_ODE (sample custom ode solver for emgr)
+function y = mysolver(f,h,T,x,u,p)
+% mysolver (sample custom ode solver for emgr)
 % by Christian Himpe, 2014-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*

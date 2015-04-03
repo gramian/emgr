@@ -109,7 +109,7 @@ function y = rk1(f,h,T,x,u,p)
     y(:,1) = x;
     y(end,T) = 0;
 
-    for t=2:T
-        x = h*f(x,u(:,1),p);
+    for t=1:T
+        x = h*f(x,u(:,t),p);
         y(:,t) = x;
     end;

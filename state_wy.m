@@ -79,10 +79,10 @@ function y = rk3(f,g,t,x,u,p)
     y(:,1) = g(x,u(:,1),p);
     y(end,T) = 0;
 
-    for t=2:T
-        k1 = h*f(x,u(:,1),p);
-        k2 = h*f(x + 0.5*k1,u(:,1),p);
-        k3r = h*f(x + 0.75*k2,u(:,1),p);
+    for t=1:T
+        k1 = h*f(x,u(:,t),p);
+        k2 = h*f(x + 0.5*k1,u(:,t),p);
+        k3r = h*f(x + 0.75*k2,u(:,t),p);
         x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
         y(:,t) = g(x,u(:,t),p);
     end;
