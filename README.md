@@ -7,7 +7,7 @@ Model reduction using empirical gramians can be applied to the state space, to t
 For state reduction the empirical controllability gramian and the empirical observability gramian, for balanced truncation, are available, or alternatively the empirical cross gramian and approximate empirical cross gramian for direct truncation. 
 For parameter reduction, parameter identification and sensitivity analysis the empirical sensitivity gramian (controllability of parameters) or the empirical identifiability gramian (observability of parameters) are provided. 
 Combined state and parameter reduction is enabled by the empirical joint gramian, which computes controllability and observability of states and parameter concurrently. 
-The emgr framework is a compact open source toolbox for (empirical) GRAMIAN-based model reduction and compatible with OCTAVE and MATLAB. 
+The emgr framework is a compact open source toolbox for (empirical) GRAMIAN-based model reduction and compatible with OCTAVE and MATLAB (and FREEMAT). 
 
 More information at: http://gramian.de
 
@@ -16,7 +16,10 @@ More information at: http://gramian.de
 Citation
 --------
 
+DOI: 10.5281/zenodo.17360 (Version 3.1)
+
 Cite as: C. Himpe. "emgr - Empirical Gramian Framework (Version 3.1)" [Computer Software]. http://gramian.de
+
 BibTeX: @MISC{emgr,author={Himpe, C.},title={{emgr - Empirical Gramian Framework (Version 3.1)}},howpublished={\url{http://gramian.de}},year={2015}}
 
 License
