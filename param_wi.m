@@ -38,7 +38,7 @@ Y = rk3(LIN,OUT,T,X,U,P); % Full Order
 
 tic;
 WI = emgr(LIN,OUT,[J,N,O],T,'i',P,0,1,0,X);
-[PP D QQ] = svd(WI{2});
+[PP,D,QQ] = svd(WI{2});
 OFFLINE = toc
 
 for I=1:N-1
@@ -77,7 +77,7 @@ function y = rk3(f,g,t,x,u,p)
     for t=1:T
         k1 = h*f(x,u(:,t),p);
         k2 = h*f(x + 0.5*k1,u(:,t),p);
-        k3r = h*f(x + 0.75*k2,u(:,t),p);
-        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
+        k3 = h*f(x + 0.75*k2,u(:,t),p);
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3;
         y(:,t) = g(x,u(:,t),p);
     end;

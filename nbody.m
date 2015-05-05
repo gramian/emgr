@@ -32,8 +32,8 @@ tic;
 WO = emgr(F,G,q,T,'o',p);
 WOP = WO(1:(2*N),1:(2*N));
 WOV = WO((2*N)+1:end,(2*N)+1:end);
-[PP DD QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
-[TT DD VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
+[PP,DD,QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
+[TT,DD,VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
 OFFLINE = toc
 
 
@@ -90,7 +90,7 @@ function y = acc(x,u,p)
 
     y = y(:);
 
-%% ======== Improved Runge-Kutta ========
+%% ======== Integrator ========
 
 function y = rk3(f,g,t,x,u,p)
 
@@ -103,7 +103,7 @@ function y = rk3(f,g,t,x,u,p)
     for t=1:T
         k1 = h*f(x,u(:,t),p);
         k2 = h*f(x + 0.5*k1,u(:,t),p);
-        k3r = h*f(x + 0.75*k2,u(:,t),p);
-        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
+        k3 = h*f(x + 0.75*k2,u(:,t),p);
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3;
         y(:,t) = g(x,u(:,t),p);
     end;

@@ -34,7 +34,7 @@ Y = rk3(LIN,OUT,T,X,U,P); % Full Order
 
 tic;
 WO = emgr(ADJ,1,[N,N,O],T,'c',P);
-[UU D VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
+[UU,D,VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
 a = VV*A*UU;
 c = UU;
 x = VV*X;
@@ -52,7 +52,7 @@ figure();
 imagesc(sparse(y)); caxis([0 cmax]);
 colormap(antijet);
 set(gca,'YTick',0,'xtick',[]); ylabel('X');
-daspect([1,1,1]);
+pbaspect([2,1,1]);
 if(o==1), print('-dpng',[mfilename(),'.png']); end;
 
 %% ======== Integrator ========
@@ -68,8 +68,8 @@ function y = rk3(f,g,t,x,u,p)
     for t=1:T
         k1 = h*f(x,u(:,t),p);
         k2 = h*f(x + 0.5*k1,u(:,t),p);
-        k3r = h*f(x + 0.75*k2,u(:,t),p);
-        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
+        k3 = h*f(x + 0.75*k2,u(:,t),p);
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3;
         y(:,t) = g(x,u(:,t),p);
     end;
 

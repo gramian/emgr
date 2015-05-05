@@ -40,7 +40,7 @@ norm8 = @(y) max(y(:));
 
 %% Main
 
-Y = C*rk1(LIN,h,L,X,U,0); % Full Order
+Y = rk1(LIN,OUT,h,L,X,U,0); % Full Order
 
 global CUSTOM_ODE;
 CUSTOM_ODE = @rk1;
@@ -48,7 +48,7 @@ CUSTOM_ODE = @rk1;
 tic;
 WC = emgr(LIN,OUT,[J,N,O],T,'c',0,[0,0,0,0,0,0,0,0,0,0,0,-1]);
 WO = emgr(ADJ,AOU,[O,N,J],T,'c',0,[0,0,0,0,0,0,0,0,0,0,0,-1]);
-[VV D UU] = balance(WC,WO);
+[VV,D,UU] = balance(WC,WO);
 OFFLINE = toc
 
 for I=1:N-1
@@ -60,7 +60,7 @@ for I=1:N-1
     x = vv*X;
     lin = @(x,u,p) a*x + b*u;
     out = @(x,u,p) c*x;
-    y = c*rk1(lin,h,L,x,U,0); % Reduced Order
+    y = rk1(lin,out,h,L,x,U,0); % Reduced Order
     l1(I) = norm1(Y-y)/norm1(Y);
     l2(I) = norm2(Y-y)/norm2(Y);
     l8(I) = norm8(Y-y)/norm8(Y);
@@ -83,33 +83,43 @@ if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
 
 function A = trasm(d,c)
 
- a = (c^(d+1)-1)/(c-1);
- A = -speye(a);
+    a = (c^(d+1)-1)/(c-1);
+    A = -speye(a);
 
- for I=0:((a-1)/c)-1
-  b = 1+c*I;
-  %A(1+I,b+1:b+c) = rand(1,c)+1;
-  A(b+1:b+c,1+I) = rand(c,1)+1;
- end
+    for I=0:((a-1)/c)-1
+        b = 1+c*I;
+        %A(1+I,b+1:b+c) = rand(1,c)+1;
+        A(b+1:b+c,1+I) = rand(c,1)+1;
+    end
 
 %% ======== Balancer ========
 
 function [X Y Z] = balance(WC,WO)
 
- [L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
- [L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
- [U Y V] = svd(LO'*LC);
- X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
- Z =   LC*V*diag(1.0./sqrt(diag(Y)));
+    [L D l] = svd(WC); LC = L*diag(sqrt(diag(D)));
+    [L D l] = svd(WO); LO = L*diag(sqrt(diag(D)));
+    [U Y V] = svd(LO'*LC);
+    X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
+    Z =   LC*V*diag(1.0./sqrt(diag(Y)));
 
 %% ======== Integrator ========
 
-function y = rk1(f,h,T,x,u,p)
+function y = rk1(f,g,h,T,x,u,p)
 
-    y(:,1) = x;
-    y(end,T) = 0;
+    if(isnumeric(g) && g==1), g = @(x,u,p) x; end;
+
+    z(:,1) = x;
+    z(end,T) = 0;
 
     for t=1:T
         x = h*f(x,u(:,t),p);
-        y(:,t) = x;
+        z(:,t) = x;
     end;
+
+    y = g(z(:,1),u(:,1),p);
+    y(end,T) = 0;
+
+    for I=2:T
+        y(:,I) = g(z(:,I),u(:,I),p);
+    end
+

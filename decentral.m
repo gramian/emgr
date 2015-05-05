@@ -20,9 +20,9 @@ U = [ones(J,1),zeros(J,L-1)];
 X =  ones(N,1);
 
 rand('seed',1009);
-A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
+A = rand(N,N); A(1:N+1:end) = -0.55*N;
 B = rand(N,J);
-C = B';
+C = rand(O,N);
 
 LIN = @(x,u,p) A*x + B*u;
 OUT = @(x,u,p) C*x;

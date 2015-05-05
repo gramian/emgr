@@ -39,8 +39,8 @@ l2 = zeros(16,16);
 
 tic;
 WJ = emgr(NON,OUT,[J,N,O],T,'j',P,0,1,0,1);
-[UU D VV] = svd(WJ{1});
-[PP D QQ] = svd(WJ{2});
+[UU,D,VV] = svd(WJ{1});
+[PP,D,QQ] = svd(WJ{2});
 OFFLINE = toc
 
 a = 1;
@@ -94,8 +94,8 @@ function y = rk3(f,g,t,x,u,p)
     for t=1:T
         k1 = h*f(x,u(:,t),p);
         k2 = h*f(x + 0.5*k1,u(:,t),p);
-        k3r = h*f(x + 0.75*k2,u(:,t),p);
-        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3r;
+        k3 = h*f(x + 0.75*k2,u(:,t),p);
+        x = x + (2.0/9.0)*k1 + (1.0/3.0)*k2 + (4.0/9.0)*k3;
         y(:,t) = g(x,u(:,t),p);
     end;
 

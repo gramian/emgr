@@ -1,4 +1,4 @@
-function emgrtest()
+function emgrtest(o)
 % emgrtest (emgr unit tests)
 % by Christian Himpe, 2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
@@ -27,8 +27,10 @@ X = zeros(N,1);
 U = [ones(J,1),zeros(J,L-1)];
 P = rand(N,1);
 
+global CUSTOM_ODE;
+CUSTOM_ODE = @mysolver;
 
-ok = @(t) fprintf([t,' OK \n']);
+ok = @(t) fprintf([t,' - OK \n']);
 
 
 %% Test Version
@@ -61,10 +63,10 @@ WJ = emgr(f,g,[J,N,O],[S,h,T],'j',[0.1*ones(N,1),P,ones(N,1)]); ok('Parametrized
 %% Centering
 
 WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[1,0,0,0,0,0,0,0,0,0,0,0]); ok('Mean Center');
-WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[2,0,0,0,0,0,0,0,0,0,0,0]); ok('Median Center');
-WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[3,0,0,0,0,0,0,0,0,0,0,0]); ok('Steady Center');
-WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[4,0,0,0,0,0,0,0,0,0,0,0]); ok('POD Center');
-WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[5,0,0,0,0,0,0,0,0,0,0,0]); ok('PCA Center');
+WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[2,0,0,0,0,0,0,0,0,0,0,0]); ok('Steady Center');
+WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[3,0,0,0,0,0,0,0,0,0,0,0]); ok('Median Center');
+WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[4,0,0,0,0,0,0,0,0,0,0,0]); ok('Midrange Center');
+WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[5,0,0,0,0,0,0,0,0,0,0,0]); ok('RMS Center');
 
 
 %% Input Scale Spacing
@@ -115,8 +117,6 @@ WS = emgr(f,g,[J,N,O],[S,h,T],'s',P,[0,0,0,0,0,2,0,0,0,0,0,0]); ok('Scaled Run W
 WI = emgr(f,g,[J,N,O],[S,h,T],'i',P,[0,0,0,0,0,2,0,0,0,0,0,0]); ok('Scaled Run WI');
 WJ = emgr(f,g,[J,N,O],[S,h,T],'j',P,[0,0,0,0,0,2,0,0,0,0,0,0]); ok('Scaled Run WJ');
 
-%% Data-Driven Gramians
-
 
 %% Robust Gramians
 
@@ -133,34 +133,66 @@ WY = emgr(f,g,[J,N,O],[S,h,T],'j',[0.1*ones(N,1),P,ones(N,1)],[0,0,0,0,0,0,0,0,1
 
 
 %% Mean-Centered WS
+
 WS = emgr(f,g,[J,N,O],[S,h,T],'s',P,[0,0,0,0,0,0,0,0,0,1,0,0]); ok('Mean WS');
 
+
 %% Schur-Complement WI
+
 WI = emgr(f,g,[J,N,O],[S,h,T],'i',P,[0,0,0,0,0,0,0,0,0,1,0,0]); ok('Schur WI');
 
+
 %% Non-symmetric Cross Gramian
+
 WJ = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,0,0,0,1,0,0]); ok('NonSym WX');
 WJ = emgr(f,g,[J,N,O],[S,h,T],'j',P,[0,0,0,0,0,0,0,0,0,1,0,0]); ok('NonSym WJ');
 
+
 %% Enforce Symmetry
+
 WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[0,0,0,0,0,0,0,0,0,0,1,0]); ok('SymPart WC');
 WO = emgr(f,g,[J,N,O],[S,h,T],'o',P,[0,0,0,0,0,0,0,0,0,0,1,0]); ok('SymPart WO');
 WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,0,0,0,0,1,0]); ok('SymPart WX');
 WY = emgr(f,F,[J,N,O],[S,h,T],'y',P,[0,0,0,0,0,0,0,0,0,0,1,0]); ok('SymPart WY');
 
+
 %% Custom Solver
-WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,0,0,0,0,0,-1]); ok('Custom WX');
-% WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,0,0,0,0,0,-2]); ok('Custom WX');
+
+WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,0,0,0,0,0,-1]); ok('Custom Solver WX');
+
 
 %% Procedural Input
-u= @(t) exp(-0.05*t);
-WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,0); ok('Procedural Input WC');
+
+WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,0,@(t) exp(-0.05*t)); ok('Procedural Input WC');
+
 
 %% Chirp Input
+
 WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,0,Inf); ok('Chirp Input WC');
 
 
+%% Demos
 
+disp('vernval:'); vernval
+
+disp('state_wx:'); state_wx
+disp('state_wy:'); state_wy
+disp('nonsym_wx'); nonsym_wx
+disp('state_bt:'); state_bt
+disp('gains_wx'); gains_wx
+disp('hierarchy:'); hierarchy
+disp('param_ws:'); param_ws
+disp('param_wi:'); param_wi
+disp('combined_wj:'); combined_wj
+disp('benchmark_ilp:'); benchmark_ilp
+disp('benchmark_lin:'); benchmark_lin
+disp('benchmark_non:'); benchmark_non
+disp('energy_wx:'); energy_wx
+disp('measure:'); measure
+disp('decentral:'); decentral
+disp('advection:'); advection
+disp('nbody:'); nbody
+disp('blackhole:'); blackhole
 
 
 
