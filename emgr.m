@@ -1,5 +1,5 @@
 function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
-% emgr - Empirical Gramian Framework ( Version: 3.1 )
+% emgr - Empirical Gramian Framework ( Version: 3.5 )
 % by Christian Himpe 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
@@ -27,22 +27,20 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %            * 'i' : empirical identifiability gramian (WI)
 %            * 'j' : empirical joint gramian (WJ)
 % (matrix,vector,scalar) [pr = 0] - parameters, each column is one set
-%        (vector,scalar) [nf = 0] - options, 12 components:
-%            + zero(0), mean(1), steady(2), median(3), midrange(4), rms(5)
+%        (vector,scalar) [nf = 0] - options, 10 components:
+%            + zero(0),init(1),steady(2),mean(3),median(4),midr(5),rms(6) center
 %            + linear(0), log(1), geom(2), single(3), sparse(4) input scales
 %            + linear(0), log(1), geom(2), single(3), sparse(4) state scales
 %            + unit(0), reciproce(1), dyadic(2), single(3) input rotations
 %            + unit(0), reciproce(1), dyadic(2), single(3) state rotations
 %            + single(0), double(1), scaled(2) run
-%            + default(0), data-driven gramians(1); only: WC,WO,WX,WY
-%            + default(0), robust parameters(1); only: WC,WY
-%            + default(0), parameter centering(1); only: WC,WX,WY,WS,WI,WJ
+%            + default(0), non-symmetric cross gramian(1); only: WX, WJ
+%            + default(0), robust parameters(1); only: WC, WY
+%            + default(0), linear(1), exponential(2) parameter centering
 %            + default(0), exclusive options:
 %                  * use mean-centered(1); only: WS
 %                  * use schur-complement(1); only: WI
-%                  * non-symmetric cross gramian(1); only: WX,WJ
-%            + default(0), enforce gramian symmetry(1); only: WC,WO,WX,WY
-%            + Improved-Runge-Kutta-3(0), custom solver global handle(-1)
+%                  * use symmetric-part of state cross gramian(1); only: WJ
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
 %         (vector,scalar) [xs = 0] - steady-state, initial state x0
@@ -50,12 +48,12 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %  (matrix,vector,scalar) [xm = 1] - initial-state scales
 %
 % RETURNS:
-%            (matrix)  W - Gramian Matrix (WC, WO, WX, WY only)
-%              (cell)  W - {State-,Parameter-} Gramian (WS, WI, WJ only)
+%            (matrix)  W - Gramian Matrix (only: WC, WO, WX, WY)
+%              (cell)  W - {State-,Parameter-} Gramian (only: WS, WI, WJ)
 %
 % CITATION:
-%    C. Himpe (2015). emgr - Empirical Gramian Framework (Version 3.1)
-%    [Computer Software]. Available from http://gramian.de
+%    C. Himpe (2015). emgr - Empirical Gramian Framework (Version 3.5)
+%    [Software]. Available from http://gramian.de . doi:10.5281/zenodo.31638 .
 %
 % SEE ALSO:
 %    gram
@@ -66,38 +64,42 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 % Further information: <http://gramian.de>
 %*
 
+    % Custom ODE Solver
+    global ODE; if(isa(ODE,'function_handle')==0), ODE = @rk2; end;
+
     % Version Info
-    if(nargin==1 && strcmp(f,'version')), W = 3.1; return; end;
+    if( nargin==1 && strcmp(f,'version') ), W = 3.5; return; end;
 
     % Default Arguments
-    if(nargin<6) ||(isempty(pr)), pr = 0.0; end;
-    if(nargin<7) ||(isempty(nf)), nf = 0;   end;
-    if(nargin<8) ||(isempty(ut)), ut = 1.0; end;
-    if(nargin<9) ||(isempty(us)), us = 0.0; end;
-    if(nargin<10)||(isempty(xs)), xs = 0.0; end;
-    if(nargin<11)||(isempty(um)), um = 1.0; end;
-    if(nargin<12)||(isempty(xm)), xm = 1.0; end;
+    if( nargin<6)  || (isempty(pr) ), pr = 0.0; end;
+    if( nargin<7)  || (isempty(nf) ), nf = 0;   end;
+    if( nargin<8)  || (isempty(ut) ), ut = 1.0; end;
+    if( nargin<9)  || (isempty(us) ), us = 0.0; end;
+    if( nargin<10) || (isempty(xs) ), xs = 0.0; end;
+    if( nargin<11) || (isempty(um) ), um = 1.0; end;
+    if( nargin<12) || (isempty(xm) ), xm = 1.0; end;
 
     % System Dimensions
     J = s(1);                 % number of inputs
     N = s(2);                 % number of states
     O = s(3);                 % number of outputs
-
     M = N; if(numel(s)==4), M = s(4); end; % number of non-constant states
 
-    h = t(2);                 % width of time step
-    T = round((t(3)-t(1))/h); % number of time steps
+    h = t(2);                     % width of time step
+    T = round((t(3)-t(1))/h) + 1; % number of time steps plus initial value
+
+    w = lower(w);             % ensure lower case gramian type
 
     P = size(pr,1);           % number of parameters
     Q = size(pr,2);           % number of parameter sets
 
-    w = lower(w);             % ensure lower case gramian type
-
-    if(isnumeric(ut) && numel(ut)==1 && ut==Inf) % Chirp Input
+    % Chirp Input
+    if( isnumeric(ut) && numel(ut)==1 && ut==Inf )
         ut = @(t) 0.5*cos(pi./t)+0.5;
     end;
 
-    if(isa(ut,'function_handle')) % Discretize Procedural Input
+    % Discretize Procedural Input
+    if(isa(ut,'function_handle'))
         uf = ut;
         ut = zeros(J,T);
         for l=1:T
@@ -106,9 +108,9 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
     end;
 
     % Lazy Arguments
-    if(isnumeric(g) && g==1), g = @(x,u,p) x; O = N; end;
+    if( isnumeric(g) && g==1 ), g = @(x,u,p) x; O = N; end;
 
-    if(numel(nf)<12), nf(12)    = 0;  end;
+    if(numel(nf)<10), nf(10)    = 0;  end;
     if(numel(ut)==1), ut(1:J,1) = (1.0/h)*ut; end;
     if(numel(us)==1), us(1:J,1) = us; end;
     if(numel(xs)==1), xs(1:N,1) = xs; end;
@@ -122,11 +124,11 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 
 %% PARAMETRIC SETUP
 
-    if( (nf(8) && w~='o') || w=='s' || w=='i' || w=='j')
+    if( (nf(8) && w~='o') || w=='s' || w=='i' || w=='j' )
 
         Q = 1;
 
-        if(nf(8) || w=='s') % Assemble (Controllability) Parameter Scales
+        if( nf(8) || w=='s' ) % assemble (controllability) parameter scales
             if(size(pr,2)==1)
                 pm = scales(pr,nf(2),nf(4));
             else
@@ -136,7 +138,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             end;
         end;
 
-        if(w=='i' || w=='j') % Assemble (Observability) Parameter Scales
+        if( w=='i' || w=='j' ) % assemble (observability) parameter scales
             if(size(pr,2)==1)
                 pm = scales(pr,nf(3),nf(5));
             else
@@ -146,12 +148,17 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             end;
         end;
 
-        if(nf(9)) % Parameter Centering
-            pr = mean(pm,2);
-            pm = bsxfun(@minus,pm,pr);
-        end;
+        switch(nf(9)) % parameter centering
 
-        assert(all(pm(:)),'ERROR! emgr: zero parameter scales!');
+            case 1, % linear
+                pr = mean(pm,2);
+                pm = bsxfun(@minus,pm,pr);
+
+            case 2, % logarithmic 
+                pr = min(pm,[],2);
+                ld = log(max(pm,[],2)) - log(pr);
+                pm = bsxfun(@minus,pr.*exp(ld*linspace(0,1,size(pm,2))),pr);
+        end;
     end;
 
 %% STATE-SPACE SETUP
@@ -163,19 +170,22 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 
         switch(nf(1)) % residuals
 
-            case 1, % mean state
-                res = @(d) mean(d,2);
+            case 1, % initial state
+                res = @(d) d(:,1);
 
             case 2, % steady state
                 res = @(d) d(:,end);
 
-            case 3, % median state
+            case 3, % mean state
+                res = @(d) mean(d,2);
+
+            case 4, % median state
                 res = @(d) median(d,2);
 
-            case 4, % midrange
+            case 5, % midrange
                 res = @(d) 0.5*(min(d,2)+max(d,2));
 
-            case 5, % rms
+            case 6, % rms
                 res = @(d) sqrt(sum(d.*d,2));
 
             otherwise, % zero state
@@ -193,7 +203,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                 F = f; f = @(x,u,p) TX.*F(tx.*x,u,p);
                 G = g; g = @(x,u,p)     G(tx.*x,u,p);
 
-            case 2, % steady scaled run
+            case 2, % steady state (input) scaled run
                 TU = us(:,1);
                 TX = xs;
                 TX = TX(1:M);
@@ -201,11 +211,6 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                 TX(TX==0) = 1.0; tx = 1.0./TX;
                 F = f; f = @(x,u,p) TX.*F(tx.*x,tu.*u,p);
                 G = g; g = @(x,u,p)     G(tx.*x,tu.*u,p);
-        end;
-
-        if(nf(7)) % data-driven
-            um = ones(J,size(um,2));
-            xm = ones(N,size(xm,2));
         end;
 
         if(nf(8)) % robust parameter
@@ -217,16 +222,6 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             F = f; f = @(x,u,p) F(x,u(1:J-P),u(J-P+1:J));
             G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
         end;
-
-        if(nf(12)) % Set Solver
-            global CUSTOM_ODE;
-            ode = CUSTOM_ODE;
-        else
-            ode = @irk3;
-        end;
-
-        assert(all(um(:)),'ERROR! emgr: zero input scales!');
-        assert(all(xm(:)),'ERROR! emgr: zero state scales!');
 
         W = zeros(N-(M<N && w=='x')*P,N); % preallocate gramian
     end;
@@ -241,9 +236,10 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                 for c=1:C
                     for j=1:J % parfor
                         uu = us + bsxfun(@times,ut,sparse(j,1,um(j,c),J,1));
-                        x = ode(f,1,h,T,xs,uu,pp);
-                        x = bsxfun(@minus,x,res(x))*(1.0/um(j,c));
-                        W = W + (x*x'); % huma
+                        x = ODE(f,1,t,xs,uu,pp);
+                        x = bsxfun(@minus,x,res(x));
+                        x = x * (1.0./(um(j,c) + (um(j,c)==0)));
+                        W = W + (x*x'); % offload
                     end;
                 end;
             end;
@@ -257,20 +253,21 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                     for n=1:N % parfor
                         xx = xs + sparse(n,1,xm(n,d),N,1);
                         if(M<N)
-                            y = ode(f,g,h,T,xx(1:M),us,xx(M+1:end));
+                            y = ODE(f,g,t,xx(1:M),us,xx(M+1:end));
                         else
-                            y = ode(f,g,h,T,xx,us,pp);
+                            y = ODE(f,g,t,xx,us,pp);
                         end;
-                        y = bsxfun(@minus,y,res(y))*(1.0/xm(n,d));
+                        y = bsxfun(@minus,y,res(y));
+                        y = y * (1.0/(xm(n,d) + (xm(n,d)==0)));
                         o(:,n) = reshape(y,[O*T,1]);
                     end;
-                    W = W + (o'*o); % huma
+                    W = W + (o'*o); % offload
                 end;
             end;
             W = W * (h/(D*Q));
 
         case 'x', % cross gramian
-            assert(J==O || nf(10),'ERROR! emgr: non-square system!');
+            if(J~=O && nf(7)==0), error('ERROR! emgr: non-square system!'); end;
             o = zeros(O,T,N);
             for q=1:Q
                 pp = pr(:,q);
@@ -278,46 +275,55 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                     for n=1:N % parfor
                         xx = xs + sparse(n,1,xm(n,d),N,1);
                         if(M<N)
-                            y = ode(f,g,h,T,xx(1:M),us,xx(M+1:end));
+                            y = ODE(f,g,t,xx(1:M),us,xx(M+1:end));
                         else
-                            y = ode(f,g,h,T,xx,us,pp);
+                            y = ODE(f,g,t,xx,us,pp);
                         end;
-                        o(:,:,n) = bsxfun(@minus,y,res(y))*(1.0/xm(n,d));
+                        y = bsxfun(@minus,y,res(y));
+                        y = y * (1.0/(xm(n,d) + (xm(n,d)==0)));
+                        o(:,:,n) = y;
                     end;
-                    o = permute(o,[2,3,1]); % Generalized Transposition
+                    o = permute(o,[2,3,1]); % generalized transposition
                     for c=1:C
                         for j=1:J % parfor
                             uu = us + bsxfun(@times,ut,sparse(j,1,um(j,c),J,1));
                             if(M<N)
-                                x = ode(f,1,h,T,xs(1:M),uu,xs(M+1:end));
+                                x = ODE(f,1,t,xs(1:M),uu,xs(M+1:end));
                             else
-                                x = ode(f,1,h,T,xs,uu,pp);
+                                x = ODE(f,1,t,xs,uu,pp);
                             end;
-                            x = bsxfun(@minus,x,res(x))*(1.0/um(j,c));
-                            if(nf(10)), K = 1:O; else K = j; end;
+                            x = bsxfun(@minus,x,res(x));
+                            x = x * (1.0./(um(j,c) + (um(j,c)==0)));
+                            if(nf(7))
+                                K = 1:O; % non-symmetric cross gramian
+                            else
+                                K = j; % regular cross gramian
+                            end;
                             for k=K
-                                W = W + (x*o(:,:,k)); % huma
+                                W = W + (x*o(:,:,k)); % offload
                             end;
                         end;
                     end;
-                    o = reshape(o,O,T,N);
+                    o = reshape(o,O,T,N); % reset
                 end;
             end;
             W = W * (h/(C*D*Q));
 
         case 'y', % linear cross gramian
-            assert(J==O || nf(8),'ERROR! emgr: non-square system!');
+            if(J~=O && nf(8)==0), error('ERROR! emgr: non-square system!'); end;
             for q=1:Q
                 pp = pr(:,q);
                 for c=1:C
                     for j=1:J % parfor
                         uu = us + bsxfun(@times,ut,sparse(j,1,um(j,c),J,1));
-                        yy = us + bsxfun(@times,ut,sparse(j,1,xm(j,c),J,1));
-                        x = ode(f,1,h,T,xs,uu,pp);
-                        y = ode(g,1,h,T,xs,yy,pp);
-                        x = bsxfun(@minus,x,res(x))*(1.0/um(j,c));
-                        y = bsxfun(@minus,y,res(y))*(1.0/xm(j,c));
-                        W = W + (x*y'); % huma
+                        x = ODE(f,1,t,xs,uu,pp);
+                        x = bsxfun(@minus,x,res(x));
+                        x = x * (1.0./(um(j,c) + (um(j,c)==0)));
+                        uu = us + bsxfun(@times,ut,sparse(j,1,xm(j,c),J,1));
+                        z = ODE(g,1,t,xs,uu,pp);
+                        z = bsxfun(@minus,z,res(z));
+                        z = z * (1.0./(xm(j,c) + (xm(j,c)==0)));
+                        W = W + (x*z'); % offload
                     end;
                 end;
             end;
@@ -331,10 +337,9 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             W{2} = speye(P);
             F = @(x,u,p) f(x,us(:,1),pr + p*u);
             G = @(x,u,p) g(x,us(:,1),pr + p*u);
-            up = ones(1,T);
-            ps = speye(P);
             for p=1:P
-                V = emgr(F,G,[1,N,O],t,'c',ps(:,p),nf,up,0,xs,pm(p,:),xm);
+                ps = sparse(p,1,1,P,1);
+                V = emgr(F,G,[1,N,O],t,'c',ps,nf,1,0,xs,pm(p,:),xm);
                 W{1} = W{1} + V;      % approximate controllability gramian
                 W{2}(p,p) = trace(V); % sensitivity gramian
             end;
@@ -358,16 +363,18 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             V = emgr(f,g,[J,N+P,O,N],t,'x',ps,nf,ut,us,[xs;pr],um,[xm;pm]);
             W{1} = V(1:N,1:N); % cross gramian
             %W{2} = zeros(P);   % cross-identifiability gramian
-            W{2} = -0.5*V(1:N,N+1:N+P)'*ainv(W{1}+W{1}')*V(1:N,N+1:N+P);
+            if(nf(10))
+                W{2} = -0.5*V(1:N,N+1:N+P)'*ainv(W{1})*V(1:N,N+1:N+P);
+            else
+                W{2} = -0.5*V(1:N,N+1:N+P)'*ainv(W{1}+W{1}')*V(1:N,N+1:N+P);
+            end
 
         otherwise,
             error('ERROR! emgr: unknown gramian type!');
     end;
-
-    if(nf(11) && (w=='c'||w=='o'||w=='x'||w=='y') ), W = 0.5*(W+W'); end;
 end
 
-%% ======== SCALING SELECTOR ========
+%% ======== SCALES SELECTOR ========
 function s = scales(s,d,e)
 
     switch(d)
@@ -415,29 +422,20 @@ function x = ainv(m)
 end
 
 %% ======== DEFAULT ODE INTEGRATOR ========
-function x = irk3(f,g,h,T,z,u,p)
+function x = rk2(f,g,t,z,u,p)
 
     if(isnumeric(g) && g==1), g = @(x,u,p) x; end;
 
-    k1 = h*f(z,u(:,1),p); % 2nd Order Midpoint RK2 for starting value
-    k2 = h*f(z + 0.5*k1,u(:,1),p);
-    z = z + k2;
-    x(:,1) = g(z,u(:,1),p);
+    h = t(2);
+    L = round((t(3)-t(1))/h);
 
-    x(end,T) = 0; % preallocate trajectory
+    x(:,1) = g(z,u(:,end),p);
+    x(end,L+1) = 0; % preallocate trajectory
 
-    k1 = h*f(z,u(:,2),p); % 2nd start value (improves impulse response)
-    k2 = h*f(z + 0.5*k1,u(:,2),p);
-    z = z + k2;
-    x(:,2) = g(z,u(:,2),p);
-
-    for t=3:T % 3rd Order Improved Runge-Kutta IRK3
-        l1 = h*f(z,u(:,t),p);
-        l2 = h*f(z + 0.5*l1,u(:,t),p);
-        z = z + (2.0/3.0)*l1 + (1.0/3.0)*k1 + (5.0/6.0)*(l2 - k2);
-        x(:,t) = g(z,u(:,t),p);
-        k1 = l1;
-        k2 = l2;
+    for l=1:L % 2nd order Ralston's Runge-Kutta Method
+        k1 = h*f(z,u(:,l),p);
+        k2 = h*f(z + 0.666666666666667*k1,u(:,l),p);
+        z = z + 0.25*k1 + 0.75*k2;
+        x(:,l+1) = g(z,u(:,l),p);
     end;
 end
-

@@ -3,7 +3,7 @@ function [U,D,V] = lsvd(A,k,m)
 % by Christian Himpe, 2014-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
-% Compatible with Matlab and Octave, for square matrices only!
+% Compatible with Matlab and Octave, for thin and square matrices only!
 %
 % Based on:
 %
@@ -14,8 +14,11 @@ function [U,D,V] = lsvd(A,k,m)
 % J. Chen and Y. Saad.
 % "Lanczos Vectors versus Singular Vectors for Effective Dimension Reduction".
 % IEEE Transactions on Knowledge and Data Engineering, 21(8): 1091--1103, 2009.
-%
 %*
+    if(size(A,1)<size(A,2)),
+        error('lsvd: ERROR! Non-Thin or Non-square matrix.');
+    end;
+
     if(nargin<3), m = k+1; end;
 
     n = size(A,2);
@@ -30,9 +33,8 @@ function [U,D,V] = lsvd(A,k,m)
     Q(:,1) = Q(:,1)/norm(Q(:,1));
 
     for I=1:m,
-
         q = Q(:,I);
-        w = (A*(q'*A)') - b(I)*r;
+        w = ((A*q)'*A)' - b(I)*r;
         a(I) = w'*q;
         w = w - a(I)*q;
 
@@ -49,11 +51,7 @@ function [U,D,V] = lsvd(A,k,m)
     [u,d] = eig(T);
     [D,X] = sort(diag(d),'descend');
 
-    [U,R] = qr(Q(:,1:I)*u(:,X(1:k)),0); % re-orthogonalize II
+    V = Q(:,1:I)*u(:,X(1:k));
     D = sqrt(D(1:k));
-
-    if(nargout==3)
-        V = diag(1.0./D)*(U'*A);
-    end
+    [U,R] = qr(A*(V*spdiags(1.0./D,0,n,n)),0);  % re-orthogonalize II
 end
-

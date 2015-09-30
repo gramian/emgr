@@ -1,26 +1,26 @@
 ![emgr Logo](emgr.png) emgr
 ===========================
-Empirical Gramian Framework (Version 3.1)
+Empirical Gramian Framework (Version 3.5) ![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.31638.png)
 
-Empirical gramians can be computed for linear and nonlinear control systems for purposes of model order reduction (MOR), system identification or uncertainty quantification. 
-Model reduction using empirical gramians can be applied to the state space, to the parameter space or to both through combined reduction. 
-For state reduction the empirical controllability gramian and the empirical observability gramian, for balanced truncation, are available, or alternatively the empirical cross gramian and approximate empirical cross gramian for direct truncation. 
-For parameter reduction, parameter identification and sensitivity analysis the empirical sensitivity gramian (controllability of parameters) or the empirical identifiability gramian (observability of parameters) are provided. 
-Combined state and parameter reduction is enabled by the empirical joint gramian, which computes controllability and observability of states and parameter concurrently. 
-The emgr framework is a compact open source toolbox for (empirical) GRAMIAN-based model reduction and compatible with OCTAVE and MATLAB (and FREEMAT). 
+Empirical gramians can be computed for linear and nonlinear state-space control systems for purposes of model order reduction (MOR), system identification (SYSID) and uncertainty quantification (UQ).
+Model reduction using empirical gramians can be applied to the state space, to the parameter space or to both through combined reduction.
+For state reduction the empirical controllability gramian and the empirical observability gramian, for balanced truncation, are available, or alternatively the empirical cross gramian for direct truncation (approximate balancing) and the empirical linear cross gramian for large-scale linear systems.
+For parameter reduction, parameter identification and sensitivity analysis the empirical sensitivity gramian (controllability of parameters) or the empirical identifiability gramian (observability of parameters) are provided.
+Combined state and parameter reduction is enabled by the empirical joint gramian, which computes controllability and observability of states (cross gramian) and parameters (cross-identifiability gramian) concurrently.
+The emgr framework is a compact open-source toolbox for (empirical) GRAMIAN-based model reduction and compatible with OCTAVE and MATLAB and provides a common interface for the computation of empirical gramians and empirical covariance matrices. 
 
 More information at: http://gramian.de
 
-![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.17360.png)
 
 Citation
 --------
 
-DOI: 10.5281/zenodo.17360 (Version 3.1)
+Cite as: C. Himpe. "emgr - Empirical Gramian Framework (Version 3.5)" [Software]. Available from http://gramian.de . doi:10.5281/zenodo.31638 .
 
-Cite as: C. Himpe. "emgr - Empirical Gramian Framework (Version 3.1)" [Computer Software]. http://gramian.de
+BibTeX: @MISC{emgr,author={Himpe, C.},title={{emgr - Empirical Gramian Framework (Version 3.5)}},howpublished={\url{http://gramian.de }},year={2015},doi={10.5281/zenodo.31638}}
 
-BibTeX: @MISC{emgr,author={Himpe, C.},title={{emgr - Empirical Gramian Framework (Version 3.1)}},howpublished={\url{http://gramian.de}},year={2015}}
+DOI: 10.5281/zenodo.31638 (Version 3.5)
+
 
 License
 -------
