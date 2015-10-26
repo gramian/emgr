@@ -4,8 +4,7 @@ function state_wx(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));

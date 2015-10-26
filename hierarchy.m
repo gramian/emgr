@@ -4,8 +4,7 @@ function hierarchy(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -43,8 +42,8 @@ function hierarchy(o)
     Y = rk1(LIN,OUT,T,X,U,0); % Full Order
 
     tic;
-    WC = emgr(LIN,OUT,[J,N,O],T,'c',0,[0,0,0,0,0,0,0,0,0,0,0,-1]);
-    WO = emgr(ADJ,AOU,[O,N,J],T,'c',0,[0,0,0,0,0,0,0,0,0,0,0,-1]);
+    WC = emgr(LIN,OUT,[J,N,O],T,'c');
+    WO = emgr(ADJ,AOU,[O,N,J],T,'c');
     [VV,D,UU] = balance(WC,WO);
     OFFLINE = toc
 
@@ -108,7 +107,7 @@ function x = rk1(f,g,t,z,u,p)
     L = round((t(3)-t(1))/h);
 
     x(:,1) = g(z,u(:,end),p);
-    x(end,L) = 0; % preallocate trajectory
+    x(end,L+1) = 0; % preallocate trajectory
 
     for l=1:L
         z = z + h*f(z,u(:,l),p);

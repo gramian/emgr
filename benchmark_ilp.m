@@ -4,16 +4,14 @@ function benchmark_ilp(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
     if(exist('ilp')~=2)
-        disp('ilp generator is required. Download at http://gramian.de/ilp.m');
-        return;
+        error('ilp not found. Get ilp at: http://gramian.de/ilp.m');
     end
 
     %% Setup

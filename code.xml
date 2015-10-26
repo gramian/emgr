@@ -1,6 +1,6 @@
 <code>
 	<name short="emgr">Empirical Gramian Framework</name>
-	<version year="2015">3.5</version>
+	<version year="2015">3.6</version>
 
 	<runtime version=">=2011b">Matlab</runtime>
 	<runtime version=">=3.8">Octave</runtime>
@@ -11,7 +11,7 @@
 
 	<about>A toolbox for model reduction, system identification and uncertainty quantification.</about>
 
-	<doi>10.5281/zenodo.31638</doi>
+	<doi>10.5281/zenodo.32639</doi>
 
 	<author id="orcid.org/0000-0003-2194-6754">Christian Himpe</author>
 

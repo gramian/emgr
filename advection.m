@@ -4,8 +4,7 @@ function advection(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -15,12 +14,12 @@ function advection(o)
     J = 0;
     N = 100;
     O = N;
-    R = 20;
+    R = 10;
     T = [0.0,0.01,1.0];
     L = (T(3)-T(1))/T(2);
     U = zeros(1,L);
     H = 0.1;
-    X = 0:H:9.9; X = exp(-(X-1).^2)';
+    X = H:H:10.0; X = exp(-(X-1.0).^2)';
 
     P = 5;
     A = spdiags((1.0/H)*[ones(N,1),-ones(N,1)],[-1,0],N,N);

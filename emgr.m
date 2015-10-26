@@ -1,5 +1,5 @@
 function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
-% emgr - Empirical Gramian Framework ( Version: 3.5 )
+% emgr - Empirical Gramian Framework ( Version: 3.6 )
 % by Christian Himpe 2013-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
@@ -34,9 +34,9 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %            + unit(0), reciproce(1), dyadic(2), single(3) input rotations
 %            + unit(0), reciproce(1), dyadic(2), single(3) state rotations
 %            + single(0), double(1), scaled(2) run
-%            + default(0), non-symmetric cross gramian(1); only: WX, WJ
-%            + default(0), robust parameters(1); only: WC, WY
-%            + default(0), linear(1), exponential(2) parameter centering
+%            + regular(0), non-symmetric(1) cross gramian; only: WX, WJ
+%            + plain(0), robust(1) parameters; only: WC, WY
+%            + linear(0), exponential(1) parameter centering
 %            + default(0), exclusive options:
 %                  * use mean-centered(1); only: WS
 %                  * use schur-complement(1); only: WI
@@ -52,8 +52,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %              (cell)  W - {State-,Parameter-} Gramian (only: WS, WI, WJ)
 %
 % CITATION:
-%    C. Himpe (2015). emgr - Empirical Gramian Framework (Version 3.5)
-%    [Software]. Available from http://gramian.de . doi:10.5281/zenodo.31638 .
+%    C. Himpe (2015). emgr - Empirical Gramian Framework (Version 3.6)
+%    [Software]. Available from http://gramian.de . doi:10.5281/zenodo.32639 .
 %
 % SEE ALSO:
 %    gram
@@ -65,25 +65,27 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %*
 
     % Custom ODE Solver
-    global ODE; if(isa(ODE,'function_handle')==0), ODE = @rk2; end;
+    global ODE;
+    if(isa(ODE,'function_handle')==0), ODE = @rk2; end;
 
     % Version Info
-    if( nargin==1 && strcmp(f,'version') ), W = 3.5; return; end;
+    if( (nargin==1) && strcmp(f,'version') ), W = 3.6; return; end;
 
     % Default Arguments
-    if( nargin<6)  || (isempty(pr) ), pr = 0.0; end;
-    if( nargin<7)  || (isempty(nf) ), nf = 0;   end;
-    if( nargin<8)  || (isempty(ut) ), ut = 1.0; end;
-    if( nargin<9)  || (isempty(us) ), us = 0.0; end;
-    if( nargin<10) || (isempty(xs) ), xs = 0.0; end;
-    if( nargin<11) || (isempty(um) ), um = 1.0; end;
-    if( nargin<12) || (isempty(xm) ), xm = 1.0; end;
+    if( (nargin<6)  || isempty(pr) ), pr = 0.0; end;
+    if( (nargin<7)  || isempty(nf) ), nf = 0;   end;
+    if( (nargin<8)  || isempty(ut) ), ut = 1.0; end;
+    if( (nargin<9)  || isempty(us) ), us = 0.0; end;
+    if( (nargin<10) || isempty(xs) ), xs = 0.0; end;
+    if( (nargin<11) || isempty(um) ), um = 1.0; end;
+    if( (nargin<12) || isempty(xm) ), xm = 1.0; end;
 
     % System Dimensions
     J = s(1);                 % number of inputs
     N = s(2);                 % number of states
     O = s(3);                 % number of outputs
-    M = N; if(numel(s)==4), M = s(4); end; % number of non-constant states
+    M = N;                    % number of non-constant states
+    if(numel(s)==4), M = s(4); end; % set by WI or WJ
 
     h = t(2);                     % width of time step
     T = round((t(3)-t(1))/h) + 1; % number of time steps plus initial value
@@ -93,8 +95,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
     P = size(pr,1);           % number of parameters
     Q = size(pr,2);           % number of parameter sets
 
-    % Chirp Input
-    if( isnumeric(ut) && numel(ut)==1 && ut==Inf )
+    if( isnumeric(ut) && numel(ut)==1 && ut==Inf ) % Chirp Input
         ut = @(t) 0.5*cos(pi./t)+0.5;
     end;
 
@@ -126,44 +127,42 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 
     if( (nf(8) && w~='o') || w=='s' || w=='i' || w=='j' )
 
-        Q = 1;
+        if(Q==1), error('ERROR! emgr: min and max parameter required!'); end;
+
+        pmin = min(pr,[],2);
+        pmax = max(pr,[],2);
 
         if( nf(8) || w=='s' ) % assemble (controllability) parameter scales
-            if(size(pr,2)==1)
-                pm = scales(pr,nf(2),nf(4));
-            else
-                pn = size(um,2);
-                pm = max(pr,[],2)*(1:pn)./pn - min(pr,[],2)*((1:pn)./pn - 1.0);
-                pr = min(pr,[],2);
-            end;
+            pn = size(um,2);
+        else                  % assemble (observability) parameter scales
+            pn = size(xm,2);
         end;
 
-        if( w=='i' || w=='j' ) % assemble (observability) parameter scales
-            if(size(pr,2)==1)
-                pm = scales(pr,nf(3),nf(5));
-            else
-                pn = size(xm,2);
-                pm = max(pr,[],2)*(1:pn)./pn - min(pr,[],2)*((1:pn)./pn - 1.0);
-                pr = min(pr,[],2);
-            end;
-        end;
+        pl = (1.0:floor(pn/2))./floor(pn/2);
+        pu = (1.0:ceil(pn/2))./ceil(pn/2);
 
         switch(nf(9)) % parameter centering
 
-            case 1, % linear
-                pr = mean(pm,2);
-                pm = bsxfun(@minus,pm,pr);
+            case 0, % linear
+                pr = mean(pr,2);
+                pm = [(pmin - pr)*pl , (pmax - pr)*pu];
 
-            case 2, % logarithmic 
-                pr = min(pm,[],2);
-                ld = log(max(pm,[],2)) - log(pr);
-                pm = bsxfun(@minus,pr.*exp(ld*linspace(0,1,size(pm,2))),pr);
+            case 1, % logarithmic
+                lpmin = log(pmin);
+                lpmax = log(pmax);
+                lpavg = 0.5*(lpmax - lpmin);
+                pr = pmin.*exp(lpavg);
+                pm = [ bsxfun(@times,exp((lpavg - lpmin)*pl),pmin) , ...
+                       bsxfun(@times,exp((lpmax - lpavg)*pu),pr) ];
+                pm = bsxfun(@minus,pm,pr);
         end;
+
+        Q = 1;
     end;
 
 %% STATE-SPACE SETUP
 
-    if(w=='c' || w=='o' || w=='x' || w=='y')
+    if( w=='c' || w=='o' || w=='x' || w=='y' )
 
         C = size(um,2); % number of input scales
         D = size(xm,2); % number of state scales
@@ -284,6 +283,9 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                         o(:,:,n) = y;
                     end;
                     o = permute(o,[2,3,1]); % generalized transposition
+                    if(nf(7))
+                        o(:,:,1) = sum(o,3);
+                    end;
                     for c=1:C
                         for j=1:J % parfor
                             uu = us + bsxfun(@times,ut,sparse(j,1,um(j,c),J,1));
@@ -294,13 +296,10 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
                             end;
                             x = bsxfun(@minus,x,res(x));
                             x = x * (1.0./(um(j,c) + (um(j,c)==0)));
-                            if(nf(7))
-                                K = 1:O; % non-symmetric cross gramian
-                            else
-                                K = j; % regular cross gramian
-                            end;
-                            for k=K
-                                W = W + (x*o(:,:,k)); % offload
+                            if(nf(7)) % non-symmetric cross gramian
+                                W = W + (x*o(:,:,1)); % offload
+                            else % regular cross gramian
+                                W = W + (x*o(:,:,j)); % offload
                             end;
                         end;
                     end;
@@ -332,6 +331,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
         case 's', % sensitivity gramian
             W = cell(1,2);
             ps = sparse(P,1);
+            up = ones(1,T);
             nf(8) = 0;
             W{1} = emgr(f,g,[J,N,O],t,'c',ps,nf,ut,us,xs,um,xm);
             W{2} = speye(P);
@@ -339,7 +339,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             G = @(x,u,p) g(x,us(:,1),pr + p*u);
             for p=1:P
                 ps = sparse(p,1,1,P,1);
-                V = emgr(F,G,[1,N,O],t,'c',ps,nf,1,0,xs,pm(p,:),xm);
+                V = emgr(F,G,[1,N,O],t,'c',ps,nf,up,0,xs,pm(p,:),xm);
                 W{1} = W{1} + V;      % approximate controllability gramian
                 W{2}(p,p) = trace(V); % sensitivity gramian
             end;
@@ -389,7 +389,7 @@ function s = scales(s,d,e)
             s = s*[0.125,0.25,0.5,1.0];
 
         case 4, % sparse
-            s = s*[0.17,0.5,0.77,0.94];
+            s = s*[0.38,0.71,0.92,1.0];
 
         otherwise, % single
             %s = s;
@@ -439,3 +439,4 @@ function x = rk2(f,g,t,z,u,p)
         x(:,l+1) = g(z,u(:,l),p);
     end;
 end
+

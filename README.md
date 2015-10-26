@@ -1,6 +1,6 @@
 ![emgr Logo](emgr.png) emgr
 ===========================
-Empirical Gramian Framework (Version 3.5) ![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.31638.png)
+Empirical Gramian Framework (Version 3.6) ![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.32639.png)
 
 Empirical gramians can be computed for linear and nonlinear state-space control systems for purposes of model order reduction (MOR), system identification (SYSID) and uncertainty quantification (UQ).
 Model reduction using empirical gramians can be applied to the state space, to the parameter space or to both through combined reduction.
@@ -15,11 +15,11 @@ More information at: http://gramian.de
 Citation
 --------
 
-Cite as: C. Himpe. "emgr - Empirical Gramian Framework (Version 3.5)" [Software]. Available from http://gramian.de . doi:10.5281/zenodo.31638 .
+Cite as: C. Himpe. "emgr - Empirical Gramian Framework (Version 3.6)" [Software]. Available from http://gramian.de . doi:10.5281/zenodo.32639 .
 
-BibTeX: @MISC{emgr,author={Himpe, C.},title={{emgr - Empirical Gramian Framework (Version 3.5)}},howpublished={\url{http://gramian.de }},year={2015},doi={10.5281/zenodo.31638}}
+BibTeX: @MISC{emgr,author={Himpe, C.},title={{emgr - Empirical Gramian Framework (Version 3.6)}},howpublished={\url{http://gramian.de }},year={2015}}
 
-DOI: 10.5281/zenodo.31638 (Version 3.5)
+DOI: 10.5281/zenodo.32639 (Version 3.6)
 
 
 License

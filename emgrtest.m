@@ -4,8 +4,7 @@ function emgrtest(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -31,7 +30,8 @@ function emgrtest(o)
 
     X = zeros(N,1);
     U = [ones(J,1),zeros(J,L-1)];
-    P = rand(N,1);
+    P = 0.5*rand(N,1)+0.25;
+    Q = ones(N,1)*[0.25,0.75];
 
     ok = @(t) fprintf([t,' - OK \n']);
 
@@ -40,9 +40,9 @@ function emgrtest(o)
     WO = emgr(f,g,[J,N,O],[S,h,T],'o',P); ok('Default WO');
     WX = emgr(f,g,[J,N,O],[S,h,T],'x',P); ok('Default WX');
     WY = emgr(f,F,[J,N,O],[S,h,T],'y',P); ok('Default WY');
-    WS = emgr(f,g,[J,N,O],[S,h,T],'s',P); ok('Default WS');
-    WI = emgr(f,g,[J,N,O],[S,h,T],'i',P); ok('Default WI');
-    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',P); ok('Default WJ');
+    WS = emgr(f,g,[J,N,O],[S,h,T],'s',Q); ok('Default WS');
+    WI = emgr(f,g,[J,N,O],[S,h,T],'i',Q); ok('Default WI');
+    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',Q); ok('Default WJ');
 
     %% Parametrized Empirical Gramians
     WC = emgr(f,g,[J,N,O],[S,h,T],'c',[0.1*ones(N,1),P,ones(N,1)]); ok('Parametrized WC');
@@ -88,26 +88,26 @@ function emgrtest(o)
     WO = emgr(f,g,[J,N,O],[S,h,T],'o',P,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WO');
     WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WX');
     WY = emgr(f,F,[J,N,O],[S,h,T],'y',P,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WY');
-    WS = emgr(f,g,[J,N,O],[S,h,T],'s',P,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WS');
-    WI = emgr(f,g,[J,N,O],[S,h,T],'i',P,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WI');
-    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',P,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WJ');
+    WS = emgr(f,g,[J,N,O],[S,h,T],'s',Q,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WS');
+    WI = emgr(f,g,[J,N,O],[S,h,T],'i',Q,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WI');
+    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',Q,[0,0,0,0,0,1,0,0,0,0]); ok('Double Run WJ');
 
     %% Scaled Run
     WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WC');
     WO = emgr(f,g,[J,N,O],[S,h,T],'o',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WO');
     WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WX');
     WY = emgr(f,F,[J,N,O],[S,h,T],'y',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WY');
-    WS = emgr(f,g,[J,N,O],[S,h,T],'s',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WS');
-    WI = emgr(f,g,[J,N,O],[S,h,T],'i',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WI');
-    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',P,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WJ');
+    WS = emgr(f,g,[J,N,O],[S,h,T],'s',Q,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WS');
+    WI = emgr(f,g,[J,N,O],[S,h,T],'i',Q,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WI');
+    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',Q,[0,0,0,0,0,2,0,0,0,0]); ok('Scaled Run WJ');
 
     % Non-Symmetric Cross Gramians
     WX = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,1,0,0,0]); ok('Non-Symmetric WX');
-    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',P,[0,0,0,0,0,0,1,0,0,0]); ok('Non-Symmetric WJ');
+    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',Q,[0,0,0,0,0,0,1,0,0,0]); ok('Non-Symmetric WJ');
 
     %% Robust Gramians
-    WC = emgr(f,g,[J,N,O],[S,h,T],'c',P,[0,0,0,0,0,0,0,1,0,0]); ok('Robust WC');
-    WY = emgr(f,F,[J,N,O],[S,h,T],'y',P,[0,0,0,0,0,0,0,1,0,0]); ok('Robust WY');
+    WC = emgr(f,g,[J,N,O],[S,h,T],'c',Q,[0,0,0,0,0,0,0,1,0,0]); ok('Robust WC');
+    WY = emgr(f,F,[J,N,O],[S,h,T],'y',Q,[0,0,0,0,0,0,0,1,0,0]); ok('Robust WY');
 
     %% Parameter Centering
     WC = emgr(f,g,[J,N,O],[S,h,T],'c',[0.1*ones(N,1),P,ones(N,1)],[0,0,0,0,0,0,0,1,1,0]); ok('ParaCent WC');
@@ -116,13 +116,13 @@ function emgrtest(o)
     WY = emgr(f,g,[J,N,O],[S,h,T],'j',[0.1*ones(N,1),P,ones(N,1)],[0,0,0,0,0,0,0,0,1,0]); ok('ParaCent WJ');
 
     %% Mean-Centered WS
-    WS = emgr(f,g,[J,N,O],[S,h,T],'s',P,[0,0,0,0,0,0,0,0,0,1]); ok('Mean WS');
+    WS = emgr(f,g,[J,N,O],[S,h,T],'s',Q,[0,0,0,0,0,0,0,0,0,1]); ok('Mean WS');
 
     %% Schur-Complement WI
-    WI = emgr(f,g,[J,N,O],[S,h,T],'i',P,[0,0,0,0,0,0,0,0,0,1]); ok('Schur WI');
+    WI = emgr(f,g,[J,N,O],[S,h,T],'i',Q,[0,0,0,0,0,0,0,0,0,1]); ok('Schur WI');
 
     %% Symmetric Part Gramian
-    WJ = emgr(f,g,[J,N,O],[S,h,T],'x',P,[0,0,0,0,0,0,0,0,0,1]); ok('NonSym WX');
+    WJ = emgr(f,g,[J,N,O],[S,h,T],'x',Q,[0,0,0,0,0,0,0,0,0,1]); ok('NonSym WX');
 
     %% Custom Solver
     ODE = @mysolver;

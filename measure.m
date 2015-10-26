@@ -4,8 +4,7 @@ function measure(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -62,6 +61,6 @@ function measure(o)
     semilogy(linspace(0,2,K),y(2,:),'g','linewidth',2);
     semilogy(linspace(0,2,K),y(3,:),'b','linewidth',2); hold off;
     pbaspect([2,1,1]);
-    legend('Input ','State ','Output ','location','northeast');
+    legend('Input ','State ','Output ','location','southeast');
     if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end

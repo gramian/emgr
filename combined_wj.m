@@ -4,8 +4,7 @@ function combined_wj(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -17,15 +16,15 @@ function combined_wj(o)
     O = J;
     T = [0.0,0.01,1.0];
     L = (T(3)-T(1))/T(2);
-    U = [ones(J,1),zeros(J,L-1)];
+    U = [ones(J,1)./T(2),zeros(J,L-1)];
     X = zeros(N,1);
 
     rand('seed',1009);
-    randn('seed',1009);
-    A = rand(N,N); A(1:N+1:end) = -N; A = 0.5*(A+A');
+    A = rand(N,N); A(1:N+1:end) = -0.54*N; A = 0.5*(A+A');
     B = rand(N,J);
     C = B';
-    P = 0.1*randn(N,1)+0.5;
+    P = 0.5*rand(N,1)+0.5;
+    Q = [0.5*ones(N,1),ones(N,1)];
 
     NON = @(x,u,p) A*tanh(p.*x) + B*u;
     OUT = @(x,u,p) C*x;
@@ -38,7 +37,7 @@ function combined_wj(o)
     l2 = zeros(16,16);
 
     tic;
-    WJ = emgr(NON,OUT,[J,N,O],T,'j',P,0,1,0,1);
+    WJ = emgr(NON,OUT,[J,N,O],T,'j',Q,0,1,0,sum(B,2));
     [UU,D,VV] = svd(WJ{1});
     [PP,D,QQ] = svd(WJ{2});
     OFFLINE = toc

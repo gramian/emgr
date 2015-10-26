@@ -5,17 +5,16 @@ function nbody(o)
 %*
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
     N = 5;
-    T = [0.0,0.02,2.0];
+    T = [0.0,0.002,0.5];
     R = 4;
-    U = sparse(1,201);
+    U = sparse(1,1001);
     p = ones(N,1);
 
     X = [1.449;  0.0;    0.400; -0.345; -1.125;...
@@ -35,6 +34,8 @@ function nbody(o)
     [PP,DD,QQ] = svd(WOP); PP = PP(:,1:2*R); QQ = PP'; %diag(DD)'
     [TT,DD,VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
     OFFLINE = toc
+
+    T(3) = 2.0;
 
     % Position-Based Reduction 
     f = @(x,u,p) [x((2*R)+1:end);QQ*acc(PP*x(1:2*R),u,p)];
@@ -83,7 +84,7 @@ function y = acc(x,u,p)
 
     for I=1:N
         B = bsxfun(@minus,A,A(:,I));
-        Z = p'./(sqrt(0.0001+(sum(B.^2))).^3);
+        Z = p'./(sqrt(1e-6+(sum(B.^2))).^3);
         B = bsxfun(@times,B,Z);
         y(:,I) = sum(B,2);
     end

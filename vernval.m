@@ -25,21 +25,19 @@ function vernval(J)
     A = 0.5*(A+A');		% symmetrize system matrix
     B = rand(N,J);		% random input matrix
     C = B';			% ensure state-space symmetric system
-    P = ones(N,1);		% parameter vector
+    P = zeros(N,1);		% parameter vector
+    Q = ones(N,1)*[0.25,0.75];	% parameter range
 
-    f = @(x,u,p) A*x+B*u;   	% linear dynamic system vector field
+    f = @(x,u,p) A*x+B*u+p;   	% linear dynamic system vector field
     g = @(x,u,p) C*x;       	% linear output functional
 
     G = @(x,u,p) A'*x+C'*u;	% adjoint dynamic system vector field
 
-    F = @(x,u,p) A*x+B*u+p; 	% linear parametrized system vector field
-
-
-    WC = emgr(f,g,[J,N,O],[S,h,T],'c',0,1); ok('Empirical Controllability Gramian: WC');
-    Wc = emgr(G,g,[J,N,O],[S,h,T],'c',0,1); ok('Adjoint Empirical Controllability Gramian: Wc');
-    WO = emgr(f,g,[J,N,O],[S,h,T],'o',0,1); ok('Empirical Observability Gramian: WO');
-    WX = emgr(f,g,[J,N,O],[S,h,T],'x',0,1); ok('Empirical Cross Gramian: WX');
-    WY = emgr(f,G,[J,N,O],[S,h,T],'y',0,1); ok('Empirical Linear Cross Gramian: WY');
+    WC = emgr(f,g,[J,N,O],[S,h,T],'c',P); ok('Empirical Controllability Gramian: WC');
+    Wc = emgr(G,g,[J,N,O],[S,h,T],'c',P); ok('Adjoint Empirical Controllability Gramian: Wc');
+    WO = emgr(f,g,[J,N,O],[S,h,T],'o',P); ok('Empirical Observability Gramian: WO');
+    WX = emgr(f,g,[J,N,O],[S,h,T],'x',P); ok('Empirical Cross Gramian: WX');
+    WY = emgr(f,G,[J,N,O],[S,h,T],'y',P); ok('Empirical Linear Cross Gramian: WY');
 
     dWCWc = norm(WC-Wc,'fro')
     dWCWY = norm(WC-WY,'fro')
@@ -48,12 +46,12 @@ function vernval(J)
     dWOWX = norm(WO-WX,'fro')
     dWXWY = norm(WX-WY,'fro')
 
-    WC = emgr(F,g,[J,N,O],[S,h,T],'c',P); ok('Parametrized Empirical Controllability Gramian: WC');
-    WO = emgr(F,g,[J,N,O],[S,h,T],'o',P); ok('Parametrized Empirical Observability Gramian: WO');
-    WX = emgr(F,g,[J,N,O],[S,h,T],'x',P); ok('Parametrized Empirical Cross Gramian: WX');
-    WS = emgr(F,g,[J,N,O],[S,h,T],'s',P); ok('Empirical Sensitivity Gramian: WS');
-    WI = emgr(F,g,[J,N,O],[S,h,T],'i',P); ok('Empirical Identifiability Gramian: WI');
-    WJ = emgr(F,g,[J,N,O],[S,h,T],'j',P); ok('Empirical Joint Gramian: WJ - OK');
+    WC = emgr(f,g,[J,N,O],[S,h,T],'c',Q); ok('Parametrized Empirical Controllability Gramian: WC');
+    WO = emgr(f,g,[J,N,O],[S,h,T],'o',Q); ok('Parametrized Empirical Observability Gramian: WO');
+    WX = emgr(f,g,[J,N,O],[S,h,T],'x',Q); ok('Parametrized Empirical Cross Gramian: WX');
+    WS = emgr(f,g,[J,N,O],[S,h,T],'s',Q); ok('Empirical Sensitivity Gramian: WS');
+    WI = emgr(f,g,[J,N,O],[S,h,T],'i',Q); ok('Empirical Identifiability Gramian: WI');
+    WJ = emgr(f,g,[J,N,O],[S,h,T],'j',Q); ok('Empirical Joint Gramian: WJ - OK');
 
     dWCWS = norm(WC-WS{1},'fro')
     dWOWI = norm(WO-WI{1},'fro')

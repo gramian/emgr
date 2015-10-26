@@ -4,8 +4,7 @@ function param_ws(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -24,7 +23,8 @@ function param_ws(o)
     A = rand(N,N); A(1:N+1:end) = -0.55*N;
     B = rand(N,J);
     C = rand(O,N);
-    P = 0.01*rand(N,1);
+    P = rand(N,1);
+    Q = [zeros(N,1),ones(N,1)];
 
     LIN = @(x,u,p) A*x+B*u+p;
     OUT = @(x,u,p) C*x;
@@ -37,7 +37,7 @@ function param_ws(o)
     Y = ODE(LIN,OUT,T,X,U,P); % Full Order
 
     tic;
-    WS = emgr(LIN,OUT,[J,N,O],T,'s',P,[0,0,0,0,0,0,0,0,0,1]);
+    WS = emgr(LIN,OUT,[J,N,O],T,'s',Q);
     [PP,D,QQ] = svd(full(WS{2}));
     OFFLINE = toc
 

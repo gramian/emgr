@@ -4,8 +4,7 @@ function blackhole(o)
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
-        return;
+        error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
         fprintf('emgr (version: %g)\n',emgr('version'));
@@ -15,29 +14,28 @@ function blackhole(o)
     t = [0.0,0.005,5.0];
     T = (t(3)-t(1))/t(2);
     u = zeros(1,T);
-    R = 14;
 
     % Planet
     xu = [0.4;pi/2;0;0];
-    pu = [0.568;1.13;0.13;0.9982;0.05]; % E,L,Q,a,e
+    pu = [0.568;1.13;0.13;0.9982;0.05;0;1]; % E,L,Q,a,e,eps,m
 
     % Photon
     xp = [0.2;pi/2;0;0];
-    EE = 0.568; %10.5
-    pp = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05]; % E,L,Q,a,e
+    EE = 0.568; %10.5;
+    pp = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05;0;0]; % E,L,Q,a,e,eps,m
 
     %% Main
-    Y = [ODE(@(x,u,p) orbit(x,u,p,0,1),@bl2c,t,xu,u,pu);... % Full Order Planet
-         ODE(@(x,u,p) orbit(x,u,p,0,0),@bl2c,t,xp,u,pp)];   % Full Order Photon
+    Y = [ODE(@orbit,@bl2c,t,xu,u,pu);... % Full Order Planet
+         ODE(@orbit,@bl2c,t,xp,u,pp)];   % Full Order Photon
 
-    fprintf('Parameters: E,L,Q,a,e\n');
+    fprintf('Parameters: E,L,Q,a,e,eps,m\n');
 
     % PLANET
-    WS = emgr(@(x,u,p) orbit(x,u,p,0,1),@bl2c,[0,4,3],t,'s',pu,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xu);
+    WS = emgr(@orbit,@bl2c,[0,4,3],t,'s',[0.9*pu,1.1*pu],[1,0,0,0,0,0,0,0,0,0],1,0,xu);
     PLANET_SENSITIVITY = full(diag(WS{2}))
 
     % PHOTON
-    WS = emgr(@(x,u,p) orbit(x,u,p,0,0),@bl2c,[0,4,3],t,'s',pp,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xp);
+    WS = emgr(@orbit,@bl2c,[0,4,3],t,'s',[0.9*pp,1.1*pp],[1,0,0,0,0,0,0,0,0,0],1,0,xp);
     PHOTON_SENSITIVITY = full(diag(WS{2}))
 
     %% Output
@@ -62,16 +60,15 @@ function blackhole(o)
 end
 
 %% ======== Orbit ========
-function x = orbit(x,u,p,w,m)
+function x = orbit(x,u,p)
 
     E = p(1); % E
     L = p(2); % L
     Q = p(3); % Q
     a = p(4); % a
     e = p(5); % e
-
-    % w (eps)
-    % m (mu)
+    w = p(6); % m
+    m = p(7); % eps
 
     D  = x(1)^2 - 2*x(1) + a^2 + e^2;
     S  = x(1)^2 + a^2*cos(x(2))^2;
@@ -79,7 +76,10 @@ function x = orbit(x,u,p,w,m)
     Vt = Q - cos(x(2))^2*(a^2*(m^2 - E^2) + L^2*sin(x(2))^(-2) );
     Vr = P^2 - D*(m^2*x(1)^2 + (L - a*E)^2 + Q);
 
-    x = abs([ sqrt(Vr) ; sqrt(Vt) ; L*sin(x(2))^(-2)+a*(P/D-E) ; a*(L-a*E*sin(x(2))^2)+P/D*(x(1)^2+a^2) ]./S);
+    x = abs([ sqrt(Vr) ; ... 
+              sqrt(Vt) ; ... 
+              L*sin(x(2))^(-2)+a*(P/D-E) ; ...
+              a*(L-a*E*sin(x(2))^2)+P/D*(x(1)^2+a^2) ]./S);
 end
 
 %% ======== Boyer-Lindquist to Cartesian ========
@@ -87,5 +87,7 @@ function y = bl2c(x,u,p)
 
     a = p(4);
 
-    y = [ sqrt(x(1)^2+a^2)*sin(x(2))*cos(x(3)) ; sqrt(x(1)^2+a^2)*sin(x(2))*sin(x(3)) ; x(1)*cos(x(2)) ];
+    y = [ sqrt(x(1)^2+a^2)*sin(x(2))*cos(x(3)) ; ...
+          sqrt(x(1)^2+a^2)*sin(x(2))*sin(x(3)) ; ...
+          x(1)*cos(x(2)) ];
 end
