@@ -6,16 +6,16 @@ function decentral(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE;
+        global ODE; ODE = [];
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
-    %% Setup
+%% SETUP
     J = 4;
     N = 16;
     O = J;
-    T = [0.0,0.01,1.0];
-    L = (T(3)-T(1))/T(2);
+    T = [0.01,1.0];
+    L = floor(T(2)/T(1)) + 1;
     U = [ones(J,1),zeros(J,L-1)];
     X = ones(N,1);
 
@@ -27,7 +27,7 @@ function decentral(o)
     LIN = @(x,u,p) A*x + B*u;
     OUT = @(x,u,p) C*x;
 
-    %% Main
+%% OFFLINE
     tic;
     WX = cell(J,O);
     for V=1:J
@@ -44,13 +44,13 @@ function decentral(o)
 
     OFFLINE = toc
 
-    %% Output
-    if(nargin==0), return; end
-    figure();
+%% OUTPUT
+    if(nargin>0 && o==0), return; end; 
+    figure('Name',mfilename,'NumberTitle','off');
     imagesc(PM);
     colormap(antijet); colorbar;
     set(gca,'XTick',1:1:J,'YTick',1:1:O);
-    if(o==1), print('-dpng',[mfilename(),'.png']); end;
+    if(nargin>0 && o==1), print('-dpng',[mfilename(),'.png']); end;
 end
 
 %% ======== Colormap ========

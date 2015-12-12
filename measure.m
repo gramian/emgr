@@ -6,16 +6,16 @@ function measure(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE;
+        global ODE; ODE = [];
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
-    %% Setup
+%% SETUP
     J = 1;
     N = 8;
     O = J;
-    T = [0.0,0.01,1.0];
-    L = (T(3)-T(1))/T(2);
+    T = [0.01,1.0];
+    L = floor(T(2)/T(1)) + 1;
     X = zeros(N,1);
 
     rand('seed',1009);
@@ -29,7 +29,7 @@ function measure(o)
     NST = @(x,u,p) A*asinh(p*x) + B*u;
     NOU = @(x,u,p) C*asinh(p*x);
 
-    %% Main
+%% OFFLINE
     tic;
     WL = emgr(LIN,OUT,[J,N,O],T,'x'); % Linear Reference
 
@@ -54,13 +54,13 @@ function measure(o)
 
     y = y./trace(WL);
 
-    %% Output
-    if(nargin==0), return; end
-    figure();
+%% OUTPUT
+    if(nargin>0 && o==0), return; end; 
+    figure('Name',mfilename,'NumberTitle','off');
     semilogy(linspace(0,2,K),y(1,:),'r','linewidth',2); hold on;
     semilogy(linspace(0,2,K),y(2,:),'g','linewidth',2);
     semilogy(linspace(0,2,K),y(3,:),'b','linewidth',2); hold off;
     pbaspect([2,1,1]);
     legend('Input ','State ','Output ','location','southeast');
-    if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
+    if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end

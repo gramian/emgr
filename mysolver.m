@@ -3,10 +3,10 @@ function y = mysolver(f,g,t,x,u,p)
 % by Christian Himpe, 2014-2015 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
-    h = t(2);
-    L = round((t(3)-t(1))/h) + 1;
+    h = t(1);
+    L = floor(t(2)/h) + 1;
 
-    T = t(1):t(2):t(3);
+    T = 0:h:t(2);
     U = @(t) u(:,1+min(floor(t/h),L-1));
 
     % Compute State Trajectory

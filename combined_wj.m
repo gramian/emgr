@@ -6,42 +6,44 @@ function combined_wj(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE;
+        global ODE; ODE = [];
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
-    %% Setup
-    J = 8;
+%% SETUP
+    J = 1;
     N = 64;
     O = J;
-    T = [0.0,0.01,1.0];
-    L = (T(3)-T(1))/T(2);
-    U = [ones(J,1)./T(2),zeros(J,L-1)];
+    T = [0.01,1.0];
+    L = floor(T(2)/T(1)) + 1;
+    U = [ones(J,1)./T(2),zeros(J,L)];
     X = zeros(N,1);
 
     rand('seed',1009);
-    A = rand(N,N); A(1:N+1:end) = -0.54*N; A = 0.5*(A+A');
-    B = rand(N,J);
-    C = B';
-    P = 0.5*rand(N,1)+0.5;
+
+    A = rand(N,N);
+    A(1:N+1:end) = -0.9*N; 
+    B = 30.0*full(sprand(N,J,0.1));
+    C = rand(O,N);
+
+    P = 0.5*rand(N,1) + 0.5;
     Q = [0.5*ones(N,1),ones(N,1)];
 
     NON = @(x,u,p) A*tanh(p.*x) + B*u;
     OUT = @(x,u,p) C*x;
 
-    norm2 = @(y) sqrt(T(2)*dot(y(:),y(:)));
-
-    %% Main
+%% FULL ORDER
     Y = ODE(NON,OUT,T,X,U,P);
+    n2 = norm(Y(:),2);
 
-    l2 = zeros(16,16);
-
+%% OFFLINE
     tic;
-    WJ = emgr(NON,OUT,[J,N,O],T,'j',Q,0,1,0,sum(B,2));
+    WJ = emgr(NON,OUT,[J,N,O],T,'j',Q,[0,0,0,0,0,0,0,0,1,1,1,0]);
     [UU,D,VV] = svd(WJ{1});
     [PP,D,QQ] = svd(WJ{2});
     OFFLINE = toc
 
+%% EVALUATION
     a = 1;
     for I=1:4:N
         uu = UU(:,1:I);
@@ -54,16 +56,16 @@ function combined_wj(o)
             x = vv*X;
             non = @(x,u,p) vv*NON(uu*x,u,p);
             out = @(x,u,p) OUT(uu*x,u,p);
-            y = ODE(non,out,T,x,U,p); % Reduced Order
-            l2(a,b) = norm2(Y-y)/norm2(Y);
+            y = ODE(non,out,T,x,U,p);
+            l2(a,b) = min(1.0,norm(Y(:)-y(:),2)/n2);
             b = b + 1;
         end;
         a = a + 1;
     end;
 
-    %% Output
-    if(nargin==0), return; end
-    figure();
+%% OUTPUT
+    if(nargin>0 && o==0), return; end; 
+    figure('Name',mfilename,'NumberTitle','off');
     h = surf(l2);
     xlim([1,16]);
     ylim([1,16]);
@@ -75,7 +77,7 @@ function combined_wj(o)
     colormap(antijet);
     set(h,'CData',log10(get(h,'CData')))
     view(135,30);
-    if(o==1), print('-dsvg',[mfilename(),'.svg']); end;
+    if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
 %% ======== Colormap ========

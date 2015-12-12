@@ -6,18 +6,18 @@ function advection(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE;
+        global ODE; ODE = [];
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
-    %% Setup
+%% SETUP
     J = 0;
     N = 100;
     O = N;
     R = 10;
-    T = [0.0,0.01,1.0];
-    L = (T(3)-T(1))/T(2);
-    U = zeros(1,L);
+    T = [0.01,1.0];
+    L = floor(T(2)/T(1)) + 1;
+    U = zeros(1,L*10);
     H = 0.1;
     X = H:H:10.0; X = exp(-(X-1.0).^2)';
 
@@ -28,12 +28,10 @@ function advection(o)
     ADJ = @(x,u,p) p*A'*x + u;
     OUT = @(x,u,p) x;
 
-    %% Main
-    Y = ODE(LIN,OUT,T,X,U,P); % Full Order
-
+%% OFFLINE
     tic;
     WO = emgr(ADJ,1,[N,N,O],T,'c',P);
-    [UU,D,VV] = svd(WO); UU = UU(:,1:R); VV = VV(:,1:R)';
+    [UU,D,VV] = svd(WO); UU = UU(:,1:R); VV = UU';
     a = VV*A*UU;
     c = UU;
     x = VV*X;
@@ -41,17 +39,17 @@ function advection(o)
     out = @(x,u,p) c*x;
     OFFLINE = toc
 
+%% ONLINE
     y = ODE(lin,out,T,x,U,P);
 
-    %% Output
-    if(nargin==0), return; end
-    cmax = max(y(:));
-    figure();
-    imagesc(sparse(y)); caxis([0 cmax]);
+%% OUTPUT
+    if(nargin>0 && o==0), return; end; 
+    figure('Name',mfilename,'NumberTitle','off');
+    imagesc(sparse(y)); caxis([0,max(y(:))]);
     colormap(antijet);
-    set(gca,'YTick',0,'xtick',[]); ylabel('X');
+    set(gca,'YTick',0,'xtick',[]); ylabel('X'); xlabel('t');
     pbaspect([2,1,1]);
-    if(o==1), print('-dpng',[mfilename(),'.png']); end;
+    if(nargin>0 && o==1), print('-dpng',[mfilename(),'.png']); end;
 end
 
 %% ======== Colormap ========

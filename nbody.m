@@ -7,14 +7,14 @@ function nbody(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE;
+        global ODE; ODE = [];
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
+%% SETUP
     N = 5;
-    T = [0.0,0.002,0.5];
+    T = [0.01,1.0];
     R = 4;
-    U = sparse(1,1001);
     p = ones(N,1);
 
     X = [1.449;  0.0;    0.400; -0.345; -1.125;...
@@ -24,9 +24,7 @@ function nbody(o)
     F = @(x,u,p) [x((2*N)+1:end);acc(x(1:2*N),u,p)];
     G = @(x,u,p)  x(1:2*N);
 
-    %% Main
-    Y = ODE(F,G,T,X,U,p); % Full Order
-
+%% OFFLINE
     tic;
     WO = emgr(F,G,[0,4*N,2*N],T,'o',p);
     WOP = WO(1:(2*N),1:(2*N));
@@ -35,42 +33,41 @@ function nbody(o)
     [TT,DD,VV] = svd(WOV); TT = TT(:,1:2*R); VV = TT'; %diag(DD)'
     OFFLINE = toc
 
-    T(3) = 2.0;
+    T = [0.01,3.0];
+    L = floor(T(2)/T(1)) + 1;
+    U = sparse(1,L);
 
     % Position-Based Reduction 
     f = @(x,u,p) [x((2*R)+1:end);QQ*acc(PP*x(1:2*R),u,p)];
     g = @(x,u,p) PP*x(1:2*R);
     x = [QQ*X(1:2*N);QQ*X((2*N)+1:end)];
-    y = ODE(f,g,T,x,U,p);
 
     %{
     % Velocity-Based Reduction
     f = @(x,u,p) [x((2*R)+1:end);VV*acc(TT*x(1:2*R),u,p)];
     g = @(x,u,p) TT*x(1:2*R);
     x = [VV*X(1:2*N);VV*X((2*N)+1:end)];
-    y = ODE(f,g,T,x,U,p);
     %}
 
-    %% Output
-    if(nargin==0), return; end
-    figure();
+%% ONLINE
+    y = ODE(f,g,T,x,U,p);
+
+%% OUTPUT
+    if(nargin>0 && o==0), return; end; 
+    figure('Name',mfilename,'NumberTitle','off');
     hold on;
     cmap = hsv(N+1);
     d = 1;
     for c=1:N
         plot(y(d,:),y(d+1,:),'--','Color',cmap(c,:),'linewidth',2);
-        d = d + 2;
-    end
-    d = 1;
-    for c=1:N
         plot(y(d,end),y(d+1,end),'*','Color',cmap(c,:),'linewidth',2);
         d = d + 2;
     end
     hold off;
-    ylim([-0.6 0.6]);
+    ylim([-0.6,0.6]);
     pbaspect([2,1,1]);
-    set(gcf,'InvertHardcopy','off')
-    if(o==1), print('-dpng',[mfilename(),'.png']); end;
+    set(gcf,'InvertHardcopy','off');
+    if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
 %% ======== Acceleration ========

@@ -6,14 +6,14 @@ function blackhole(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE;
+        global ODE; ODE = [];
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
     %% Setup
-    t = [0.0,0.005,5.0];
-    T = (t(3)-t(1))/t(2);
-    u = zeros(1,T);
+    T = [0.005,5.0];
+    L = floor(T(2)/T(1)) + 1;
+    U = zeros(1,L);
 
     % Planet
     xu = [0.4;pi/2;0;0];
@@ -25,22 +25,22 @@ function blackhole(o)
     pp = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05;0;0]; % E,L,Q,a,e,eps,m
 
     %% Main
-    Y = [ODE(@orbit,@bl2c,t,xu,u,pu);... % Full Order Planet
-         ODE(@orbit,@bl2c,t,xp,u,pp)];   % Full Order Photon
+    Y = [ODE(@orbit,@bl2c,T,xu,U,pu);... % Full Order Planet
+         ODE(@orbit,@bl2c,T,xp,U,pp)];   % Full Order Photon
 
     fprintf('Parameters: E,L,Q,a,e,eps,m\n');
 
     % PLANET
-    WS = emgr(@orbit,@bl2c,[0,4,3],t,'s',[0.9*pu,1.1*pu],[1,0,0,0,0,0,0,0,0,0],1,0,xu);
+    WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pu,1.1*pu],[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xu);
     PLANET_SENSITIVITY = full(diag(WS{2}))
 
     % PHOTON
-    WS = emgr(@orbit,@bl2c,[0,4,3],t,'s',[0.9*pp,1.1*pp],[1,0,0,0,0,0,0,0,0,0],1,0,xp);
+    WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pp,1.1*pp],[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xp);
     PHOTON_SENSITIVITY = full(diag(WS{2}))
 
     %% Output
-    if(nargin==0), return; end
-    figure();
+    if(nargin>0 && o==0), return; end; 
+    figure('Name',mfilename,'NumberTitle','off');
     grid on;
     hold on;
     p0 = plot3(0,0,0,'*','Color','black');                     %singularity
@@ -56,7 +56,7 @@ function blackhole(o)
     zl = ceil(10*max([abs(Y(3,:)),abs(Y(6,:))]))*0.1;
     set(gca,'Xlim',[-xl,xl],'Ylim',[-yl,yl],'Zlim',[-zl,zl]);
     view(-30,30);
-    if(o==1), print('-dpng',[mfilename(),'.png']); end;
+    if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
 %% ======== Orbit ========
