@@ -1,6 +1,6 @@
 function vernval(J)
 % vernval (verification and validation)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)

@@ -1,11 +1,16 @@
 function [A,B,C] = ilp(J,N,O,s,r)
 % ilp (inverse lyapunov procedure)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
-        error('emgr not found! Get emgr at: http://gramian.de');
-    end
+        disp('emgr framework is required. Download at http://gramian.de/emgr.m');
+        return;
+    end;
+
+    if(nargin==3 || isempty(s))
+        s = 0;
+    end;
 
     if(nargin==5)
         rand('seed',r);
@@ -13,25 +18,25 @@ function [A,B,C] = ilp(J,N,O,s,r)
     end;
 
     % Gramian Eigenvalues
-    wc = exp( rand(N,1) );
-    wo = exp( rand(N,1) );
+    WC = exp( 0.5*rand(N,1) );
+    WO = exp( 0.5*rand(N,1) );
 
     % Gramian Eigenvectors
     [P,S,Q] = svd(randn(N));
 
     % Balancing Transformation
-    WC = P*diag(wc)*P';
-    WO = Q'*diag(wo)*Q;
+    WC = P*diag(sqrt(WC))*P';
+    WO = Q*diag(sqrt(WO))*Q';
     [U,D,V] = svd(WC*WO);
 
     % Input and Output
     B = randn(N,J);
 
-    if(nargin>=4 && s~=0),
+    if(s)
         C = B';
-    else,
+    else
         C = randn(O,N);
-    end
+    end;
 
     % Scale Output Matrix
     BB = sum(B.*B,2);  % = diag(B*B')
@@ -41,11 +46,13 @@ function [A,B,C] = ilp(J,N,O,s,r)
 
     % Solve System Matrix
     f = @(x,u,p) -D*x+B*u;
-    g = @(x,u,p) C*x;
+    g = @(x,u,p)  C*x;
     A = -emgr(f,g,[J,N,O],[1.0/N,1.0],'c') - (1.0/N)*speye(N);
 
     % Unbalance System
-    A = V'*A*U;
-    B = V'*B;
-    C = C*U;
+    if(s==0)
+        A = V*A*U';
+        B = V*B;
+        C = C*U';
+    end;
 end

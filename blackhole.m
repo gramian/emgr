@@ -1,6 +1,6 @@
 function blackhole(o)
 % stable orbit parameter identification inside the event horizon of black hole
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -10,31 +10,31 @@ function blackhole(o)
         fprintf('emgr (version: %g)\n',emgr('version'));
     end
 
-    %% Setup
+%% SETUP
     T = [0.005,5.0];
     L = floor(T(2)/T(1)) + 1;
     U = zeros(1,L);
 
-    % Planet
+   % Planet Parameters
     xu = [0.4;pi/2;0;0];
     pu = [0.568;1.13;0.13;0.9982;0.05;0;1]; % E,L,Q,a,e,eps,m
 
-    % Photon
+    % Photon Parameters
     xp = [0.2;pi/2;0;0];
     EE = 0.568; %10.5;
     pp = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05;0;0]; % E,L,Q,a,e,eps,m
 
-    %% Main
+%% MAIN
     Y = [ODE(@orbit,@bl2c,T,xu,U,pu);... % Full Order Planet
          ODE(@orbit,@bl2c,T,xp,U,pp)];   % Full Order Photon
 
     fprintf('Parameters: E,L,Q,a,e,eps,m\n');
 
-    % PLANET
+    % Planet Sensitivities
     WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pu,1.1*pu],[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xu);
     PLANET_SENSITIVITY = full(diag(WS{2}))
 
-    % PHOTON
+    % Photon Sensitivities
     WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pp,1.1*pp],[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xp);
     PHOTON_SENSITIVITY = full(diag(WS{2}))
 

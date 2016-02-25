@@ -1,6 +1,6 @@
 function measure(o)
 % measure (nonlinearity measure)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -19,12 +19,15 @@ function measure(o)
     X = zeros(N,1);
 
     rand('seed',1009);
-    A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
+    A = rand(N,N);
+    A(1:N+1:end) = -0.55*N;
+    A = 0.5*(A+A');
     B = rand(N,J);
     C = B';
 
     LIN = @(x,u,p) A*x + B*u;
     OUT = @(x,u,p) C*x;
+
     NIN = @(x,u,p) A*x + B*asinh(p*u);
     NST = @(x,u,p) A*asinh(p*x) + B*u;
     NOU = @(x,u,p) C*asinh(p*x);
@@ -57,9 +60,7 @@ function measure(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(linspace(0,2,K),y(1,:),'r','linewidth',2); hold on;
-    semilogy(linspace(0,2,K),y(2,:),'g','linewidth',2);
-    semilogy(linspace(0,2,K),y(3,:),'b','linewidth',2); hold off;
+    semilogy(linspace(0,2,K),y,{'r','g','b'},'linewidth',2);
     pbaspect([2,1,1]);
     legend('Input ','State ','Output ','location','southeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;

@@ -1,6 +1,6 @@
 function benchmark_lin(o)
 % benchmark (iss model reduction benchmark)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -36,13 +36,11 @@ function benchmark_lin(o)
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE
+%% OFFLINE (use velocity cross gramian)
     tic;
     WX = emgr(LIN,OUT,[J,N,O],T,'x');
-    %WXP = WX(1:n,1:n);
-    %[UU D VV] = svd(WXP);
-    WXV = WX(n+1:N,n+1:N);
-    [UU,D,VV] = svd(WXV);
+    WXV = WX(n+1:N,n+1:N); % WXP = WX(1:n,1:n);
+    [UU,D,VV] = svd(WXV);  % [UU,D,VV] = svd(WXP);
     OFFLINE = toc
 
 %% EVALUATION
@@ -64,9 +62,7 @@ function benchmark_lin(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(2:2:N-2,l1,'r','linewidth',2); hold on;
-    semilogy(2:2:N-2,l2,'g','linewidth',2);
-    semilogy(2:2:N-2,l8,'b','linewidth',2); hold off;
+    semilogy(2:2:N-2,[l1;l2;l8],{'r','g','b'},'linewidth',2);
     xlim([2,N-2]);
     ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
     pbaspect([2,1,1]);

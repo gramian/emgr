@@ -1,9 +1,9 @@
 function [U,D,V] = lsvd(A,k,m)
 % lsvd (lanczos sparse svd / truncated svd)
-% by Christian Himpe, 2014-2015 ( http://gramian.de )
+% by Christian Himpe, 2014-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
-% Compatible with Matlab and Octave, for square matrices only!
+% Compatible with MATLAB and OCTAVE, for square matrices only!
 %
 % Based on:
 %
@@ -36,7 +36,7 @@ function [U,D,V] = lsvd(A,k,m)
         a(I) = w'*q;
         w = w - a(I)*q;
 
-        w = w - Q(:,1:J)*(w'*Q(:,1:J))'; % re-orthogonalize I
+        w = w - Q(:,1:J)*(w'*Q(:,1:J))'; % re-orthogonalize
 
         b(I+1) = norm(w,2);
         Q(:,I+1) = w/b(I+1);
@@ -48,10 +48,10 @@ function [U,D,V] = lsvd(A,k,m)
     [u,d] = eig(T);
     [D,X] = sort(diag(d),'descend');
 
-    [U,R] = qr(Q(:,1:m)*u(:,X(1:k)),0); % re-orthogonalize II
+    U = Q(:,1:m)*u(:,X(1:k));
     D = sqrt(D(1:k));
 
     if(nargout==3)
-        V = diag(1.0./D)*(U'*A);
+        V = (diag(1.0./D)*(U'*A))';
     end
 end

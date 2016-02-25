@@ -1,13 +1,13 @@
 function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
-% emgr - Empirical Gramian Framework ( Version: 3.8 )
-% by Christian Himpe 2013-2015 ( http://gramian.de )
+% emgr - Empirical Gramian Framework ( Version: 3.9 )
+% Copyright (c) 2013-2016 Christian Himpe ( gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
 % SYNTAX:
 %    W = emgr(f,g,s,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm]);
 %
 % SUMMARY:
-%    emgr - Empirical Gramian Framemwork,
+%    emgr - EMpirical GRamian framemwork,
 %    computation of empirical gramians for model reduction,
 %    system identification and uncertainty quantification.
 %    Enables gramian-based nonlinear model order reduction.
@@ -40,8 +40,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %            + none(0), linear(1), logarithmic(2) parameter centering
 %            + default(0), exclusive options:
 %                  * use rms-centering(1); only: WS
-%                  * use schur-complement(1); only: WI
-%                  * use detailed schur-complement(1); only: WJ
+%                  * use Schur-complement(1); only: WI
+%                  * use detailed Schur-complement(1); only: WJ
 %            + assume(0), enforce(1) gramian symmetry
 %  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 %         (vector,scalar) [us = 0] - steady-state input
@@ -54,8 +54,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
 %              (cell)  W - {State-,Parameter-} Gramian (only: WS, WI, WJ)
 %
 % CITATION:
-%    C. Himpe (2015). emgr - Empirical Gramian Framework (Version 3.8)
-%    [Software]. Available from http://gramian.de . doi:10.5281/zenodo.35282 .
+%    C. Himpe (2016). emgr - Empirical Gramian Framework (Version 3.9)
+%    [Software]. Available from http://gramian.de . doi:10.5281/zenodo.46523 .
 %
 % SEE ALSO:
 %    gram
@@ -71,7 +71,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
     if(isa(ODE,'function_handle')==0), ODE = @rk2; end;
 
     % Version Info
-    if( (nargin==1) && strcmp(f,'version') ), W = 3.8; return; end;
+    if( (nargin==1) && strcmp(f,'version') ), W = 3.9; return; end;
 
     % Default Arguments
     if( (nargin<6)  || isempty(pr) ), pr = 0.0; end;
@@ -99,9 +99,9 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
     P = size(pr,1);         % number of parameters
     Q = size(pr,2);         % number of parameter sets
 
-    % Chirp Input
+    % Linear Chirp Input
     if( isnumeric(ut) && numel(ut)==1 && ut==Inf )
-        ut = @(t) 0.5*cos(pi./t)+0.5;
+        ut = @(t) 0.5*cos(pi*(t+10*t.*t))+0.5;
     end;
 
     % Discretize Procedural Input
@@ -231,8 +231,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             G = g; g = @(x,u,p) G(x,u(1:J-P),u(J-P+1:J));
         end;
 
-        n = N - P*(M>0 && w=='x'); % non-zero rows if joint gramian
-        W = zeros(n,N);            % preallocate gramian
+        m = N - P*(M>0 && w=='x'); % non-zero rows if joint gramian
+        W = zeros(m,N);            % preallocate gramian
     end;
 
 %% GRAMIAN COMPUTATION
@@ -394,8 +394,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm)
             error('ERROR! emgr: unknown gramian type!');
     end;
 
-    if(nf(12) && (w=='c' || w=='o' || w=='x' || w=='y') ) % enforce symmetry
-        W = 0.5*(W + W');
+    if(nf(12) && (w=='c' || w=='o' || w=='y' || w=='x') ) % enforce symmetry
+        W(1:m,1:m) = 0.5*(W(1:m,1:m) + W(1:m,1:m)');
     end;
 end
 

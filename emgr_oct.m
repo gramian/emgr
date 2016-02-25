@@ -1,10 +1,10 @@
-function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
-# emgr_oct - Empirical Gramian Framework ( Version: 3.8.oct )
-# by Christian Himpe 2013-2015 ( http://gramian.de )
+function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1.0,us=0,xs=0,um=1.0,xm=1.0)
+# emgr - Empirical Gramian Framework ( Version: 3.9.oct )
+# by Christian Himpe 2013-2016 ( http://gramian.de )
 # released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 #
 # SYNTAX:
-#    W = emgr(f,g,s,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm]);
+#    W = emgr_oct(f,g,s,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm]);
 #
 # SUMMARY:
 #    emgr - Empirical Gramian Framemwork,
@@ -40,8 +40,8 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
 #            + none(0), linear(1), logarithmic(2) parameter centering
 #            + default(0), exclusive options:
 #                  * use rms-centering(1); only: WS
-#                  * use schur-complement(1); only: WI
-#                  * use detailed schur-complement(1); only: WJ
+#                  * use Schur-complement(1); only: WI
+#                  * use detailed Schur-complement(1); only: WJ
 #            + assume(0), enforce(1) gramian symmetry
 #  (matrix,vector,scalar) [ut = 1] - input; default: delta impulse
 #         (vector,scalar) [us = 0] - steady-state input
@@ -54,8 +54,8 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
 #              (cell)  W - {State-,Parameter-} Gramian (only: WS, WI, WJ)
 #
 # CITATION:
-#    C. Himpe (2015). emgr - Empirical Gramian Framework (Version 3.8)
-#    [Software]. Available from http://gramian.de . doi:10.5281/zenodo.35282 .
+#    C. Himpe (2016). emgr - Empirical Gramian Framework (Version 3.9.oct)
+#    [Software]. Available from http://gramian.de . doi:? .
 #
 # SEE ALSO:
 #    gram
@@ -71,7 +71,7 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
     if(isa(ODE,'function_handle')==0), ODE = @rk2; end;
 
     # Version Info
-    if( (nargin==1) && strcmp(f,'version') ), W = 3.8; return; end;
+    if( (nargin==1) && strcmp(f,'version') ), W = 3.9; return; end;
 
     # System Dimensions
     J = s(1);               # number of inputs
@@ -90,9 +90,9 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
     P = size(pr,1);         # number of parameters
     Q = size(pr,2);         # number of parameter sets
 
-    # Chirp Input
+    # Linear Chirp Input
     if( isnumeric(ut) && numel(ut)==1 && ut==Inf )
-        ut = @(t) 0.5*cos(pi./t)+0.5;
+        ut = @(t) 0.5*cos(pi*(t+10*t.*t))+0.5;
     end;
 
     # Discretize Procedural Input
@@ -195,7 +195,7 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
 
             case 1, # preconditioned run
                 nf(6) = 0;
-                WT = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm);
+                WT = emgr_oct(f,g,s,t,w,pr,nf,ut,us,xs,um,xm);
                 TX = sqrt(diag(WT));
                 TX = TX(1:(N-(M>0 && w~='c')*P));
                 tx = 1.0./TX;
@@ -240,7 +240,7 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
                             up = pr + sparse(M,1,um(j,c),P,1);
                             x = ODE(f,1,t,xs,us,up);
                         else
-                            uu = us + ut.*(um(j,c)*(1:J==j)');
+                            uu = us + (ut.*(um(j,c)*(1:J==j)'));
                             x = ODE(f,1,t,xs,uu,pp);
                         end;
                         x -= res(x);
@@ -302,7 +302,7 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
                     for c=1:C
                         for j=1:J # parfor
                             if(um(j,c)==0), continue; end;
-                            uu = us + ut.*(um(j,c)*(1:J==j)');
+                            uu = us + (ut.*(um(j,c)*(1:J==j)'));
                             if(M>0)
                                 x = ODE(f,1,t,xs(1:M),uu,xs(M+1:end));
                             else
@@ -329,11 +329,11 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
                 for c=1:C
                     for j=1:J # parfor
                         if(um(j,c)==0 || xm(j,c)==0), continue; end;
-                        uu = us + ut.*(um(j,c)*(1:J==j)');
+                        uu = us + (ut.*(um(j,c)*(1:J==j)'));
                         x = ODE(f,1,t,xs,uu,pp);
                         x -= res(x);
                         x *= 1.0./um(j,c);
-                        uu = us + ut.*(xm(j,c)*(1:J==j)');
+                        uu = us + (ut.*(xm(j,c)*(1:J==j)'));
                         z = ODE(g,1,t,xs,uu,pp);
                         z -= res(z);
                         z *= 1.0./xm(j,c);
@@ -351,7 +351,7 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
             W{2} = zeros(P,1);
             for p=1:P
                 V = emgr_oct(f,g,[1,N,O,p],t,'c',pr,nf,ut,us,xs,pm(p,:),xm);
-                W{1} += V;              # approximate controllability gramian
+                W{1} += V;        # approximate controllability gramian
                 W{2}(p) = trace(V);
             end;
             if(nf(11))
@@ -366,7 +366,7 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
             W{1} = V(1:N,1:N);         # observability gramian
             W{2} = V(N+1:N+P,N+1:N+P); # identifiability gramian
             if(nf(11))
-                W{2} = W{2} - V(N+1:N+P,1:N)*ainv(W{1})*V(1:N,N+1:N+P);
+                W{2} -= V(N+1:N+P,1:N)*ainv(W{1})*V(1:N,N+1:N+P);
             end;
 
         case 'j', # joint gramian
@@ -385,8 +385,8 @@ function W = emgr_oct(f,g,s,t,w,pr=0,nf=0,ut=1,us=0,xs=0,um=1,xm=1)
             error('ERROR! emgr: unknown gramian type!');
     end;
 
-    if(nf(12) && (w=='c' || w=='o' || w=='x' || w=='y') ) # enforce symmetry
-        W = 0.5*(W + W');
+    if(nf(12) && (w=='c' || w=='o' || w=='y' || w=='x') ) # enforce symmetry
+        W(1:n,1:n) = 0.5*(W(1:n,1:n) + W(1:n,1:n)');
     end;
 end
 

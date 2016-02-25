@@ -1,6 +1,6 @@
 function combined_wj(o)
 % combined_wj (joint gramian nonlinear combined reduction)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -21,20 +21,17 @@ function combined_wj(o)
 
     rand('seed',1009);
 
-    A = rand(N,N);
-    A(1:N+1:end) = -0.9*N; 
-    B = 30.0*full(sprand(N,J,0.1));
+    A = full(sprand(N,N,1./N));
+    A(1:N+1:end) = -1.0;
+    A = A * 10.0;
+    B = 10.0*full(sprand(N,J,2.0/N));
     C = rand(O,N);
 
-    P = 0.5*rand(N,1) + 0.5;
-    Q = [0.5*ones(N,1),ones(N,1)];
+    P = 0.9*rand(N,10) + 0.1;
+    Q = [0.1*ones(N,1),ones(N,1)];
 
     NON = @(x,u,p) A*tanh(p.*x) + B*u;
     OUT = @(x,u,p) C*x;
-
-%% FULL ORDER
-    Y = ODE(NON,OUT,T,X,U,P);
-    n2 = norm(Y(:),2);
 
 %% OFFLINE
     tic;
@@ -44,24 +41,30 @@ function combined_wj(o)
     OFFLINE = toc
 
 %% EVALUATION
-    a = 1;
-    for I=1:4:N
-        uu = UU(:,1:I);
-        vv = uu';
-        b = 1;
-        for K=1:4:N
-            pp = PP(:,1:K);
-            qq = pp';
-            p = pp*qq*P;
-            x = vv*X;
-            non = @(x,u,p) vv*NON(uu*x,u,p);
-            out = @(x,u,p) OUT(uu*x,u,p);
-            y = ODE(non,out,T,x,U,p);
-            l2(a,b) = min(1.0,norm(Y(:)-y(:),2)/n2);
-            b = b + 1;
+    for H=1:10
+        Y = ODE(NON,OUT,T,X,U,P(:,H));
+        n2 = norm(Y(:),2);
+
+        a = 1;
+        for I=1:4:N
+            uu = UU(:,1:I);
+            vv = uu';
+            b = 1;
+            for K=1:4:N
+                pp = PP(:,1:K);
+                qq = pp';
+                p = pp*qq*P(:,H);
+                x = vv*X;
+                non = @(x,u,p) vv*NON(uu*x,u,p);
+                out = @(x,u,p) OUT(uu*x,u,p);
+                y = ODE(non,out,T,x,U,p);
+                l2(a,b,H) = min(1.0,norm(Y(:)-y(:),2)/n2);
+                b = b + 1;
+            end;
+            a = a + 1;
         end;
-        a = a + 1;
     end;
+    l2 = sqrt(sum(l2.^2,3));
 
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 

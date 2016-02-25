@@ -1,6 +1,6 @@
 function benchmark_non(o)
 % benchmark (nonlinear rc ladder)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -16,7 +16,7 @@ function benchmark_non(o)
     O = 1;
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = ones(1,L);
+    U = [ones(J,floor(L/2)),zeros(J,ceil(L/2))];
     X = zeros(N,1);
 
     g = @(x) exp(x)+x-1.0;
@@ -55,9 +55,7 @@ function benchmark_non(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(1:N-1,l1,'r','linewidth',2); hold on;
-    semilogy(1:N-1,l2,'g','linewidth',2);
-    semilogy(1:N-1,l8,'b','linewidth',2); hold off;
+    semilogy(1:N-1,[l1;l2;l8],{'r','g','b'},'linewidth',2);
     xlim([1,N-1]);
     ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
     pbaspect([2,1,1]);

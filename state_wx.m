@@ -1,6 +1,6 @@
 function state_wx(o)
 % state_wx (cross gramian linear state reduction)
-% by Christian Himpe, 2013-2015 ( http://gramian.de )
+% by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -20,7 +20,9 @@ function state_wx(o)
     X = zeros(N,1);
 
     rand('seed',1009);
-    A = rand(N,N); A(1:N+1:end) = -0.55*N; A = 0.5*(A+A');
+    A = rand(N,N);
+    A(1:N+1:end) = -0.55*N;
+    A = 0.5*(A+A');
     B = rand(N,J);
     C = B';
 
@@ -58,9 +60,7 @@ function state_wx(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(1:N-1,l1,'r','linewidth',2); hold on;
-    semilogy(1:N-1,l2,'g','linewidth',2);
-    semilogy(1:N-1,l8,'b','linewidth',2); hold off;
+    semilogy(1:N-1,[l1;l2;l8],{'r','g','b'},'linewidth',2);
     xlim([1,N-1]);
     ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
     pbaspect([2,1,1]);

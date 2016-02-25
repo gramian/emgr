@@ -1,6 +1,6 @@
-function state_wy(o)
-% state_wy (linear cross gramian linear state reduction)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
+function pmor_wx(o)
+% pmor_wx (cross-gramian-based parametrized state reduction)
+% by Christian Himpe, 2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -11,7 +11,7 @@ function state_wy(o)
     end
 
 %% SETUP
-    J = 8;
+    J = 1;
     N = 64;
     O = J;
     T = [0.01,1.0];
@@ -22,27 +22,26 @@ function state_wy(o)
     rand('seed',1009);
     A = rand(N,N);
     A(1:N+1:end) = -0.55*N;
-    A = 0.5*(A+A');
     B = rand(N,J);
-    C = B';
+    C = rand(O,N);
 
-    LIN = @(x,u,p) A*x + B*u;
-    ADJ = @(x,u,p) A'*x + C'*u;
+    LIN = @(x,u,p) A*x + B*u + p;
     OUT = @(x,u,p) C*x;
 
-%% FULL ORDER
-    Y = ODE(LIN,OUT,T,X,U,0);
+%% OFFLINE
+    tic;
+    WX = emgr(LIN,OUT,[J,N,O],T,'x',ones(N,1)*linspace(0,1,5),[0,0,0,0,0,0,0,0,0,0,0,1]);
+    [UU,D,VV] = svd(WX);
+    OFFLINE = toc
+
+%% EVALUATION
+
+    Q = rand(N,1);
+    Y = ODE(LIN,OUT,T,X,U,Q);
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE
-    tic;
-    WY = emgr(LIN,ADJ,[J,N,O],T,'y');
-    [UU,D,VV] = svd(WY);
-    OFFLINE = toc
-
-%% EVALUATION
     for I=1:N-1
         uu = UU(:,1:I);
         vv = uu';
@@ -50,13 +49,14 @@ function state_wy(o)
         b = vv*B;
         c = C*uu;
         x = vv*X;
-        lin = @(x,u,p) a*x + b*u;
+        lin = @(x,u,p) a*x + b*u + vv*Q;
         out = @(x,u,p) c*x;
-        y = ODE(lin,out,T,x,U,0);
+        y = ODE(lin,out,T,x,U,Q);
         l1(I) = norm(Y(:)-y(:),1)/n1;
         l2(I) = norm(Y(:)-y(:),2)/n2;
         l8(I) = norm(Y(:)-y(:),Inf)/n8;
     end;
+
 
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 

@@ -1,6 +1,6 @@
 function y = mysolver(f,g,t,x,u,p)
 % mysolver (sample custom ode solver for emgr)
-% by Christian Himpe, 2014-2015 ( http://gramian.de )
+% by Christian Himpe, 2014-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     h = t(1);
@@ -10,7 +10,7 @@ function y = mysolver(f,g,t,x,u,p)
     U = @(t) u(:,1+min(floor(t/h),L-1));
 
     % Compute State Trajectory
-    if(exist('OCTAVE_VERSION'))
+    if(exist('OCTAVE_VERSION','builtin'))
         x = lsode(@(y,t) f(y,U(t),p),x,T);
     else
         [tdummy,x] = ode45(@(t,y) f(y,U(t),p),T,x);

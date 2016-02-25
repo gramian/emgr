@@ -1,6 +1,6 @@
 function decentral(o)
 % decentral (-ized control)
-% by Christian Himpe, 2013-2015 (http://gramian.de )
+% by Christian Himpe, 2013-2016 (http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
@@ -20,7 +20,8 @@ function decentral(o)
     X = ones(N,1);
 
     rand('seed',1009);
-    A = rand(N,N); A(1:N+1:end) = -0.55*N;
+    A = rand(N,N);
+    A(1:N+1:end) = -0.55*N;
     B = rand(N,J);
     C = rand(O,N);
 
