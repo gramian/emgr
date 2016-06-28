@@ -7,7 +7,7 @@ function gains_wx(o)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
@@ -19,11 +19,8 @@ function gains_wx(o)
     U = [ones(J,1),zeros(J,L-1)];
     X = zeros(N,1);
 
-    rand('seed',1009);
-    A = rand(N,N);
-    A(1:N+1:end) = -0.55*N;
-    A = 0.5*(A+A');
-    B = rand(N,J);
+    A = -gallery('lehmer',N);
+    B = toeplitz(1:N,1:J)./N;
     C = B';
 
     LIN = @(x,u,p) A*x + B*u;
@@ -41,18 +38,18 @@ function gains_wx(o)
     [UU,D,VV] = svd(WX);
 
     % Balanced Gains Resorting
-    d = abs(sum((UU'*B).*(C*UU)',2)).*diag(D);
+    d = abs(sum((VV'*B).*(C*UU)',2)).*diag(D);
     [TMP,IX] = sort(d,'descend');
     for r = 1:size(A,1)
-        ug(:,r) = UU(:,IX(r));
-        vg(r,:) = VV(IX(r),:);
+        UG(:,r) = UU(:,IX(r));
+        VG(r,:) = VV(:,IX(r));
     end
 
     OFFLINE = toc
 
 %% EVALUATION
     for I=1:N-1
-        uu = UU(:,1:I);
+        uu = UG(:,1:I);
         vv = uu';
         a = vv*A*uu;
         b = vv*B;

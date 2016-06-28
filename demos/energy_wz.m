@@ -1,19 +1,19 @@
-function nonsym_wx(o)
-% nonsym_wx (nonsymmetric cross gramian linear state reduction)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
+function energy_wz(o)
+% energy_wz (cross gramian experimental reduction)
+% by Christian Himpe, 2015-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
     J = 8;
     N = 64;
-    O = J;
+    O = 1;
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
     U = [ones(J,1),zeros(J,L-1)];
@@ -26,7 +26,7 @@ function nonsym_wx(o)
     C = rand(O,N);
 
     LIN = @(x,u,p) A*x + B*u;
-    OUT = @(x,u,p) C*x;
+    OUT = @(x,u,p) x'*x;
 
 %% FULL ORDER
     Y = ODE(LIN,OUT,T,X,U,0);
@@ -34,10 +34,10 @@ function nonsym_wx(o)
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE
+% OFFLINE
     tic;
-    WX = emgr(LIN,OUT,[J,N,O],T,'x',[],[0,0,0,0,0,0,1,0,0,0,0,0]);
-    [UU,D,VV] = svd(WX);
+    WZ = emgr(LIN,OUT,[J,N,O],T,'x',0,[0,0,0,0,0,0,1,0,0,0],1,0,1);
+    [UU,D,VV] = svd(WZ);
     OFFLINE = toc
 
 %% EVALUATION
@@ -46,10 +46,9 @@ function nonsym_wx(o)
         vv = uu';
         a = vv*A*uu;
         b = vv*B;
-        c = C*uu;
         x = vv*X;
         lin = @(x,u,p) a*x + b*u;
-        out = @(x,u,p) c*x;
+        out = @(x,u,p) OUT(uu*x,u,p);
         y = ODE(lin,out,T,x,U,0);
         l1(I) = norm(Y(:)-y(:),1)/n1;
         l2(I) = norm(Y(:)-y(:),2)/n2;

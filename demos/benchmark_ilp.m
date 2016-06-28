@@ -1,5 +1,5 @@
-function hierarchy(o)
-% hierarchy (hierarchical network reduction)
+function benchmark_ilp(o)
+% benchmark (inverse lyapunov procedure)
 % by Christian Himpe, 2013-2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
@@ -7,35 +7,28 @@ function hierarchy(o)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
+    end
+
+    if(exist('ilp')~=2)
+        error('ilp not found. Get ilp at: http://gramian.de/ilp.m');
     end
 
 %% SETUP
-    D = 3;	%Tree depth
-    M = 4;	%Children per node
-
-    J = 1;
-    O = M^D;
-    N = (M^(D+1)-1)/(M-1);
-    T = [1,100];
+    J = 8;
+    N = 64;
+    O = J;
+    [A,B,C] = ilp(J,N,O,0,1009);
+    T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = exp(-0.0005*(1:L).^2);
+    U = [ones(J,1),zeros(J,L-1)];
     X = zeros(N,1);
-
-    rand('seed',1009);
-    A = trasm(D,M);
-    B = sparse(N,1); B(1,1) = D;
-    C = [sparse(O,N-O),speye(O)];
 
     LIN = @(x,u,p) A*x + B*u;
     OUT = @(x,u,p) C*x;
 
-    ADJ = @(x,u,p) A'*x + C'*u;
-    AOU = @(x,u,p) B'*x;
-
 %% FULL ORDER
-    ODE = @rk1;
-    Y = rk1(LIN,OUT,T,X,U,0);
+    Y = ODE(LIN,OUT,T,X,U,0);
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
@@ -43,7 +36,7 @@ function hierarchy(o)
 %% OFFLINE
     tic;
     WC = emgr(LIN,OUT,[J,N,O],T,'c');
-    WO = emgr(ADJ,AOU,[O,N,J],T,'c');
+    WO = emgr(LIN,OUT,[J,N,O],T,'o');
     [VV,D,UU] = balance(WC,WO);
     OFFLINE = toc
 
@@ -74,19 +67,6 @@ function hierarchy(o)
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
-%% ======== Tree Assembler ========
-function A = trasm(d,c)
-
-    a = (c^(d+1)-1)/(c-1);
-    A = -speye(a);
-
-    for I=0:((a-1)/c)-1
-        b = 1+c*I;
-        %A(1+I,b+1:b+c) = rand(1,c)+1;
-        A(b+1:b+c,1+I) = rand(c,1)+1;
-    end
-end
-
 %% ======== Balancer ========
 function [X,Y,Z] = balance(WC,WO)
 
@@ -96,21 +76,3 @@ function [X,Y,Z] = balance(WC,WO)
     X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
     Z =   LC*V*diag(1.0./sqrt(diag(Y)));
 end
-
-%% ======== Integrator ========
-function x = rk1(f,g,t,z,u,p)
-
-    if(isnumeric(g) && g==1), g = @(x,u,p) x; end;
-
-    h = t(1);
-    L = floor(t(2)/h) + 1;
-
-    x(:,1) = g(z,u(:,end),p);
-    x(end,L) = 0;
-
-    for l=2:L
-        z = z + h*f(z,u(:,l-1),p);
-        x(:,l) = g(z,u(:,l-1),p);
-    end;
-end
-

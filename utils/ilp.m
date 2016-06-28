@@ -47,7 +47,7 @@ function [A,B,C] = ilp(J,N,O,s,r)
     % Solve System Matrix
     f = @(x,u,p) -D*x+B*u;
     g = @(x,u,p)  C*x;
-    A = -emgr(f,g,[J,N,O],[1.0/N,1.0],'c') - (1.0/N)*speye(N);
+    A = -emgr(f,g,[J,N,O],[1.0/N,1.0],'c') - sqrt(eps)*speye(N);
 
     % Unbalance System
     if(s==0)

@@ -1,6 +1,6 @@
 ![emgr Logo](emgr.png) emgr
 ===========================
-Empirical Gramian Framework (Version 3.9) ![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.46523.png)
+Empirical Gramian Framework (Version 4.0) ![DOI badge](https://zenodo.org/badge/doi/10.5281/zenodo.56502.png)
 
 Empirical gramians can be computed for linear and nonlinear state-space control systems for purposes of model order reduction (MOR), system identification (SYSID) and uncertainty quantification (UQ).
 Model reduction using empirical gramians can be applied to the state-space, to the parameter-space or to both through combined reduction.

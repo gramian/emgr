@@ -7,7 +7,7 @@ function combined_wj(o)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
@@ -22,7 +22,7 @@ function combined_wj(o)
     rand('seed',1009);
 
     A = full(sprand(N,N,1./N));
-    A(1:N+1:end) = -1.0;
+    A(1:N+1:end) = -2.0;
     A = A * 10.0;
     B = 10.0*full(sprand(N,J,2.0/N));
     C = rand(O,N);
@@ -35,13 +35,13 @@ function combined_wj(o)
 
 %% OFFLINE
     tic;
-    WJ = emgr(NON,OUT,[J,N,O],T,'j',Q,[0,0,0,0,0,0,0,0,1,1,1,0]);
+    WJ = emgr(NON,OUT,[J,N,O],T,'j',Q,[0,0,0,0,0,0,0,1,1,0]);
     [UU,D,VV] = svd(WJ{1});
     [PP,D,QQ] = svd(WJ{2});
     OFFLINE = toc
 
 %% EVALUATION
-    for H=1:10
+    for H=1:1
         Y = ODE(NON,OUT,T,X,U,P(:,H));
         n2 = norm(Y(:),2);
 

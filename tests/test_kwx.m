@@ -1,56 +1,52 @@
-function benchmark_ilp(o)
-% benchmark (inverse lyapunov procedure)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
+function test_kwx(o)
+% test_kwx (kernel cross gramian linear state reduction)
+% by Christian Himpe, 2016 ( http://gramian.de )
 % released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %*
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
-    end
-
-    if(exist('ilp')~=2)
-        error('ilp not found. Get ilp at: http://gramian.de/ilp.m');
+        global ODE;
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
-    J = 8;
+    J = 4;
     N = 64;
     O = J;
-    [A,B,C] = ilp(J,N,O,0,1009);
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
     U = [ones(J,1),zeros(J,L-1)];
     X = zeros(N,1);
 
+    A = -gallery('lehmer',N);
+    B = toeplitz(1:N,1:J)./N;
+    C = B';
+
     LIN = @(x,u,p) A*x + B*u;
     OUT = @(x,u,p) C*x;
 
 %% FULL ORDER
-    Y = ODE(LIN,OUT,T,X,U,0);
+    Y = ODE(LIN,OUT,T,X,U,0); %figure; plot(0:T(1):T(2),Y); return;
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
 %% OFFLINE
+    global DOT;
+    DOT = @gauss_kernel;
+
     tic;
-    WC = emgr(LIN,OUT,[J,N,O],T,'c');
-    WO = emgr(LIN,OUT,[J,N,O],T,'o');
-    [VV,D,UU] = balance(WC,WO);
+    WX = emgr(LIN,OUT,[J,N,O],T,'x');
+    [UU,D,VV] = svd(WX);
     OFFLINE = toc
 
 %% EVALUATION
     for I=1:N-1
         uu = UU(:,1:I);
-        vv = VV(1:I,:);
-        a = vv*A*uu;
-        b = vv*B;
-        c = C*uu;
-        x = vv*X;
-        lin = @(x,u,p) a*x + b*u;
-        out = @(x,u,p) c*x;
-        y = ODE(lin,out,T,x,U,0);
+        lin = @(x,u,p) uu'*LIN(uu*x,u,p);
+        out = @(x,u,p) OUT(uu*x,u,p);
+        y = ODE(lin,out,T,uu'*X,U,0);
         l1(I) = norm(Y(:)-y(:),1)/n1;
         l2(I) = norm(Y(:)-y(:),2)/n2;
         l8(I) = norm(Y(:)-y(:),Inf)/n8;
@@ -61,18 +57,24 @@ function benchmark_ilp(o)
     figure('Name',mfilename,'NumberTitle','off');
     semilogy(1:N-1,[l1;l2;l8],{'r','g','b'},'linewidth',2);
     xlim([1,N-1]);
-    ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
+    ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))),1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
+
+%% CLEAN UP
+    ODE = [];
+    DOT = [];
 end
 
-%% ======== Balancer ========
-function [X,Y,Z] = balance(WC,WO)
+function w = gauss_kernel(x,y)
+% gauss_kernel - Gaussian Kernel
+% Copyright (c) 2016 Christian Himpe ( gramian.de )
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
+%*
+    global GAMMA;
+    if(isempty(GAMMA)), GAMMA = 1.0; end;
 
-    [L,D,l] = svd(WC); LC = L*diag(sqrt(diag(D)));
-    [L,D,l] = svd(WO); LO = L*diag(sqrt(diag(D)));
-    [U,Y,V] = svd(LO'*LC);
-    X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
-    Z =   LC*V*diag(1.0./sqrt(diag(Y)));
+    r = sqrt(1.0/GAMMA)*(x - y');
+    w = exp(-(r*r').^2.0);
 end

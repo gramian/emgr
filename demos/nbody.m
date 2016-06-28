@@ -7,8 +7,8 @@ function nbody(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        global ODE; ODE = @lf2;
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
@@ -68,6 +68,8 @@ function nbody(o)
     pbaspect([2,1,1]);
     set(gcf,'InvertHardcopy','off');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
+
+    ODE = [];
 end
 
 %% ======== Acceleration ========
@@ -87,4 +89,29 @@ function y = acc(x,u,p)
     end
 
     y = y(:);
+end
+
+%% ======== SYMPLECTIC INTEGRATOR ========
+function x = lf2(f,g,t,z,u,p)
+
+    if(isnumeric(g) && g==1), g = @(x,u,p) x; end;
+
+    h = t(1);
+    L = floor(t(2)/h) + 1;
+    N = numel(z);
+    n = N/2;
+
+    x(:,1) = g(z,u(:,end),p);
+    x(end,L) = 0; % preallocate trajectory
+
+    p1 = z(1:n);
+    q1 = z(n+1:end);
+
+    for l=2:L % 2nd order Leapfrog Verlet Method
+        a1 = f([p1;q1],u(:,l-1),p);
+        p1 = p1 + h*q1 + 0.5*h*h*a1(n+1:end);
+        a2 = f([p1;q1],u(:,l-1),p);
+        q1 = q1 + 0.5*h*(a1(n+1:end) + a2(n+1:end));
+        x(:,l) = g([p1;q1],u(:,l-1),p);
+    end;
 end

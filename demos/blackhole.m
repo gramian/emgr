@@ -7,7 +7,7 @@ function blackhole(o)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
@@ -31,12 +31,12 @@ function blackhole(o)
     fprintf('Parameters: E,L,Q,a,e,eps,m\n');
 
     % Planet Sensitivities
-    WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pu,1.1*pu],[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xu);
-    PLANET_SENSITIVITY = full(diag(WS{2}))
+    WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pu,1.1*pu],[1,0,0,0,0,0,0,0,0,0],1,0,xu);
+    PLANET_SENSITIVITY = WS{2}(:)
 
     % Photon Sensitivities
-    WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pp,1.1*pp],[1,0,0,0,0,0,0,0,0,0,0,0],1,0,xp);
-    PHOTON_SENSITIVITY = full(diag(WS{2}))
+    WS = emgr(@orbit,@bl2c,[0,4,3],T,'s',[0.9*pp,1.1*pp],[1,0,0,0,0,0,0,0,0,0],1,0,xp);
+    PHOTON_SENSITIVITY = WS{2}(:)
 
     %% Output
     if(nargin>0 && o==0), return; end; 
@@ -49,7 +49,7 @@ function blackhole(o)
     p3 = plot3(Y(4,end),Y(5,end),Y(6,end),'*','Color','blue'); %photon
     p4 = plot3(Y(4,:),Y(5,:),Y(6,:),'Color','blue');           %photon orbit
     l = legend([p0 p2 p4],'singularity','planet orbit','photon orbit');
-    set(l,'FontSize',5);
+    set(l,'FontSize',10);
     hold off;
     xl = ceil(10*max([abs(Y(1,:)),abs(Y(4,:))]))*0.1;
     yl = ceil(10*max([abs(Y(2,:)),abs(Y(5,:))]))*0.1;

@@ -7,7 +7,7 @@ function measure(o)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
@@ -46,9 +46,9 @@ function measure(o)
         Ws = emgr(NST,OUT,[J,N,O],T,'x',P); % State Nonlinearity
         Wo = emgr(LIN,NOU,[J,N,O],T,'o',P); % Output Nonlinearity
 
-        Ni = sum(sum(abs(WL-Wi)));
-        Ns = sum(sum(abs(WL-Ws)));
-        No = sum(sum(abs(WL-Wo)));
+        Ni = norm(WL-Wi,'fro');
+        Ns = norm(WL-Ws,'fro');
+        No = norm(WL-Wo,'fro');
 
         y(:,I) = [Ni;Ns;No];
         P = P + Q;

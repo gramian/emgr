@@ -7,7 +7,7 @@ function decentral(o)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
@@ -29,20 +29,23 @@ function decentral(o)
     OUT = @(x,u,p) C*x;
 
 %% OFFLINE
+
+    global DOT;
+    DOT = @trace_kernel;
+
     tic;
-    WX = cell(J,O);
+    PM = zeros(J,O); % Participation Matrix
+
     for V=1:J
         for W=1:O
             lin = @(x,u,p) A*x + B(:,V)*u;
             out = @(x,u,p) C(W,:)*x;
-            WX{V,W} = emgr(lin,out,[1,N,1],T,'x');
+            io = emgr(lin,out,[1,N,1],T,'x');
+            PM(V,W) = io(1,1);
         end
     end
 
-    PM = zeros(J,O); % Participation Matrix
-    PM = cellfun(@(w) trace(w),WX);
     PM = PM./sum(sum(PM));
-
     OFFLINE = toc
 
 %% OUTPUT
@@ -68,4 +71,12 @@ function m = antijet(n)
     B = 0.3*sin( L*(2.11*pi) )+0.3;
 
     m = [R;G;B]';
+end
+
+function w = trace_kernel(x,y)
+% trace_kernel - Kernel for Trace Computation
+% Copyright (c) 2016 Christian Himpe ( gramian.de )
+% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
+%*
+    w = sum(sum(x.*y'));
 end

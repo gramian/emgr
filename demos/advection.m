@@ -6,23 +6,22 @@ function advection(o)
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
-        fprintf('emgr (version: %g)\n',emgr('version'));
+        global ODE;
+        fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
     J = 0;
-    N = 100;
+    N = 256;
     O = N;
     R = 10;
-    T = [0.01,1.0];
+    T = [0.001,0.1];
     L = floor(T(2)/T(1)) + 1;
     U = zeros(1,L*10);
-    H = 0.1;
-    X = H:H:10.0; X = exp(-(X-1.0).^2)';
+    X = exp(-linspace(-2,8,N).^2)';
 
-    P = 5;
-    A = spdiags((1.0/H)*[ones(N,1),-ones(N,1)],[-1,0],N,N);
+    P = 0.55;
+    A = spdiags(N*[ones(N,1),-ones(N,1)],[-1,0],N,N);
 
     LIN = @(x,u,p) p*A*x;
     ADJ = @(x,u,p) p*A'*x + u;
@@ -40,7 +39,7 @@ function advection(o)
     OFFLINE = toc
 
 %% ONLINE
-    y = ODE(lin,out,T,x,U,P);
+    y = ODE(lin,out,[0.001,1.0],x,U,P);
 
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
@@ -50,6 +49,8 @@ function advection(o)
     set(gca,'YTick',0,'xtick',[]); ylabel('X'); xlabel('t');
     pbaspect([2,1,1]);
     if(nargin>0 && o==1), print('-dpng',[mfilename(),'.png']); end;
+
+    ODE = [];
 end
 
 %% ======== Colormap ========
