@@ -60,7 +60,9 @@ function measure(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(linspace(0,2,K),y,{'r','g','b'},'linewidth',2);
+    semilogy(linspace(0,2,K),y(1,:),'r','linewidth',2); hold on;
+    semilogy(linspace(0,2,K),y(2,:),'g','linewidth',2);
+    semilogy(linspace(0,2,K),y(3,:),'b','linewidth',2); hold off;
     pbaspect([2,1,1]);
     legend('Input ','State ','Output ','location','southeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;

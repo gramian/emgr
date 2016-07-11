@@ -51,7 +51,9 @@ function test_wi(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(1:N-1,[l1;l2;l8],{'r','g','b'},'linewidth',2);
+    semilogy(1:N-1,l1,'r','linewidth',2); hold on;
+    semilogy(1:N-1,l2,'g','linewidth',2);
+    semilogy(1:N-1,l8,'b','linewidth',2); hold off;
     xlim([1,N-1]);
     ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))),1]);
     pbaspect([2,1,1]);

@@ -62,7 +62,9 @@ function benchmark_lin(o)
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    semilogy(2:2:N-2,[l1;l2;l8],{'r','g','b'},'linewidth',2);
+    semilogy(2:2:N-2,l1,'r','linewidth',2); hold on;
+    semilogy(2:2:N-2,l2,'g','linewidth',2);
+    semilogy(2:2:N-2,l8,'b','linewidth',2); hold off;
     xlim([2,N-2]);
     ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
     pbaspect([2,1,1]);
