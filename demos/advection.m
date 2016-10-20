@@ -1,70 +1,55 @@
 function advection(o)
-% finite difference discretized pde transport equation reduction
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: advection (finite difference discretized transport equation)
+%%% project: emgr - Empirical Gramian Framework ( gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
         global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
-    J = 0;
+    M = 0;
     N = 256;
-    O = N;
+    Q = N;
     R = 10;
-    T = [0.001,0.1];
+    T = [0.01,0.1];
     L = floor(T(2)/T(1)) + 1;
-    U = zeros(1,L*10);
+    U = @(t) 0;
     X = exp(-linspace(-2,8,N).^2)';
 
     P = 0.55;
     A = spdiags(N*[ones(N,1),-ones(N,1)],[-1,0],N,N);
 
-    LIN = @(x,u,p) p*A*x;
-    ADJ = @(x,u,p) p*A'*x + u;
-    OUT = @(x,u,p) x;
+    LIN = @(x,u,p,t) p*A*x;
+    ADJ = @(x,u,p,t) p*A'*x + u;
+    OUT = @(x,u,p,t) x;
 
 %% OFFLINE
     tic;
-    WO = emgr(ADJ,1,[N,N,O],T,'c',P);
+    WO = emgr(ADJ,1,[N,N,Q],T,'c',P);
     [UU,D,VV] = svd(WO); UU = UU(:,1:R); VV = UU';
     a = VV*A*UU;
     c = UU;
     x = VV*X;
-    lin = @(x,u,p) p*a*x;
-    out = @(x,u,p) c*x;
+    lin = @(x,u,p,t) p*a*x;
+    out = @(x,u,p,t) c*x;
     OFFLINE = toc
 
 %% ONLINE
-    y = ODE(lin,out,[0.001,1.0],x,U,P);
+    y = ODE(lin,out,[0.01,1.0],x,U,P);
 
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
     imagesc(sparse(y)); caxis([0,max(y(:))]);
-    colormap(antijet);
+    if(exist('viridis')==0), colormap(hot); end;
     set(gca,'YTick',0,'xtick',[]); ylabel('X'); xlabel('t');
     pbaspect([2,1,1]);
     if(nargin>0 && o==1), print('-dpng',[mfilename(),'.png']); end;
-
-    ODE = [];
 end
 
-%% ======== Colormap ========
-function m = antijet(n)
-% antijet colormap
-% by Christian Himpe 2014-2015
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
-    if(nargin<1 || isempty(n)), n = 256; end;
-    L = linspace(0,1,n);
-
-    R = -0.5*sin( L*(1.37*pi)+0.13*pi )+0.5;
-    G = -0.4*cos( L*(1.5*pi) )+0.4;
-    B = 0.3*sin( L*(2.11*pi) )+0.3;
-
-    m = [R;G;B]';
-end

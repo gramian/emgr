@@ -1,22 +1,24 @@
 function combined_wj(o)
-% combined_wj (joint gramian nonlinear combined reduction)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: combined_wj (joint gramian nonlinear combined reduction)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
-    J = 1;
+    M = 1;
     N = 64;
-    O = J;
+    Q = M;
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = [ones(J,1)./T(2),zeros(J,L)];
+    U = @(t) ones(M,1)*(t<=T(1))/T(1);
     X = zeros(N,1);
 
     rand('seed',1009);
@@ -24,18 +26,18 @@ function combined_wj(o)
     A = full(sprand(N,N,1./N));
     A(1:N+1:end) = -2.0;
     A = A * 10.0;
-    B = 10.0*full(sprand(N,J,2.0/N));
-    C = rand(O,N);
+    B = 10.0*full(sprand(N,M,2.0/N));
+    C = rand(Q,N);
 
     P = 0.9*rand(N,10) + 0.1;
-    Q = [0.1*ones(N,1),ones(N,1)];
+    R = [0.1*ones(N,1),ones(N,1)];
 
-    NON = @(x,u,p) A*tanh(p.*x) + B*u;
-    OUT = @(x,u,p) C*x;
+    NON = @(x,u,p,t) A*tanh(p.*x) + B*u;
+    OUT = @(x,u,p,t) C*x;
 
 %% OFFLINE
     tic;
-    WJ = emgr(NON,OUT,[J,N,O],T,'j',Q,[0,0,0,0,0,0,0,1,1,0]);
+    WJ = emgr(NON,OUT,[M,N,Q],T,'j',R,[0,0,0,0,0,0,0,1,1,0]);
     [UU,D,VV] = svd(WJ{1});
     [PP,D,QQ] = svd(WJ{2});
     OFFLINE = toc
@@ -46,8 +48,8 @@ function combined_wj(o)
         n2 = norm(Y(:),2);
 
         a = 1;
-        for I=1:4:N
-            uu = UU(:,1:I);
+        for n=1:4:N
+            uu = UU(:,1:n);
             vv = uu';
             b = 1;
             for K=1:4:N
@@ -55,8 +57,8 @@ function combined_wj(o)
                 qq = pp';
                 p = pp*qq*P(:,H);
                 x = vv*X;
-                non = @(x,u,p) vv*NON(uu*x,u,p);
-                out = @(x,u,p) OUT(uu*x,u,p);
+                non = @(x,u,p,t) vv*NON(uu*x,u,p);
+                out = @(x,u,p,t) OUT(uu*x,u,p);
                 y = ODE(non,out,T,x,U,p);
                 l2(a,b,H) = min(1.0,norm(Y(:)-y(:),2)/n2);
                 b = b + 1;
@@ -77,24 +79,9 @@ function combined_wj(o)
     set(gca,'YTick',1:2:16,'YTickLabel',1:8:N);
     ylabel('State Dimension')
     xlabel('Parameter Dimension');
-    colormap(antijet);
+    if(exist('viridis')==0), colormap(hot); end;
     set(h,'CData',log10(get(h,'CData')))
     view(135,30);
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
-%% ======== Colormap ========
-function m = antijet(n)
-% antijet colormap
-% by Christian Himpe 2014-2015
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
-    if(nargin<1 || isempty(n)), n = 256; end;
-    L = linspace(0,1,n);
-
-    R = -0.5*sin( L*(1.37*pi)+0.13*pi )+0.5;
-    G = -0.4*cos( L*(1.5*pi) )+0.4;
-    B = 0.3*sin( L*(2.11*pi) )+0.3;
-
-    m = [R;G;B]';
-end

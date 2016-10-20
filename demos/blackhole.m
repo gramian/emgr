@@ -1,19 +1,21 @@
 function blackhole(o)
-% stable orbit parameter identification inside the event horizon of black hole
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: blackhole (inside black hole dynamics sensitivity analysis)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
     T = [0.005,5.0];
     L = floor(T(2)/T(1)) + 1;
-    U = zeros(1,L);
+    U = @(t) 0;
 
    % Planet Parameters
     xu = [0.4;pi/2;0;0];
@@ -60,7 +62,9 @@ function blackhole(o)
 end
 
 %% ======== Orbit ========
-function x = orbit(x,u,p)
+function x = orbit(x,u,p,t)
+%%% summary: orbit (generalized orbit vector-field)
+%$
 
     E = p(1); % E
     L = p(2); % L
@@ -83,11 +87,13 @@ function x = orbit(x,u,p)
 end
 
 %% ======== Boyer-Lindquist to Cartesian ========
-function y = bl2c(x,u,p)
-
+function y = bl2c(x,u,p,t)
+%%% summary: bl2c (Boyer-Lindquist to Cartesian coordinate conversion)
+%$
     a = p(4);
 
     y = [ sqrt(x(1)^2+a^2)*sin(x(2))*cos(x(3)) ; ...
           sqrt(x(1)^2+a^2)*sin(x(2))*sin(x(3)) ; ...
           x(1)*cos(x(2)) ];
 end
+

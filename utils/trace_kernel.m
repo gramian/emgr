@@ -1,7 +1,8 @@
 function w = trace_kernel(x,y)
-% trace_kernel - Kernel for Trace Computation
-% Copyright (c) 2016 Christian Himpe ( gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: trace_kernel (Pseudo-Kernel for Trace Computation)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2016)
+%$
     w = sum(sum(x.*y'));
 end

@@ -1,5 +1,5 @@
-function test_cwj(o)
-%%% summary: test_cwj (cross-identifiability gramian combined reduction)
+function test_swx(o)
+%%% summary: test_swx (scaled cross gramian linear state reduction)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016)
@@ -20,17 +20,16 @@ function test_cwj(o)
     L = floor(T(2)/T(1)) + 1;
     U = @(t) ones(M,1)*(t<=T(1))/T(1);
     X = zeros(N,1);
-    P = 0.5+0.5*cos(1:N)';
 
     A = -gallery('lehmer',N);
     B = toeplitz(1:N,1:M)./N;
     C = B';
 
-    LIN = @(x,u,p,t) A*x + B*u + p;
+    LIN = @(x,u,p,t) A*x + B*u;
     OUT = @(x,u,p,t) C*x;
 
 %% FULL ORDER
-    Y = ODE(LIN,OUT,T,X,U,P);
+    Y = ODE(LIN,OUT,T,X,U,0);
     %figure; plot(0:T(1):T(2),Y); return;
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
@@ -38,18 +37,16 @@ function test_cwj(o)
 
 %% OFFLINE
     tic;
-    WJ = emgr(LIN,OUT,[M,N,Q],T,'j',[zeros(N,1),ones(N,1)]);
-    [UU,D,VV] = svd(WJ{1});
-    [PP,D,QQ] = svd(WJ{2});
+    WX = emgr(LIN,OUT,[M,N,Q],T,'x',0,[0,0,0,0,0,1,0,0,0,0]);
+    [UU,D,VV] = svd(WX);
     OFFLINE = toc
 
 %% EVALUATION
     for n=1:N-1
         uu = UU(:,1:n);
-        pp = PP(:,1:n);
         lin = @(x,u,p,t) uu'*LIN(uu*x,u,p);
         out = @(x,u,p,t) OUT(uu*x,u,p);
-        y = ODE(lin,out,T,uu'*X,U,pp*pp'*P);
+        y = ODE(lin,out,T,uu'*X,U,0);
         l1(n) = norm(Y(:)-y(:),1)/n1;
         l2(n) = norm(Y(:)-y(:),2)/n2;
         l8(n) = norm(Y(:)-y(:),Inf)/n8;

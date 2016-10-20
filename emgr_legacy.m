@@ -1,6 +1,6 @@
-function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
+function W = emgr_legacy(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
-%%% version: 5.0 ( 2016-10-20 )
+%%% version: 5.0-legacy ( 2016-10-20 )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %
@@ -148,7 +148,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
 
             case 1 % Preconditioned run
                 nf(6) = 0;
-                WT = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm);
+                WT = emgr_legacy(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm);
                 TX = sqrt(WT(1:N+1:end))';
                 tx = 1.0./TX;
                 F = f; f = @(x,u,p,t) TX.*F(tx.*x,u,p,t);
@@ -188,14 +188,14 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
                     for m = find(um(:,c))' % parfor
                         uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
                         x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        x = x - avg(x,nf(1));
+                        x = bsxfun(@minus,x,avg(x,nf(1)));
                         x = x * (1.0/um(m,c));
                         W = W + DOT(x,x');
                     end;
                     for m = find(pm(:,c))' % parfor
                         pp = pr(:,k) + sparse(m,1,pm(m,c),P,1);
                         x = ODE(f,@(x,u,p,t) x,t,xs,up,pp);
-                        x = x - avg(x,nf(1));
+                        x = bsxfun(@minus,x,avg(x,nf(1)));
                         x = x * (1.0/pm(m,c));
                         o(m) = o(m) + sum(sum(x.*x));
                     end;
@@ -203,7 +203,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
             end;
             W = W * (h/(C*K));
             W = 0.5 * (W + W');
-            if(A>0), W = {W,o * (1.0/sum(o))}; end;
+            if(A>0), W = {W,o}; end;
 
         case 'o' % Observability gramian
             W = zeros(N+A,N+A);
@@ -213,14 +213,14 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
                     for n = find(xm(:,d))' % parfor
                         xx = xs + sparse(n,1,xm(n,d),N,1);
                         y = ODE(f,g,t,xx,ux,pr(:,k));
-                        y = y - avg(y,nf(1));
+                        y = bsxfun(@minus,y,avg(y,nf(1)));
                         y = y  * (1.0/xm(n,d));
                         o(:,n) = y(:);
                     end;
                     for n = find(pm(:,d))' % parfor
                         pp = pr(:,k) + sparse(n,1,pm(n,d),P,1);
                         y = ODE(f,g,t,xs,up,pp);
-                        y = y - avg(y,nf(1));
+                        y = bsxfun(@minus,y,avg(y,nf(1)));
                         y = y * (1.0/pm(n,d));
                         o(:,N+n) = y(:);
                     end;
@@ -267,14 +267,14 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
                     for n = find(xm(:,d))' % parfor
                         xx = xs + sparse(n,1,xm(n,d),N,1);
                         y = ODE(f,g,t,xx,ux,pr(:,k));
-                        y = y - avg(y,nf(1));
+                        y = bsxfun(@minus,y,avg(y,nf(1)));
                         y = y * (1.0/xm(n,d));
                         o(:,n-n0,:) = y';
                     end;
                     for n = find(pm(:,d))' % parfor
                         pp = pr(:,k) + sparse(n,1,pm(n,d),P,1);
                         y = ODE(f,g,t,xs,up,pp);
-                        y = y - avg(y,nf(1));
+                        y = bsxfun(@minus,y,avg(y,nf(1)));
                         y = y * (1.0/pm(n,d));
                         o(:,n-a0,:) = y';
                     end;
@@ -285,7 +285,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
                         for m = find(um(:,c))' % parfor
                             uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
                             x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                            x = x - avg(x,nf(1));
+                            x = bsxfun(@minus,x,avg(x,nf(1)));
                             x = x * (1.0/um(m,c));
                             if(nf(7)) % Non-symmetric cross gramian
                                 W = W + DOT(x,o(:,:,1));
@@ -307,7 +307,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
                     for m = find(um(:,c))' % parfor
                         uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
                         x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        x = x - avg(x,nf(1));
+                        x = bsxfun(@minus,x,avg(x,nf(1)));
                         o(:,:,m) = x * (1.0/um(m,c));
                     end;
                     if(nf(7)) % Non-symmetric cross gramian: cache average
@@ -316,7 +316,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
                     for m = find(xm(:,c))' % parfor
                         uu = @(t) us + ut(t) .* sparse(m,1,xm(m,c),Q,1);
                         z = ODE(g,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        z = z - avg(z,nf(1));
+                        z = bsxfun(@minus,z,avg(z,nf(1)));
                         z = z * (1.0/xm(m,c));
                         if(nf(7)) % Non-symmetric cross gramian
                             W = W + DOT(o(:,:,1),z');
@@ -330,13 +330,13 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
 
         case 's' % Sensitivity gramian
             [pr,pm] = pscales(pr,size(um,2),nf(9));
-            W = emgr(f,g,[M,N,Q,P],t,'c',pr,nf,ut,us,xs,um,xm,pm);
+            W = emgr_legacy(f,g,[M,N,Q,P],t,'c',pr,nf,ut,us,xs,um,xm,pm);
             % W{1} % Controllability gramian
             % W{2} % Sensitivity gramian diagonal
 
         case 'i' % Identifiability gramian
             [pr,pm] = pscales(pr,size(xm,2),nf(9));
-            V = emgr(f,g,[M,N,Q,P],t,'o',pr,nf,ut,us,xs,um,xm,pm);
+            V = emgr_legacy(f,g,[M,N,Q,P],t,'o',pr,nf,ut,us,xs,um,xm,pm);
             W{1} = V(1:N,1:N);  % Observability gramian
             WM = V(1:N,N+1:N+P);
             if(nf(10))          % Identifiability gramian
@@ -347,7 +347,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,pm)
 
         case 'j' % Joint gramian
             [pr,pm] = pscales(pr,size(xm,2),nf(9));
-            V = emgr(f,g,[M,N,Q,P],t,'x',pr,nf,ut,us,xs,um,xm,pm);
+            V = emgr_legacy(f,g,[M,N,Q,P],t,'x',pr,nf,ut,us,xs,um,xm,pm);
             if(isempty(DWX)==0) % Distributed cross gramian
                 W = V;
                 return;
@@ -454,8 +454,8 @@ function x = ainv(m)
     d = diag(m);
     d(d~=0) = 1.0./d(d~=0);
     n = numel(d);
-    x = m .* (-d);
-    x = x .* (d');
+    x = bsxfun(@times,m,-d);
+    x = bsxfun(@times,x,d');
     x(1:n+1:end) = d;
 end
 
@@ -491,5 +491,4 @@ function y = ssp2(f,g,t,x0,u,p)
         y(:,k+1) = g(x,uk,p,tk);
     end;
 end
-
 

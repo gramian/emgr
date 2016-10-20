@@ -1,12 +1,14 @@
 function benchmark_ilp(o)
-% benchmark (inverse lyapunov procedure)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: benchmark_ilp (inverse lyapunov procedure benchmark)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
@@ -15,17 +17,17 @@ function benchmark_ilp(o)
     end
 
 %% SETUP
-    J = 8;
-    N = 64;
-    O = J;
-    [A,B,C] = ilp(J,N,O,0,1009);
+    M = 4;
+    N = M*M*M;
+    Q = M;
+    [A,B,C] = ilp(M,N,Q,0,1009);
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = [ones(J,1),zeros(J,L-1)];
+    U = @(t) ones(M,1)*(t<=T(1))/T(1);
     X = zeros(N,1);
 
-    LIN = @(x,u,p) A*x + B*u;
-    OUT = @(x,u,p) C*x;
+    LIN = @(x,u,p,t) A*x + B*u;
+    OUT = @(x,u,p,t) C*x;
 
 %% FULL ORDER
     Y = ODE(LIN,OUT,T,X,U,0);
@@ -35,25 +37,31 @@ function benchmark_ilp(o)
 
 %% OFFLINE
     tic;
-    WC = emgr(LIN,OUT,[J,N,O],T,'c');
-    WO = emgr(LIN,OUT,[J,N,O],T,'o');
-    [VV,D,UU] = balance(WC,WO);
+    WC = emgr(LIN,OUT,[M,N,Q],T,'c');
+    WO = emgr(LIN,OUT,[M,N,Q],T,'o');
+
+    [L,D,l] = svd(WC); LC = L*diag(sqrt(diag(D)));
+    [L,D,l] = svd(WO); LO = L*diag(sqrt(diag(D)));
+    [UO,D,VC] = svd(LO'*LC);
+    VV = ( LO*UO*diag(1.0./sqrt(diag(D))) )';
+    UU =   LC*VC*diag(1.0./sqrt(diag(D)));
+
     OFFLINE = toc
 
 %% EVALUATION
-    for I=1:N-1
-        uu = UU(:,1:I);
-        vv = VV(1:I,:);
+    for n=1:N-1
+        uu = UU(:,1:n);
+        vv = VV(1:n,:);
         a = vv*A*uu;
         b = vv*B;
         c = C*uu;
         x = vv*X;
-        lin = @(x,u,p) a*x + b*u;
-        out = @(x,u,p) c*x;
+        lin = @(x,u,p,t) a*x + b*u;
+        out = @(x,u,p,t) c*x;
         y = ODE(lin,out,T,x,U,0);
-        l1(I) = norm(Y(:)-y(:),1)/n1;
-        l2(I) = norm(Y(:)-y(:),2)/n2;
-        l8(I) = norm(Y(:)-y(:),Inf)/n8;
+        l1(n) = norm(Y(:)-y(:),1)/n1;
+        l2(n) = norm(Y(:)-y(:),2)/n2;
+        l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
 %% OUTPUT
@@ -69,12 +77,3 @@ function benchmark_ilp(o)
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
-%% ======== Balancer ========
-function [X,Y,Z] = balance(WC,WO)
-
-    [L,D,l] = svd(WC); LC = L*diag(sqrt(diag(D)));
-    [L,D,l] = svd(WO); LO = L*diag(sqrt(diag(D)));
-    [U,Y,V] = svd(LO'*LC);
-    X = ( LO*U*diag(1.0./sqrt(diag(Y))) )';
-    Z =   LC*V*diag(1.0./sqrt(diag(Y)));
-end

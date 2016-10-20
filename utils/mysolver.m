@@ -1,30 +1,26 @@
-function y = mysolver(f,g,t,x,u,p)
-% mysolver (sample custom ode solver for emgr)
-% by Christian Himpe, 2014-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+function y = mysolver(f,g,t,x0,u,p)
+%%% summary: mysolver (sample custom solver for emgr)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2016)
+%$
     h = t(1);
-    L = floor(t(2)/h) + 1;
-
-    T = 0:h:t(2);
-    U = @(t) u(:,1+min(floor(t/h),L-1));
+    T = t(2);
+    L = floor(T/h) + 1;
 
     % Compute State Trajectory
-    if(exist('OCTAVE_VERSION','builtin'))
-        x = lsode(@(y,t) f(y,U(t),p),x,T);
-    else
-        [tdummy,x] = ode45(@(t,y) f(y,U(t),p),T,x);
-    end;  
-
+    [k,x] = ode45(@(t,x) f(x,u(t),p,t),[0,T],x0)
     x = x';
 
     if(isnumeric(g) && g==1),
-        y = x;
+        z = x;
     else % Compute Output Trajectory
-        O = numel(g(x(:,1),u(:,1),p));
-        y(O,L) = 0;
-        for I=1:L
-            y(:,I) = g(x(:,I),u(:,I),p);
+        z = g(x(:,1),u(:,1),p,0);
+        K = numel(k)
+        z(end,K) = 0;
+        for I=2:K
+            z(:,I) = g(x(:,I),u(t),p,k);
         end;
     end
+    y = interp1(k,z',0:h:T)';
 end

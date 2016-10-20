@@ -1,12 +1,14 @@
 function benchmark_lin(o)
-% benchmark (iss model reduction benchmark)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: benchmark_lin (iss model reduction benchmark)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
@@ -19,16 +21,16 @@ function benchmark_lin(o)
 
 %% SETUP
     N = size(A,2);
-    n = N/2;
-    J = size(B,2);
-    O = size(C,1);
+    K = N/2;
+    M = size(B,2);
+    Q = size(C,1);
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = [ones(J,1),zeros(J,L-1)];
+    U = @(t) ones(M,1)*(t<=T(1))/T(1);
     X = zeros(N,1);
 
-    LIN = @(x,u,p) A*x + B*u;
-    OUT = @(x,u,p) C*x;
+    LIN = @(x,u,p,t) A*x + B*u;
+    OUT = @(x,u,p,t) C*x;
 
 %% FULL ORDER
     Y = ODE(LIN,OUT,T,X,U,0);
@@ -36,27 +38,35 @@ function benchmark_lin(o)
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE (use velocity cross gramian)
+%% OFFLINE
     tic;
-    WX = emgr(LIN,OUT,[J,N,O],T,'x');
-    WXV = WX(n+1:N,n+1:N); % WXP = WX(1:n,1:n);
-    [UU,D,VV] = svd(WXV);  % [UU,D,VV] = svd(WXP);
+    WX = emgr(LIN,OUT,[M,N,Q],T,'x'); % use velocity cross gramian
+    WXV = WX(K+1:N,K+1:N);
+    [UU,D,VV] = svd(WXV);
     OFFLINE = toc
 
+    %{
+    tic;
+    WX = emgr(LIN,OUT,[M,N,Q],T,'x'); % use position cross gramian
+    WXP = WX(1:K,1:K);
+    [UU,D,VV] = svd(WXP);
+    OFFLINE = toc
+    %}
+
 %% EVALUATION
-    for I=1:n-1
-        uu = UU(:,1:I);
+    for n=1:K-1
+        uu = UU(:,1:n);
         vv = uu';
-        a = [zeros(I,I),eye(I);vv*A(n+1:N,1:n)*uu,vv*A(n+1:N,n+1:N)*uu];
-        b = [zeros(I,J);vv*B(n+1:N,:)];
-        c = [zeros(O,I),C(:,n+1:N)*uu];
-        x = zeros(2*I,1);
-        lin = @(x,u,p) a*x + b*u;
-        out = @(x,u,p) c*x;
+        a = [zeros(n,n),eye(n);vv*A(K+1:N,1:K)*uu,vv*A(K+1:N,K+1:N)*uu];
+        b = [zeros(n,M);vv*B(K+1:N,:)];
+        c = [zeros(Q,n),C(:,K+1:N)*uu];
+        x = zeros(2*n,1);
+        lin = @(x,u,p,t) a*x + b*u;
+        out = @(x,u,p,t) c*x;
         y = ODE(lin,out,T,x,U,0);
-        l1(I) = norm(Y(:)-y(:),1)/n1;
-        l2(I) = norm(Y(:)-y(:),2)/n2;
-        l8(I) = norm(Y(:)-y(:),Inf)/n8;
+        l1(n) = norm(Y(:)-y(:),1)/n1;
+        l2(n) = norm(Y(:)-y(:),2)/n2;
+        l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
 %% OUTPUT
@@ -71,3 +81,4 @@ function benchmark_lin(o)
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
+

@@ -1,32 +1,34 @@
 function energy_wz(o)
-% energy_wz (cross gramian experimental reduction)
-% by Christian Himpe, 2015-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: energy_wz (cross gramian experimental reduction)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
-    J = 8;
-    N = 64;
-    O = 1;
+    M = 4;
+    N = M*M*M;
+    Q = 1;
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = [ones(J,1),zeros(J,L-1)];
+    U = @(t) ones(M,1)*(t<=T(1))/T(1);
     X = zeros(N,1);
 
     rand('seed',1009);
     A = rand(N,N);
     A(1:N+1:end) = -0.55*N;
-    B = rand(N,J);
-    C = rand(O,N);
+    B = rand(N,M);
+    C = rand(Q,N);
 
-    LIN = @(x,u,p) A*x + B*u;
-    OUT = @(x,u,p) x'*x;
+    LIN = @(x,u,p,t) A*x + B*u;
+    OUT = @(x,u,p,t) x'*x;
 
 %% FULL ORDER
     Y = ODE(LIN,OUT,T,X,U,0);
@@ -36,23 +38,23 @@ function energy_wz(o)
 
 % OFFLINE
     tic;
-    WZ = emgr(LIN,OUT,[J,N,O],T,'x',0,[0,0,0,0,0,0,1,0,0,0],1,0,1);
+    WZ = emgr(LIN,OUT,[M,N,Q],T,'x',0,[0,0,0,0,0,0,1,0,0,0],1,0,1);
     [UU,D,VV] = svd(WZ);
     OFFLINE = toc
 
 %% EVALUATION
-    for I=1:N-1
-        uu = UU(:,1:I);
+    for n=1:N-1
+        uu = UU(:,1:n);
         vv = uu';
         a = vv*A*uu;
         b = vv*B;
         x = vv*X;
-        lin = @(x,u,p) a*x + b*u;
-        out = @(x,u,p) OUT(uu*x,u,p);
+        lin = @(x,u,p,t) a*x + b*u;
+        out = @(x,u,p,t) OUT(uu*x,u,p);
         y = ODE(lin,out,T,x,U,0);
-        l1(I) = norm(Y(:)-y(:),1)/n1;
-        l2(I) = norm(Y(:)-y(:),2)/n2;
-        l8(I) = norm(Y(:)-y(:),Inf)/n8;
+        l1(n) = norm(Y(:)-y(:),1)/n1;
+        l2(n) = norm(Y(:)-y(:),2)/n2;
+        l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
 %% OUTPUT
@@ -67,3 +69,4 @@ function energy_wz(o)
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
+

@@ -1,22 +1,24 @@
 function benchmark_non(o)
-% benchmark (nonlinear rc ladder)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: benchmark_non (nonlinear rc ladder benchmark)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
-    J = 1;
+    M = 1;
     N = 64;
-    O = 1;
+    Q = M;
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = [ones(J,floor(L/2)),zeros(J,ceil(L/2))];
+    U = @(t) ones(M,1)*(t<=0.5*L);
     X = zeros(N,1);
 
     g = @(x) exp(x)+x-1.0;
@@ -24,8 +26,8 @@ function benchmark_non(o)
     A1 = spdiags(ones(N-1,1),-1,N,N)-speye(N);
     A2 = spdiags([ones(N-1,1);0],0,N,N)-spdiags(ones(N,1),1,N,N);
 
-    NON = @(x,u,p) g(A1*x)-g(A2*x) + [u;sparse(N-1,1)];
-    OUT = @(x,u,p) x(1);
+    NON = @(x,u,p,t) g(A1*x)-g(A2*x) + [u;sparse(N-1,1)];
+    OUT = @(x,u,p,t) x(1);
 
 %% FULL ORDER
     Y = ODE(NON,OUT,T,X,U,0);
@@ -35,21 +37,21 @@ function benchmark_non(o)
 
 %% OFFLINE
     tic;
-    WX = emgr(NON,OUT,[J,N,O],T,'x');
+    WX = emgr(NON,OUT,[M,N,Q],T,'x',0,0,U);
     [UU,D,VV] = svd(WX);
     OFFLINE = toc
 
 %% EVALUATION
-    for I=1:N-1
-        uu = UU(:,1:I);
+    for n=1:N-1
+        uu = UU(:,1:n);
         vv = uu';
         x = vv*X;
-        non = @(x,u,p) vv*NON(uu*x,u,p);
-        out = @(x,u,p) OUT(uu*x,u,p);
+        non = @(x,u,p,t) vv*NON(uu*x,u,p);
+        out = @(x,u,p,t) OUT(uu*x,u,p);
         y = ODE(non,out,T,x,U,0);
-        l1(I) = norm(Y(:)-y(:),1)/n1;
-        l2(I) = norm(Y(:)-y(:),2)/n2;
-        l8(I) = norm(Y(:)-y(:),Inf)/n8;
+        l1(n) = norm(Y(:)-y(:),1)/n1;
+        l2(n) = norm(Y(:)-y(:),2)/n2;
+        l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
 %% OUTPUT
@@ -64,3 +66,4 @@ function benchmark_non(o)
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
+

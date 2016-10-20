@@ -1,45 +1,47 @@
 function decentral(o)
-% decentral (-ized control)
-% by Christian Himpe, 2013-2016 (http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+%%% summary: decentral (decentralized control)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2013--2016)
+%$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
-        global ODE; ODE = [];
+        global ODE;
+        ODE = [];
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
 %% SETUP
-    J = 4;
+    M = 4;
     N = 16;
-    O = J;
+    Q = M;
     T = [0.01,1.0];
     L = floor(T(2)/T(1)) + 1;
-    U = [ones(J,1),zeros(J,L-1)];
+    U = @(t) ones(M,1)*(t<=T(1))/T(1);
     X = ones(N,1);
 
     rand('seed',1009);
     A = rand(N,N);
     A(1:N+1:end) = -0.55*N;
-    B = rand(N,J);
-    C = rand(O,N);
+    B = rand(N,M);
+    C = rand(Q,N);
 
-    LIN = @(x,u,p) A*x + B*u;
-    OUT = @(x,u,p) C*x;
+    LIN = @(x,u,p,t) A*x + B*u;
+    OUT = @(x,u,p,t) C*x;
 
 %% OFFLINE
 
     global DOT;
-    DOT = @trace_kernel;
+    DOT = @(x,y) sum(sum(x.*y')); % Trace pseudo-kernel
 
     tic;
-    PM = zeros(J,O); % Participation Matrix
+    PM = zeros(M,Q); % Participation Matrix
 
-    for V=1:J
-        for W=1:O
-            lin = @(x,u,p) A*x + B(:,V)*u;
-            out = @(x,u,p) C(W,:)*x;
+    for V=1:M
+        for W=1:Q
+            lin = @(x,u,p,t) A*x + B(:,V)*u;
+            out = @(x,u,p,t) C(W,:)*x;
             io = emgr(lin,out,[1,N,1],T,'x');
             PM(V,W) = io(1,1);
         end
@@ -47,36 +49,15 @@ function decentral(o)
 
     PM = PM./sum(sum(PM));
     OFFLINE = toc
+    DOT = [];
 
 %% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
     imagesc(PM);
-    colormap(antijet); colorbar;
-    set(gca,'XTick',1:1:J,'YTick',1:1:O);
+    if(exist('viridis')==0), colormap(hot); end;
+    colorbar;
+    set(gca,'XTick',1:1:M,'YTick',1:1:Q);
     if(nargin>0 && o==1), print('-dpng',[mfilename(),'.png']); end;
 end
 
-%% ======== Colormap ========
-function m = antijet(n)
-% antijet colormap
-% by Christian Himpe 2014-2015
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
-    if(nargin<1 || isempty(n)), n = 256; end;
-    L = linspace(0,1,n);
-
-    R = -0.5*sin( L*(1.37*pi)+0.13*pi )+0.5;
-    G = -0.4*cos( L*(1.5*pi) )+0.4;
-    B = 0.3*sin( L*(2.11*pi) )+0.3;
-
-    m = [R;G;B]';
-end
-
-function w = trace_kernel(x,y)
-% trace_kernel - Kernel for Trace Computation
-% Copyright (c) 2016 Christian Himpe ( gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
-    w = sum(sum(x.*y'));
-end

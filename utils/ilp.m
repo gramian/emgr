@@ -1,8 +1,9 @@
-function [A,B,C] = ilp(J,N,O,s,r)
-% ilp (inverse lyapunov procedure)
-% by Christian Himpe, 2013-2016 ( http://gramian.de )
-% released under BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%*
+function [A,B,C] = ilp(M,N,Q,s,r)
+%%% summary: ilp (inverse lyapunov procedure)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% authors: Christian Himpe ( 0000-0003-2194-6754 )
+%%% license: 2-Clause BSD (2016)
+%$
     if(exist('emgr')~=2)
         disp('emgr framework is required. Download at http://gramian.de/emgr.m');
         return;
@@ -17,39 +18,39 @@ function [A,B,C] = ilp(J,N,O,s,r)
         randn('seed',r);
     end;
 
-    % Gramian Eigenvalues
+%% Gramian Eigenvalues
     WC = exp( 0.5*rand(N,1) );
     WO = exp( 0.5*rand(N,1) );
 
-    % Gramian Eigenvectors
-    [P,S,Q] = svd(randn(N));
+%% Gramian Eigenvectors
+    [P,S,O] = svd(randn(N,N));
 
-    % Balancing Transformation
+%% Balancing Transformation
     WC = P*diag(sqrt(WC))*P';
-    WO = Q*diag(sqrt(WO))*Q';
+    WO = O*diag(sqrt(WO))*O';
     [U,D,V] = svd(WC*WO);
 
-    % Input and Output
-    B = randn(N,J);
+%% Input and Output
+    B = randn(N,M);
 
     if(s)
         C = B';
     else
-        C = randn(O,N);
+        C = randn(Q,N);
     end;
 
-    % Scale Output Matrix
+%% Scale Output Matrix
     BB = sum(B.*B,2);  % = diag(B*B')
     CC = sum(C.*C,1)'; % = diag(C'*C)
     SC = sqrt(BB./CC)';
     C = bsxfun(@times,C,SC);
 
-    % Solve System Matrix
-    f = @(x,u,p) -D*x+B*u;
-    g = @(x,u,p)  C*x;
-    A = -emgr(f,g,[J,N,O],[1.0/N,1.0],'c') - sqrt(eps)*speye(N);
+%% Solve for System Matrix
+    f = @(x,u,p,t) -D*x+B*u;
+    g = @(x,u,p,t)  C*x;
+    A = -emgr(f,g,[M,N,Q],[1.0/N,1.0],'c') - sqrt(eps)*speye(N);
 
-    % Unbalance System
+%% Unbalance System
     if(s==0)
         A = V*A*U';
         B = V*B;

@@ -1,5 +1,5 @@
-function test_cwj(o)
-%%% summary: test_cwj (cross-identifiability gramian combined reduction)
+function test_ws2(o)
+%%% summary: test_ws2 (sensitivity gramian parameter reduction)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016)
@@ -26,11 +26,11 @@ function test_cwj(o)
     B = toeplitz(1:N,1:M)./N;
     C = B';
 
-    LIN = @(x,u,p,t) A*x + B*u + p;
+    LIN = @(x,u,p,t) A*x + B*u + [p(1:N/2);0.0001*p(N/2+1:end)];
     OUT = @(x,u,p,t) C*x;
 
 %% FULL ORDER
-    Y = ODE(LIN,OUT,T,X,U,P);
+    Y = ODE(LIN,OUT,T,X,U,P); 
     %figure; plot(0:T(1):T(2),Y); return;
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
@@ -38,18 +38,16 @@ function test_cwj(o)
 
 %% OFFLINE
     tic;
-    WJ = emgr(LIN,OUT,[M,N,Q],T,'j',[zeros(N,1),ones(N,1)]);
-    [UU,D,VV] = svd(WJ{1});
-    [PP,D,QQ] = svd(WJ{2});
+    WS = emgr(LIN,OUT,[M,N,Q],T,'s',[zeros(N,1),ones(N,1)]);
+    [D,V] = sort(WS{2},'descend');
+    UU = eye(N);
+    UU = UU(:,V);
     OFFLINE = toc
 
 %% EVALUATION
     for n=1:N-1
         uu = UU(:,1:n);
-        pp = PP(:,1:n);
-        lin = @(x,u,p,t) uu'*LIN(uu*x,u,p);
-        out = @(x,u,p,t) OUT(uu*x,u,p);
-        y = ODE(lin,out,T,uu'*X,U,pp*pp'*P);
+        y = ODE(LIN,OUT,T,X,U,uu*uu'*P);
         l1(n) = norm(Y(:)-y(:),1)/n1;
         l2(n) = norm(Y(:)-y(:),2)/n2;
         l8(n) = norm(Y(:)-y(:),Inf)/n8;
@@ -64,7 +62,7 @@ function test_cwj(o)
     xlim([1,N-1]);
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
-    legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    legend('L1 Error ','L2 Error ','L8 Error ','location','southeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

@@ -1,5 +1,5 @@
-function test_cwj(o)
-%%% summary: test_cwj (cross-identifiability gramian combined reduction)
+function test_cwjz2(o)
+%%% summary: test_cwjz2 (cross-identifiability gramian combined reduction)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016)
@@ -38,14 +38,14 @@ function test_cwj(o)
 
 %% OFFLINE
     tic;
-    WJ = emgr(LIN,OUT,[M,N,Q],T,'j',[zeros(N,1),ones(N,1)]);
+    WJ = emgr(LIN,OUT,[M,N,Q],T,'j',[zeros(N,1),ones(N,1)],[0,0,0,0,0,0,1,3,0,0]);
     [UU,D,VV] = svd(WJ{1});
     [PP,D,QQ] = svd(WJ{2});
     OFFLINE = toc
 
 %% EVALUATION
     for n=1:N-1
-        uu = UU(:,1:n);
+        uu = UU;
         pp = PP(:,1:n);
         lin = @(x,u,p,t) uu'*LIN(uu*x,u,p);
         out = @(x,u,p,t) OUT(uu*x,u,p);
