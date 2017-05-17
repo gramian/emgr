@@ -1,8 +1,8 @@
-function test_bt(o)
-%%% summary: test_bt (balanced truncation state reduction)
+function benchmark_fss(o)
+%%% summary: benchmark_fss (Flexible Space Structures Benchmark)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2016--2017)
+%%% license: 2-Clause BSD (2017)
 %$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
@@ -12,57 +12,71 @@ function test_bt(o)
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
-%% SYSTEM SETUP
-    M = 4;				% number of inputs
-    N = M*M*M;				% number of states
-    Q = M;				% number of outputs
-    h = 0.01;				% time step size
-    T = 1.0;				% time horizon
-    X = zeros(N,1);			% initial state
-    U = @(t) ones(M,1)*(t<=h)/h;	% impulse input function
+    rand('seed',1009);
 
-    A = -gallery('lehmer',N);		% system matrix
-    B = toeplitz(1:N,1:M)./N;		% input matrix
-    C = B';				% output matrix
+%% SETUPs
+
+    K = 32;				% number of modes
+    xi = rand(1,K)*0.001;		% damping ratio
+    omega = rand(1,K)*100;		% natural frequencies
+
+    N = 2*K;				% number of states
+    M = 1;				% number of inputs
+    Q = M;				% number of outputs
+
+    A_k = cellfun(@(p) sparse([-2.0*p(1)*p(2),-p(2);p(2),0]), ...
+                  num2cell([xi;omega],1),'UniformOutput',0);
+    A = blkdiag(A_k{:});		% system matrix
+    B = kron(rand(K,M),[1;0]);		% input matrix
+    C = 10.0*rand(Q,2*K);		% output matrix
+
+    h = 0.001;				% time step size
+    T = 1.0;				% time horizon			
+    L = floor(T/h) + 1;			% number of time steps
+    U = @(t) ones(M,1)*(t<=h)/h;	% impulse input function
+    X = zeros(N,1);
 
     LIN = @(x,u,p,t) A*x + B*u;		% vector field
     OUT = @(x,u,p,t) C*x;		% output functional
 
-%% FULL ORDER MODEL REFERENCE SOLUTION
+%% FULL ORDER
     Y = ODE(LIN,OUT,[h,T],X,U,0);
     %figure; plot(0:h:T,Y); return;
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% REDUCED ORDER MODEL PROJECTION ASSEMBLY
+%% OFFLINE
     tic;
-    WC = emgr(LIN,OUT,[M,N,Q],[h,T],'c');
-    WO = emgr(LIN,OUT,[M,N,Q],[h,T],'o');
-    [L1,D1,R1] = svd(WC); LC = L1*diag(sqrt(diag(D1)));
-    [L2,D2,R2] = svd(WO); LO = L2*diag(sqrt(diag(D2)));
-    [Lb,Db,Rb] = svd(LO'*LC);
-    UU = ( LO*Lb*diag(1.0./sqrt(diag(Db))) )';
-    VV =   LC*Rb*diag(1.0./sqrt(diag(Db)));
+    s = 16;
+    P = ceil(N/s);
+    wx = cell(1,Q);
+    for p=1:P
+        wx{p} = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,0,0,0,0,s,p]);
+    end;
+    [UU,DD,VV] = svd(cell2mat(wx));
     OFFLINE_TIME = toc
 
-%% REDUCED ORDER MODEL EVALUATION
+%% EVALUATION
     l1 = zeros(1,N-1);
     l2 = zeros(1,N-1);
     l8 = zeros(1,N-1);
 
     for n=1:N-1
-        uu = UU(1:n,:);
-        vv = VV(:,1:n);
-        lin = @(x,u,p,t) uu*LIN(vv*x,u,p,t);
-        out = @(x,u,p,t) OUT(vv*x,u,p,t);
-        y = ODE(lin,out,[h,T],uu*X,U,0);
+        uu = UU(:,1:n);
+        a = uu'*A*uu;
+        b = uu'*B;
+        c = C*uu;
+        x = uu'*X;
+        lin = @(x,u,p,t) a*x + b*u;
+        out = @(x,u,p,t) c*x;
+        y = ODE(lin,out,[h,T],x,U,0);
         l1(n) = norm(Y(:)-y(:),1)/n1;
         l2(n) = norm(Y(:)-y(:),2)/n2;
         l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
-%% PLOT REDUCED ORDER VS RELATIVE ERRORS
+%% OUTPUT
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
     semilogy(1:N-1,l1,'r','linewidth',2); hold on;

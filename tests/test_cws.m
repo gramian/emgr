@@ -2,7 +2,7 @@ function test_cws(o)
 %%% summary: test_cws (sensitivity gramian combined reduction)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2016)
+%%% license: 2-Clause BSD (2016--2017)
 %$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
@@ -12,34 +12,36 @@ function test_cws(o)
         fprintf('emgr (version: %1.1f)\n',emgr('version'));
     end
 
-%% SETUP
-    M = 4;
-    N = M*M*M;
-    Q = M;
-    T = [0.01,1.0];
-    L = floor(T(2)/T(1)) + 1;
-    U = @(t) ones(M,1)*(t<=T(1))/T(1);
-    X = zeros(N,1);
-    P = 0.5+0.5*cos(1:N)';
+%% SYSTEM SETUP
+    M = 4;				% number of inputs
+    N = M*M*M;				% number of states
+    Q = M;				% number of outputs
+    h = 0.01;				% time step size
+    T = 1.0;				% time horizon
+    X = zeros(N,1);			% initial state
+    U = @(t) ones(M,1)*(t<=h)/h;	% impulse input function
+    P = 0.5+0.5*cos(1:N)';		% parameter
+    R = [zeros(N,1),ones(N,1)];		% parameter range
+    r = 0.5*ones(N,1);			% nominal parameter
 
-    A = -gallery('lehmer',N);
-    B = toeplitz(1:N,1:M)./N;
-    C = B';
+    A = -gallery('lehmer',N);		% system matrix
+    B = toeplitz(1:N,1:M)./N;		% input matrix
+    C = B';				% output matrix
 
-    LIN = @(x,u,p,t) A*x + B*u + p;
-    OUT = @(x,u,p,t) C*x;
+    LIN = @(x,u,p,t) A*x + B*u + p;	% vector field
+    OUT = @(x,u,p,t) C*x;		% output functional
 
-%% FULL ORDER
-    Y = ODE(LIN,OUT,T,X,U,P);
-    %figure; plot(0:T(1):T(2),Y); return;
+%% FULL ORDER MODEL REFERENCE SOLUTION
+    Y = ODE(LIN,OUT,[h,T],X,U,P);
+    %figure; plot(0:h:T,Y); return;
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE
+%% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WS = emgr(LIN,OUT,[M,N,Q],T,'s',[zeros(N,1),ones(N,1)]);    
-    WO = emgr(LIN,OUT,[M,N,Q],T,'o');
+    WS = emgr(LIN,OUT,[M,N,Q],[h,T],'s',R);    
+    WO = emgr(LIN,OUT,[M,N,Q],[h,T],'o',r);
     [L1,D1,R1] = svd(WS{1}); LC = L1*diag(sqrt(diag(D1)));
     [L2,D2,R2] = svd(WO); LO = L2*diag(sqrt(diag(D2)));
     [Lb,Db,Rb] = svd(LO'*LC);
@@ -47,23 +49,27 @@ function test_cws(o)
     VV =   LC*Rb*diag(1.0./sqrt(diag(Db)));
     [D,V] = sort(WS{2},'descend');
     PP = eye(N);
-    PP = PP(V,:);
+    PP = PP(:,V);
     OFFLINE = toc
 
-%% EVALUATION
+%% REDUCED ORDER MODEL EVALUATION
+    l1 = zeros(1,N-1);
+    l2 = zeros(1,N-1);
+    l8 = zeros(1,N-1);
+
     for n=1:N-1
         uu = VV(:,1:n);
         vv = UU(1:n,:);
         pp = PP(:,1:n);
-        lin = @(x,u,p,t) vv*LIN(uu*x,u,p);
-        out = @(x,u,p,t) OUT(uu*x,u,p);
-        y = ODE(lin,out,T,vv*X,U,pp*pp'*P);
+        lin = @(x,u,p,t) vv*LIN(uu*x,u,p,t);
+        out = @(x,u,p,t) OUT(uu*x,u,p,t);
+        y = ODE(lin,out,[h,T],vv*X,U,pp*pp'*P);
         l1(n) = norm(Y(:)-y(:),1)/n1;
         l2(n) = norm(Y(:)-y(:),2)/n2;
         l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
-%% OUTPUT
+%% PLOT REDUCED ORDER VS RELATIVE ERRORS
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
     semilogy(1:N-1,l1,'r','linewidth',2); hold on;

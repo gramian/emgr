@@ -2,7 +2,7 @@ function benchmark_lin(o)
 %%% summary: benchmark_lin (iss model reduction benchmark)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2013--2016)
+%%% license: 2-Clause BSD (2013--2017)
 %$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
@@ -13,47 +13,56 @@ function benchmark_lin(o)
     end
 
     D = 'iss';
-    if(exist(['/tmp/',D,'.mat'],'file')==0)
-        urlwrite(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],['/tmp/',D,'.zip']);
-        unzip(['/tmp/',D,'.zip'],'/tmp');
+    try
+        if(exist(['/tmp/',D,'.mat'],'file')==0)
+            urlwrite(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],['/tmp/',D,'.zip']);
+            unzip(['/tmp/',D,'.zip'],'/tmp');
+        end
+    catch
+        disp('benchmark_lin: Could not download benchmark data.');
+        return;
     end
     load(['/tmp/',D,'.mat']);
 
-%% SETUP
-    N = size(A,2);
-    K = N/2;
-    M = size(B,2);
-    Q = size(C,1);
-    T = [0.01,1.0];
-    L = floor(T(2)/T(1)) + 1;
-    U = @(t) ones(M,1)*(t<=T(1))/T(1);
-    X = zeros(N,1);
+%% SYSTEM SETUP
+    N = size(A,2);			% number of states
+    K = N/2;				% number of coupled states
+    M = size(B,2);			% number of inputs
+    Q = size(C,1);			% number of outputs
+    h = 0.01;				% time step size
+    T = 1.0;				% time horizon
+    X = zeros(N,1);			% initial state
+    U = @(t) ones(M,1)*(t<=h)/h;	% impulse input function
 
-    LIN = @(x,u,p,t) A*x + B*u;
-    OUT = @(x,u,p,t) C*x;
+    LIN = @(x,u,p,t) A*x + B*u;		% vector field
+    OUT = @(x,u,p,t) C*x;		% output functional
 
-%% FULL ORDER
-    Y = ODE(LIN,OUT,T,X,U,0);
+%% FULL ORDER MODEL REFERENCE SOLUTION
+    Y = ODE(LIN,OUT,[h,T],X,U,0);
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE
+%% STRUCTURED REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WX = emgr(LIN,OUT,[M,N,Q],T,'x'); % use velocity cross gramian
+    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x'); % use velocity cross gramian
     WXV = WX(K+1:N,K+1:N);
     [UU,D,VV] = svd(WXV);
-    OFFLINE = toc
+    OFFLINE_TIME = toc
 
     %{
     tic;
-    WX = emgr(LIN,OUT,[M,N,Q],T,'x'); % use position cross gramian
+    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x'); % use position cross gramian
     WXP = WX(1:K,1:K);
     [UU,D,VV] = svd(WXP);
-    OFFLINE = toc
+    OFFLINE_TIME = toc
     %}
 
-%% EVALUATION
+%% REDUCED ORDER MODEL EVALUATION
+    l1 = zeros(1,K-1);
+    l2 = zeros(1,K-1);
+    l8 = zeros(1,K-1);
+
     for n=1:K-1
         uu = UU(:,1:n);
         vv = uu';
@@ -63,20 +72,20 @@ function benchmark_lin(o)
         x = zeros(2*n,1);
         lin = @(x,u,p,t) a*x + b*u;
         out = @(x,u,p,t) c*x;
-        y = ODE(lin,out,T,x,U,0);
+        y = ODE(lin,out,[h,T],x,U,0);
         l1(n) = norm(Y(:)-y(:),1)/n1;
         l2(n) = norm(Y(:)-y(:),2)/n2;
         l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
-%% OUTPUT
+%% PLOT REDUCED ORDER VS RELATIVE ERRORS
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
     semilogy(2:2:N-2,l1,'r','linewidth',2); hold on;
     semilogy(2:2:N-2,l2,'g','linewidth',2);
     semilogy(2:2:N-2,l8,'b','linewidth',2); hold off;
     xlim([2,N-2]);
-    ylim([10^floor(log10(min([l1(:);l2(:);l8(:)]))-1),1]);
+    ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;

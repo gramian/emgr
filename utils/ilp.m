@@ -2,7 +2,7 @@ function [A,B,C] = ilp(M,N,Q,s,r)
 %%% summary: ilp (inverse lyapunov procedure)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2016)
+%%% license: 2-Clause BSD (2016--2017)
 %$
     if(exist('emgr')~=2)
         disp('emgr framework is required. Download at http://gramian.de/emgr.m');

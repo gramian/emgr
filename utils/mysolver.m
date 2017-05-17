@@ -2,7 +2,7 @@ function y = mysolver(f,g,t,x0,u,p)
 %%% summary: mysolver (sample custom solver for emgr)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2016)
+%%% license: 2-Clause BSD (2016--2017)
 %$
     h = t(1);
     T = t(2);

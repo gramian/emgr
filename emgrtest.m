@@ -2,7 +2,7 @@ function emgrtest(m)
 %%% summary: emgrtest (emgr sanity test via EOC)
 %%% project: emgr - Empirical Gramian Framework ( gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2015--2016)
+%%% license: 2-Clause BSD (2015--2017)
 %$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');

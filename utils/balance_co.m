@@ -1,8 +1,8 @@
 function [X,Y,Z] = balance_co(WC,WO)
-%%% summary: balance_co (SVD-based balancer)
+%%% summary: balance_co (SVD-based balancing)
 %%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2013--2016)
+%%% license: 2-Clause BSD (2013--2017)
 %$
 
     [L,D,l] = svd(WC); LC = L*diag(sqrt(diag(D)));

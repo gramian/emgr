@@ -1,15 +1,15 @@
-function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
-%% emgr - EMpirical GRamian Framework
+function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
+%% emgr - EMpirical GRamian Framework (Legacy Edition)
 %
 %  project: emgr ( http://gramian.de )
-%  version: 5.1 ( 2017-05-18 )
+%  version: 5.1-lgc ( 2017-05-18 )
 %  authors: Christian Himpe ( 0000-0003-2194-6754 )
 %  license: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %  summary: Empirical Gramians for model reduction of input-output systems.
 %
 % USAGE:
 %
-%  W = emgr(f,g,s,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm],[dp])
+%  W = emgr_lgc(f,g,s,t,w,[pr],[nf],[ut],[us],[xs],[um],[xm],[dp])
 %
 % DESCRIPTION:
 %
@@ -180,7 +180,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                     for m = find(um(:,c))' % parfor
                         uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
                         x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        x = x - avg(x,nf(1),xs);
+                        x = bsxfun(@minus,x,avg(x,nf(1),xs));
                         x = x * (1.0/um(m,c));
                         W = W + dp(x,x');
                     end;
@@ -198,7 +198,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                         xx = xs + sparse(n,1,xm(n,d),N+A,1);
                         if(A==0), pp = pr(:,k); else, pp = xx(N+1:end); end;
                         y = ODE(f,g,t,xx(1:N),up,pp);
-                        y = y - avg(y,nf(1),g(xs(1:N),us,pp,0));
+                        y = bsxfun(@minus,y,avg(y,nf(1),g(xs(1:N),us,pp,0)));
                         y = y * (1.0/xm(n,d));
                         o(:,n) = y(:);
                     end;
@@ -236,7 +236,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                         xx = xs + sparse(i0-1+n,1,xm(n,d),N+A,1);
                         if(A==0), pp = pr(:,k); else, pp = xx(N+1:end); end;
                         y = ODE(f,g,t,xx(1:N),up,pp);
-                        y = y - avg(y,nf(1),g(xs(1:N),us,pp,0));
+                        y = bsxfun(@minus,y,avg(y,nf(1),g(xs(1:N),us,pp,0)));
                         y = y * (1.0/xm(n,d));
                         o(:,n,:) = y';
                     end;
@@ -248,7 +248,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                             uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
                             if(A==0), pp = pr(:,k); else, pp = xs(N+1:end); end;
                             x = ODE(f,@(x,u,p,t) x,t,xs(1:N),uu,pp);
-                            x = x - avg(x,nf(1),xs(1:N));
+                            x = bsxfun(@minus,x,avg(x,nf(1),xs(1:N)));
                             x = x * (1.0/um(m,c));
                             if(nf(7)) % Non-symmetric cross gramian
                                 W = W + dp(x,o(:,:,1));
@@ -272,7 +272,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                     for m = find(um(:,c))' % parfor
                         uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
                         x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        x = x - avg(x,nf(1),xs);
+                        x = bsxfun(@minus,x,avg(x,nf(1),xs));
                         x = x * (1.0/um(m,c));
                         o(:,:,m) = x;
                     end;
@@ -282,7 +282,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                     for q = find(xm(:,c))' % parfor
                         uu = @(t) us + ut(t) .* sparse(q,1,xm(q,c),Q,1);
                         z = ODE(g,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        z = z - avg(z,nf(1),xs);
+                        z = bsxfun(@minus,z,avg(z,nf(1),xs));
                         z = z * (1.0/xm(q,c));
                         if(nf(7)) % Non-symmetric cross gramian
                             W = W + dp(o(:,:,1),z');
@@ -378,15 +378,15 @@ function [pr,pm] = pscales(p,d,c)
         case 1 % Linear
             pr = 0.5 * (pmax + pmin);
             pm = (pmax - pmin) * linspace(0,1.0,c);
-            pm = pm + pmin - pr;
+            pm = bsxfun(@plus,pm,pmin - pr);
 
         case 2 % Logarithmic
             lmin = log(pmin);
             lmax = log(pmax);
             pr = real(exp(0.5 * (lmax + lmin)));
             pm = (lmax - lmin) * linspace(0,1.0,c);
-            pm = pm + lmin;
-            pm = real(exp(pm)) + (pmin - pr);
+            pm = bsxfun(@plus,pm,lmin);
+            pm = bsxfun(@plus,real(exp(pm)),pmin - pr);
 
         case -1 %
             pr = p;
@@ -433,8 +433,8 @@ function x = ainv(m)
 
     d = diag(m);
     d(d~=0) = 1.0./d(d~=0);
-    x = m .* (-d);
-    x = x .* (d');
+    x = bsxfun(@times,m,-d);
+    x = bsxfun(@times,x,d');
     x(1:numel(d)+1:end) = d;
 end
 
