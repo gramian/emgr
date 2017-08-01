@@ -1,6 +1,6 @@
 function test_pwz(o)
 %%% summary: test_pwz (non-symmetric cross gramian parametric state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
@@ -40,7 +40,7 @@ function test_pwz(o)
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WZ = emgr(LIN,OUT,[M,N,Q],[h,T],'x',R,[0,0,0,0,0,0,1,0,0,0]);
+    WZ = emgr(LIN,OUT,[M,N,Q],[h,T],'x',R,[0,0,0,0,0,0,1,0,0,0,0,0]);
     [UU,D,VV] = svd(WZ);
     OFFLINE_TIME = toc
 

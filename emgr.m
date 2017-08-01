@@ -2,7 +2,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %% emgr - EMpirical GRamian Framework
 %
 %  project: emgr ( http://gramian.de )
-%  version: 5.1 ( 2017-05-18 )
+%  version: 5.2 ( 2017-08-01 )
 %  authors: Christian Himpe ( 0000-0003-2194-6754 )
 %  license: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 %  summary: Empirical Gramians for model reduction of input-output systems.
@@ -22,7 +22,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %
 % ARGUMENTS:
 %
-%   f {handle} vector field handle: xdot = f(x,u,p,t)
+%   f {handle} vector field handle: x' = f(x,u,p,t)
 %   g {handle} output function handle: y = g(x,u,p,t)
 %   s {vector} system dimensions: [inputs,states,outputs]
 %   t {vector} time discretization: [time-step,time-horizon]
@@ -36,7 +36,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %    * 'j' empirical joint gramian (Wj)
 %  pr {matrix|0} parameters, each column is one set
 %  nf {vector|0} option flags, twelve components, default zero:
-%    * center: no(0), steady(1), last(2), mean(3), rms(4), midr(5), wave(6)
+%    * center: no(0), steady(1), last(2), mean(3), rms(4), midrange(5)
 %    * input scales: single(0), linear(1), geom(2), log(3), sparse(4)
 %    * state scales: single(0), linear(1), geom(2), log(3), sparse(4)
 %    * input rotations: unit(0), single(1)
@@ -46,8 +46,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %    * extra input (only: Wo, Wx, Ws, Wi, Wj): no(0), yes(1)
 %    * parameter centering (only: Ws, Wi, Wj): no(0), linear(1), log(2)
 %    * Schur-complement (only: Wi, Wj): detailed(0), approximate(1)
-%    * partition size (only: Wx, Wj): full(0), partitioned(<N)
-%    * partition index (only: Wx, Wj): partition(>0)
+%    * cross gramian partition size (only: Wx, Wj): full(0), partitioned(<N)
+%    * cross gramian partition index (only: Wx, Wj): partition(>0)
 %  ut {handle|1} input function handle: u = ut(t), default: delta impulse
 %  us {vector|0} steady-state input
 %  xs {vector|0} steady-state and initial state x0
@@ -57,13 +57,13 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %
 % RETURNS:
 %
-%  (matrix) W : Gramian Matrix (only: Wc, Wo, Wx, Wy)
-%    (cell) W : [State-, Parameter-] Gramian (only: Ws, Wi, Wj)
+%  W {matrix} Gramian Matrix (only: Wc, Wo, Wx, Wy)
+%  W  {cell}  [State-, Parameter-] Gramian (only: Ws, Wi, Wj)
 %
 % CITATION:
 %
-%  C. Himpe (2017). emgr - EMpirical GRamian Framework (Version 5.1)
-%  [Software]. Available from http://gramian.de . doi:10.5281/zenodo.580804
+%  C. Himpe (2017). emgr - EMpirical GRamian Framework (Version 5.2)
+%  [Software]. Available from http://gramian.de . doi: 10.5281/zenodo.837237
 %
 % SEE ALSO:
 %  gram
@@ -79,7 +79,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     if(isa(ODE,'function_handle')==0), ODE = @ssp2; end;
 
     % Version Info
-    if(strcmp(f,'version')), W = 5.1; return; end;
+    if(strcmp(f,'version')), W = 5.2; return; end;
 
     % Default Arguments
     if( (nargin<6)  || isempty(pr) ), pr = 0.0; end;
@@ -89,7 +89,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     if( (nargin<10) || isempty(xs) ), xs = 0.0; end;
     if( (nargin<11) || isempty(um) ), um = 1.0; end;
     if( (nargin<12) || isempty(xm) ), xm = 1.0; end;
-    if( (nargin<13) || isempty(dp) ), dp = 1.0; end;
+    if( (nargin<13) || isempty(dp) ), dp = @mtimes; end;
 
     w = lower(w); % Ensure lower case gramian type
 
@@ -99,7 +99,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     M = s(1);                   % Number of inputs
     N = s(2);                   % Number of states
     Q = s(3);                   % Number of outputs
-    A = (numel(s)==4)*s(end);   % Number of augmented parameter-states
+    A = (numel(s)==4) * s(end); % Number of augmented parameter-states
     P = size(pr,1);             % Dimension of parameter
     K = size(pr,2);             % Number of parameter-sets
     h = t(1);                   % Width of time step
@@ -114,17 +114,15 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     nf = [nf(:)',zeros(1,12-numel(nf))]; % Ensure flag vector length
 
     if(isnumeric(ut) && numel(ut)==1) % Built-in input functions
-        if(ut==Inf) % Linear Chirp Input
+        if(ut==Inf)   % Linear Chirp Input
             mh = ones(M,1);
             sh = (1.0/L - 0.1/h) / L;
             ut = @(t) 0.5 + mh*0.5*cos(2.0*pi*(((0.1/h)+0.5*sh*t).*t));
-        else        % Delta Impulse Input
+        else          % Delta Impulse Input
             mh = ones(M,1)./h;
             ut = @(t) mh * (t<=h);
         end;
     end;
-
-    if(isnumeric(dp) && numel(dp)==1), dp = @mtimes; end; % Default dot product
 
     if(numel(us)==1), us = us * ones(M,1); end;
     if(numel(xs)==1), xs = xs * ones(N,1); end;
@@ -139,7 +137,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 
     if(nf(6)) % Scaled empirical gramians
         TX = ones(N,1);
-        NF = nf; NF(6) = 0;
+        NF = nf;
+        NF(6) = 0;
         switch(nf(6))
 
             case 1 % Use Jacobi Preconditioner (state only)
@@ -156,7 +155,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
         xs = tx.*xs;
     end
 
-    if( (w=='o' || w=='x' || w=='s') && nf(8)) % Extra input
+    if( (w=='o' || w=='x' || w=='s') && nf(8) ) % Extra input
         up = @(t) us + ut(t);
     else
         up = @(t) us;
@@ -353,7 +352,7 @@ function sm = scales(s,d,c)
             sc = [0.001,0.01,0.1,1.0];
 
         case 4 % Sparse
-            sc = [0.38,0.71,0.92,1.0];
+            sc = [0.01,0.5,0.99,1.0];
 
         otherwise % One
             sc = 1;
@@ -368,7 +367,7 @@ end
 %  summary: Parameter perturbation scales
 function [pr,pm] = pscales(p,d,c)
 
-    assert(size(p,2)>1 || d==-1,'emgr: min + max parameter required!');
+    assert(size(p,2)>1,'emgr: min + max parameter required!');
 
     pmin = min(p,[],2);
     pmax = max(p,[],2);
@@ -378,7 +377,7 @@ function [pr,pm] = pscales(p,d,c)
         case 1 % Linear
             pr = 0.5 * (pmax + pmin);
             pm = (pmax - pmin) * linspace(0,1.0,c);
-            pm = pm + pmin - pr;
+            pm = pm + (pmin - pr);
 
         case 2 % Logarithmic
             lmin = log(pmin);
@@ -387,10 +386,6 @@ function [pr,pm] = pscales(p,d,c)
             pm = (lmax - lmin) * linspace(0,1.0,c);
             pm = pm + lmin;
             pm = real(exp(pm)) + (pmin - pr);
-
-        case -1 %
-            pr = p;
-            pm = zeros(0,c);
 
         otherwise % None
             pr = pmin;
@@ -414,13 +409,10 @@ function mn = avg(x,d,c)
             mn = mean(x,2);
 
         case 4 % Root-mean-square state / output
-            mn = sqrt(sum(x.*x,2));
+            mn = sqrt(mean(x.*x,2));
 
         case 5 % Midrange state / output
             mn = 0.5*(max(x,[],2)-min(x,[],2));
-
-        case 6 % Wave
-            mn = repmat(sqrt(0.5*sum(x.*x,1)),size(x,1),1);
 
         otherwise % None
             mn = zeros(size(x,1),1);

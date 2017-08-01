@@ -1,6 +1,6 @@
 function test_wz(o)
 %%% summary: test_wz (non-symmetric cross gramian linear state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
@@ -37,7 +37,7 @@ function test_wz(o)
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,1,0,0,0]);
+    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,1,0,0,0,0,0]);
     [UU,D,VV] = svd(WX);
     OFFLINE_TIME = toc
 

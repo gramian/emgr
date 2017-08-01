@@ -1,6 +1,6 @@
 function test_dwx(o)
 %%% summary: test_dwx (distributed cross gramian linear state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
@@ -46,7 +46,7 @@ function test_dwx(o)
     K = ceil(N/w);
     wx = cell(1,K);
     for k=1:K
-        wx{k} = emgr(LIN,OUT,[M,N,Q],[h,T],'x',[],[0,0,0,0,0,0,0,0,0,0,w,k]);
+        wx{k} = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,0,0,0,0,w,k]);
     end;
     OFFLINE_TIME_DIST = toc
     RESIDUAL = norm(WX-cell2mat(wx),2)

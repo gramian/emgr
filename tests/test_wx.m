@@ -1,9 +1,10 @@
 function test_wx(o)
 %%% summary: test_wx (cross gramian linear state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
+
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
     else
@@ -37,7 +38,7 @@ function test_wx(o)
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x');
+    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x',6);
     [UU,D,VV] = svd(WX);
     OFFLINE_TIME = toc
 

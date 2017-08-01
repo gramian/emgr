@@ -35,20 +35,15 @@ function testall(o)
     disp(' test_wj:');  test_wj(o);
     disp(' test_wjz:'); test_wjz(o);
 
-    disp(' test_ws2:');  test_ws2(o);
     disp(' test_wi2:');  test_wi2(o);
     disp(' test_wj2:');  test_wj2(o);
-    disp(' test_wjz2:'); test_wjz2(o);
-
-    disp(' test_dwj:');  test_dwj(o);
-    disp(' test_dwjz:'); test_dwjz(o);
-    disp(' test_kwx:');  test_kwx(o);
-    disp(' test_kwy:');  test_kwy(o);
-
-    disp(' test_cws:');  test_cws(o);
     disp(' test_cwi:');  test_cwi(o);
     disp(' test_cwj:');  test_cwj(o);
-    disp(' test_cwjz:'); test_cwjz(o);
+
+    disp(' test_dwj:');  test_dwj(o);
+    disp(' test_kwx:');  test_kwx(o);
+    disp(' test_kwy:');  test_kwy(o);
+    disp(' test_kpwz:');  test_kpwz(o);
 
     disp(' test_swx:');  test_swx(o);
     disp(' test_swx2:'); test_swx2(o);

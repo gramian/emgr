@@ -1,8 +1,8 @@
-function test_cwjz(o)
-%%% summary: test_cwjz (non-symmetric joint gramian combined reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+function test_kpwz(o)
+%%% summary: test_pwz (non-symmetric cross gramian parametric state reduction)
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2016--2017)
+%%% license: 2-Clause BSD (2017)
 %$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
@@ -20,14 +20,15 @@ function test_cwjz(o)
     T = 1.0;				% time horizon
     X = zeros(N,1);			% initial state
     U = @(t) ones(M,1)*(t<=h)/h;	% impulse input function
-    P = 0.5+0.5*cos(1:N)';		% parameter
-    R = [zeros(N,1),ones(N,1)];		% parameter range
+    P = 0.5;				% parameter
+    R = [0,1.0];			% test parameter set 
 
     A = -gallery('lehmer',N);		% system matrix
     B = toeplitz(1:N,1:M)./N;		% input matrix
     C = B';				% output matrix
+    F = ones(N,1);			% source matrix
 
-    LIN = @(x,u,p,t) A*x + B*u + p;	% vector field
+    LIN = @(x,u,p,t) A*x + B*u + F*p;	% vector field
     OUT = @(x,u,p,t) C*x;		% output functional
 
 %% FULL ORDER MODEL REFERENCE SOLUTION
@@ -38,11 +39,13 @@ function test_cwjz(o)
     n8 = norm(Y(:),Inf);
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
+
+%
     tic;
-    WJ = emgr(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,0,0,0,0,0]);
-    [UU,D,VV] = svd(WJ{1});
-    [PP,D,QQ] = svd(WJ{2});
+    WZ = emgr(LIN,OUT,[M,N,Q],[h,T],'x',R,[0,0,0,0,0,0,1,0,0,0,0,0],1,0,0,1,1,@pk);
+    [UU,D,VV] = svd(WZ);
     OFFLINE_TIME = toc
+%
 
 %% REDUCED ORDER MODEL EVALUATION
     l1 = zeros(1,N-1);
@@ -51,10 +54,9 @@ function test_cwjz(o)
 
     for n=1:N-1
         uu = UU(:,1:n);
-        pp = PP(:,1:n);
         lin = @(x,u,p,t) uu'*LIN(uu*x,u,p,t);
         out = @(x,u,p,t) OUT(uu*x,u,p,t);
-        y = ODE(lin,out,[h,T],uu'*X,U,pp*pp'*P);
+        y = ODE(lin,out,[h,T],uu'*X,U,P);
         l1(n) = norm(Y(:)-y(:),1)/n1;
         l2(n) = norm(Y(:)-y(:),2)/n2;
         l8(n) = norm(Y(:)-y(:),Inf)/n8;
@@ -69,7 +71,12 @@ function test_cwjz(o)
     xlim([1,N-1]);
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
-    legend('L1 Error ','L2 Error ','L8 Error ','location','southeast');
+    legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
+function z = pk(x,y)
+% summary: Quadratic polynomial kernel
+
+    z = (x*y).^2 + 1.0;
+end

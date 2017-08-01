@@ -2,11 +2,11 @@
 =========================================================
 
 ![code meta-data.](https://img.shields.io/badge/code_meta--data-%E2%9C%93-brightgreen.svg) 
-![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.580804.png)
+![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.837237.png)
 ![matlab compatible](https://img.shields.io/badge/matlab-compatible-lightgrey.svg)
 
 * emgr - EMpirical GRamian Framework ( gramian.de )
-* version: **5.1** ( 2017-05-18 )
+* version: **5.2** ( 2017-08-01 )
 * by: Christian Himpe ( 0000-0003-2194-6754 )
 * under: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 * summary: Empirical Gramians for model reduction of input-output systems.
@@ -113,7 +113,7 @@ addpath('demos')
 
 ### [Custom Solver](http://gramian.de/#solver)
 
-### [Extra Utilities](http://gramian.de/#utilities)
+### [Extra Utilities](http://gramian.de/#extra)
 
 ### [Tests](http://gramian.de/#tests)
 
@@ -127,6 +127,6 @@ addpath('demos')
 
 ### [Notes](http://gramian.de/#notes)
 
-### [Troubleshooting](http://gramian.de/#troubleshooting)
+### [Troubleshooting](http://gramian.de/#trouble)
 
 ## More information at: http://gramian.de

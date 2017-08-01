@@ -1,6 +1,6 @@
 function test_kwx(o)
 %%% summary: test_kwx (kernel cross gramian linear state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
@@ -37,7 +37,7 @@ function test_kwx(o)
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x',[],[],[],[],[],[],[],@gk);
+    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,0,1,0,0,1,1,@gk);
     [UU,D,VV] = svd(WX);
     OFFLINE_TIME = toc
 
@@ -73,5 +73,5 @@ function z = gk(x,y)
 % summary: Gaussian kernel
 
     d = x - y';
-    z = exp(-d*d');   
+    z = exp(-d*d');
 end

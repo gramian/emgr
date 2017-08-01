@@ -1,6 +1,6 @@
 function test_dwz(o)
 %%% summary: test_dwz (distributed non-symmetric cross gramian state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
@@ -37,7 +37,7 @@ function test_dwz(o)
 
 %% COMPARATIVE REDUCED ORDER MODEL PROJECTION ASSEMBLY 
     tic;
-    WZ = emgr(LIN,OUT,[M,N,Q],[h,T],'x',[],[0,0,0,0,0,0,1,0,0,0,0,0]);
+    WZ = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,1,0,0,0,0,0]);
     [UU,D,VV] = svd(WZ);
     OFFLINE_TIME_FULL = toc
 
@@ -46,7 +46,7 @@ function test_dwz(o)
     K = ceil(N/w);
     wz = cell(1,K);
     for k=1:K
-        wz{k} = emgr(LIN,OUT,[M,N,Q],[h,T],'x',[],[0,0,0,0,0,0,1,0,0,0,w,k]);
+        wz{k} = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,1,0,0,0,w,k]);
     end;
     OFFLINE_TIME_DIST = toc
     RESIDUAL = norm(WZ-cell2mat(wz))

@@ -1,6 +1,6 @@
 function test_kwy(o)
 %%% summary: test_kwy (kernel linear cross gramian linear state reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
 %$
@@ -26,8 +26,8 @@ function test_kwy(o)
     C = B';				% output matrix
 
     LIN = @(x,u,p,t) A*x + B*u;		% vector field
-    OUT = @(x,u,p,t) C*x;		% output functional
     ADJ = @(x,u,p,t) A'*x + C'*u;	% adjoint vector field
+    OUT = @(x,u,p,t) C*x;		% output functional
 
 %% FULL ORDER MODEL REFERENCE SOLUTION
     Y = ODE(LIN,OUT,[h,T],X,U,0);
@@ -37,13 +37,9 @@ function test_kwy(o)
     n8 = norm(Y(:),Inf);
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
-
-    WW = gallery('tridiag',N,1.0,-2.0,1.0);
-    dp = @(x,y) (WW*x)*(y*WW);
-
     tic;
-    WX = emgr(LIN,ADJ,[M,N,Q],[h,T],'y',[],[],[],[],[],[],[],dp);
-    [UU,D,VV] = svd(WX);
+    WY = emgr(LIN,ADJ,[M,N,Q],[h,T],'y',0,0,1,0,0,1,1,@pk);
+    [UU,D,VV] = svd(WY);
     OFFLINE_TIME = toc
 
 %% REDUCED ORDER MODEL EVALUATION
@@ -74,3 +70,8 @@ function test_kwy(o)
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
+function z = pk(x,y)
+% summary: Polynomial kernel
+
+    z = (x*y).^2 + 1;
+end
