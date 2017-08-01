@@ -1,8 +1,8 @@
 function advection(o)
 %%% summary: advection (finite difference discretized transport equation)
-%%% project: emgr - Empirical Gramian Framework ( gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2013--2017)
+%%% license: 2-Clause BSD (2017)
 %$
     if(exist('emgr')~=2)
         error('emgr not found! Get emgr at: http://gramian.de');
@@ -13,44 +13,63 @@ function advection(o)
     end
 
 %% SYSTEM SETUP
-    M = 0;				% number of inputs
-    N = 256;				% number of states
-    Q = N;				% number of outputs
-    R = 10;				% target reduced order
-    h = 0.01;				% time step size
-    T = 0.1;				% time horizon
-    X = exp(-linspace(-2,8,N).^2)';	% initial state
-    U = @(t) 0;				% zero input function
-    P = 0.55;				% parameter
+    M = 1;					% number of inputs
+    N = 256;					% number of states
+    Q = 1;					% number of outputs
+    L = N;					% number of time steps
+    T = 1.0;					% time horizon
+    h = T./L;					% time step width
+    p = 1.3;					% velocity
+    A = N * spdiags([ones(N,1),-ones(N,1)],[-1,0],N,N); % discretization
+    B = [1.0;sparse(N-1,1)];			% input matrix
+    C = [sparse(1,N-1),1.0];			% output matrix
+    X = zeros(N,1);				% initial state
+    U = @(t) exp(((t-0.1).^2)./(-0.001));	% input function
 
-    A = spdiags(N*[ones(N,1),-ones(N,1)],[-1,0],N,N);	% system matrix
+    LIN = @(x,u,p,t) p*A*x + B*u;		% vector field
+    ADJ = @(x,u,p,t) p*A'*x + C'*u;		% adjoint vector field
+    OUT = @(x,u,p,t) C*x;			% output functional
 
-    LIN = @(x,u,p,t) p*A*x;		% vector field
-    ADJ = @(x,u,p,t) p*A'*x + u;	% adjoint vector field
-    OUT = @(x,u,p,t) x;			% output functional
+%% FULL ORDER MODEL REFERENCE SOLUTION
+    Y = ODE(LIN,OUT,[h,T],X,U,p);
+    n1 = norm(Y(:),1);
+    n2 = norm(Y(:),2);
+    n8 = norm(Y(:),Inf);
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WO = emgr(ADJ,1,[N,N,Q],[h,T],'c',P);
-    [UU,D,VV] = svd(WO);
-    UU = UU(:,1:R);
-    VV = UU';
-    a = VV*A*UU;
-    c = UU;
-    x = VV*X;
-    lin = @(x,u,p,t) p*a*x;
-    out = @(x,u,p,t) c*x;
-    OFFLINE = toc
+    WX = emgr(LIN,ADJ,[M,N,Q],[h,T],'y',p,[4,0,0,0,0,0,0,0,0,0,0,0]);
+    [UU,D,VV] = svd(WX);
+    OFFLINE_TIME = toc
 
-%% REDUCED ORDER MODEL SIMULATION
-    y = ODE(lin,out,[0.01,1.0],x,U,P);
+%% REDUCED ORDER MODEL EVALUATION
+    l1 = zeros(1,N-1);
+    l2 = zeros(1,N-1);
+    l8 = zeros(1,N-1);
 
-%% PLOT REDUCED ORDER MODEL PHASE SPACE
+    for n=1:4:N-1
+        uu = UU(:,1:n);
+        a = uu'*A*uu;
+        b = uu'*B;
+        c = C*uu;
+        lin = @(x,u,p,t) p*a*x + b*u;
+        out = @(x,u,p,t) c*x;
+        y = ODE(lin,out,[h,T],uu'*X,U,p);
+        l1(n) = norm(Y(:)-y(:),1)/n1;
+        l2(n) = norm(Y(:)-y(:),2)/n2;
+        l8(n) = norm(Y(:)-y(:),Inf)/n8;
+    end;
+
+%% PLOT REDUCDED ORDER VS RELATIVE ERRORS
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
-    imagesc(sparse(y)); caxis([0,max(y(:))]);
-    set(gca,'YTick',0,'xtick',[]); ylabel('X'); xlabel('t');
+    semilogy(1:4:N-1,l1(1:4:N-1),'r','linewidth',2); hold on;
+    semilogy(1:4:N-1,l2(1:4:N-1),'g','linewidth',2);
+    semilogy(1:4:N-1,l8(1:4:N-1),'b','linewidth',2); hold off;
+    xlim([1,N-1]);
+    ylim([1e-16,1]);
     pbaspect([2,1,1]);
-    if(nargin>0 && o==1), print('-dpng',[mfilename(),'.png']); end;
+    legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

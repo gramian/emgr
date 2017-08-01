@@ -1,6 +1,6 @@
 function benchmark_lin(o)
-%%% summary: benchmark_lin (iss model reduction benchmark)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% summary: benchmark_lin (ISS 1-r model reduction benchmark)
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2013--2017)
 %$
@@ -16,12 +16,12 @@ function benchmark_lin(o)
     try
         if(exist(['/tmp/',D,'.mat'],'file')==0)
             urlwrite(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],['/tmp/',D,'.zip']);
-            unzip(['/tmp/',D,'.zip'],'/tmp');
         end
     catch
-        disp('benchmark_lin: Could not download benchmark data.');
+        disp('benchmark_lin: Cannot download benchmark data.');
         return;
     end
+    unzip(['/tmp/',D,'.zip'],'/tmp');
     load(['/tmp/',D,'.mat']);
 
 %% SYSTEM SETUP

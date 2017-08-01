@@ -1,6 +1,6 @@
 function combined_wj(o)
 %%% summary: combined_wj (joint gramian nonlinear combined reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2013--2017)
 %$

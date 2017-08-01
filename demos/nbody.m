@@ -1,6 +1,6 @@
 function nbody(o)
 %%% summary: nbody (5-body figure eight reduction)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - EMpirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2013--2017)
 %$
