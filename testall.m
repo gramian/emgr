@@ -2,7 +2,7 @@ function testall(o)
 %%% summary: testall (run all tests and demos)
 %%% project: emgr - Empirical Gramian Framework ( gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2016--2017)
+%%% license: 2-Clause BSD (2016--2018)
 %$
     if(nargin==0), o = 0; end;
 
@@ -63,4 +63,5 @@ function testall(o)
     disp(' advection:');     advection(o);
     disp(' nbody:');         nbody(o);
     disp(' blackhole:');     blackhole(o);
+    disp(' indices:');       indices(o);
 end
