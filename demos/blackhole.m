@@ -17,7 +17,7 @@ function blackhole(o)
     T = 5.0;	% time horizon
     U = @(t) 0;	% zero input function
 
-   % Planet Parameters
+   % Fermion Parameters
     xu = [0.4;pi/2;0;0];
     pu = [0.568;1.13;0.13;0.9982;0.05;0;1]; % E,L,Q,a,e,eps,m
     ru = [0.9*pu,1.1*pu];
@@ -28,15 +28,15 @@ function blackhole(o)
     pp = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05;0;0]; % E,L,Q,a,e,eps,m
     rp = [0.9*pp,1.1*pp];
 
-%% COMPUTE SENSITIVITY MEASURES FOR PHOTON AND PARTICLE
-    Y = [ODE(@orbit,@bl2c,[h,T],xu,U,pu);... % Full Order Planet
+%% COMPUTE SENSITIVITY MEASURES FOR PHOTON AND FERMION
+    Y = [ODE(@orbit,@bl2c,[h,T],xu,U,pu);... % Full Order Fermion
          ODE(@orbit,@bl2c,[h,T],xp,U,pp)];   % Full Order Photon
 
     fprintf('Parameters: E,L,Q,a,e,eps,m\n');
 
-    % Planet Sensitivities
+    % Fermion Sensitivities
     WS = emgr(@orbit,@bl2c,[0,4,3],[h,T],'s',ru,[1,0,0,0,0,0,0,0,0,0],1,0,xu);
-    PLANET_SENSITIVITY = WS{2}
+    FERMION_SENSITIVITY = WS{2}
 
     % Photon Sensitivities
     WS = emgr(@orbit,@bl2c,[0,4,3],[h,T],'s',rp,[1,0,0,0,0,0,0,0,0,0],1,0,xp);
@@ -47,12 +47,12 @@ function blackhole(o)
     figure('Name',mfilename,'NumberTitle','off');
     grid on;
     hold on;
-    p0 = plot3(0,0,0,'*','Color','black');                     		%singularity
-    p1 = plot3(Y(1,end),Y(2,end),Y(3,end),'*','Color','red');  		%planet
-    p2 = plot3(Y(1,:),Y(2,:),Y(3,:),'Color','red','linewidth',2);	%planet orbit
-    p3 = plot3(Y(4,end),Y(5,end),Y(6,end),'*','Color','blue'); 		%photon
-    p4 = plot3(Y(4,:),Y(5,:),Y(6,:),'Color','blue','linewidth',2);	%photon orbit
-    l = legend([p0 p2 p4],'singularity','planet orbit','photon orbit');
+    p0 = plot3(0,0,0,'*','Color','black');                     		% singularity
+    p1 = plot3(Y(1,end),Y(2,end),Y(3,end),'*','Color','red');  		% fermion
+    p2 = plot3(Y(1,:),Y(2,:),Y(3,:),'Color','red','linewidth',2);	% fermion orbit
+    p3 = plot3(Y(4,end),Y(5,end),Y(6,end),'*','Color','blue'); 		% photon
+    p4 = plot3(Y(4,:),Y(5,:),Y(6,:),'Color','blue','linewidth',2);	% photon orbit
+    l = legend([p0 p2 p4],'singularity','fermion orbit','photon orbit');
     set(l,'FontSize',10);
     hold off;
     xl = ceil(10*max([abs(Y(1,:)),abs(Y(4,:))]))*0.1;

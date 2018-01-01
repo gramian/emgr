@@ -40,7 +40,7 @@ function energy_wz(o)
     tic;
     WZ = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,0,1,0,0,0,0,0],1,0,1);
     [UU,D,VV] = svd(WZ);
-    OFFLINE = toc
+    OFFLINE_TIME = toc
 
 %% REDUCED ORDER MODEL EVALUATION
     l1 = zeros(1,N-1);
@@ -71,6 +71,7 @@ function energy_wz(o)
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    set(gca,'YGrid','on');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

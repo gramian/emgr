@@ -1,5 +1,5 @@
 function test_swx(o)
-%%% summary: test_swx (scaled cross gramian linear state reduction)
+%%% summary: test_swx (normalized cross gramian linear state reduction)
 %%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2016--2017)
@@ -37,7 +37,7 @@ function test_swx(o)
 
 %% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
-    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'o',0,[0,0,0,0,0,1,0,0,0,0,0,0]);
+    WX = emgr(LIN,OUT,[M,N,Q],[h,T],'x',0,[0,0,0,0,0,1,0,0,0,0,0,0]);
     [UU,D,VV] = svd(WX);
     OFFLINE_TIME = toc
 
@@ -66,6 +66,7 @@ function test_swx(o)
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    set(gca,'YGrid','on');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

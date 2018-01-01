@@ -10,13 +10,13 @@ B = [0;1;0;1]
 C = [0,0,1,1]
 
 % (Empircal) Controllability Gramian
-emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) C*x,[1,4,1],[0.01,1.0],'c')
+WC = emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) C*x,[1,4,1],[0.01,1.0],'c')
 
 % (Empirical) Observability Gramian
-emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) C*x,[1,4,1],[0.01,1.0],'o')
+WO = emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) C*x,[1,4,1],[0.01,1.0],'o')
 
 % (Empirical) Cross Gramian
-emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) C*x,[1,4,1],[0.01,1.0],'x')
+WX = emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) C*x,[1,4,1],[0.01,1.0],'x')
 
 % (Empirical) Linear Cross Gramian
-emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) A'*x+C'*u,[1,4,1],[0.01,1.0],'y')
+WY = emgr(@(x,u,p,t) A*x+B*u,@(x,u,p,t) A'*x+C'*u,[1,4,1],[0.01,1.0],'y')

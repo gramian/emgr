@@ -2,10 +2,10 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %% emgr - EMpirical GRamian Framework
 %
 %  project: emgr ( http://gramian.de )
-%  version: 5.2-lgc ( 2017-08-01 )
+%  version: 5.3-lgc ( 2018-01-01 )
 %  authors: Christian Himpe ( 0000-0003-2194-6754 )
 %  license: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-%  summary: Empirical Gramians for model reduction of input-output systems.
+%  summary: Empirical Gramians for (nonlinear) input-output systems.
 %
 % USAGE:
 %
@@ -37,49 +37,50 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %  pr {matrix|0} parameters, each column is one set
 %  nf {vector|0} option flags, twelve components, default zero:
 %    * center: no(0), steady(1), last(2), mean(3), rms(4), midrange(5)
-%    * input scales: single(0), linear(1), geom(2), log(3), sparse(4)
-%    * state scales: single(0), linear(1), geom(2), log(3), sparse(4)
+%    * input scales: single(0), linear(1), geometric(2), log(3), sparse(4)
+%    * state scales: single(0), linear(1), geometric(2), log(3), sparse(4)
 %    * input rotations: unit(0), single(1)
 %    * state rotations: unit(0), single(1)
-%    * scale type: no(0), Jacobi preconditioner(1), steady-state(2)
+%    * normalizing (only: Wc, Wo, Wx, Wy): no(0), Jacobi(1), steady-state(2)
 %    * cross gramian type (only: Wx, Wy, Wj): regular(0), non-symmetric(1)
 %    * extra input (only: Wo, Wx, Ws, Wi, Wj): no(0), yes(1)
 %    * parameter centering (only: Ws, Wi, Wj): no(0), linear(1), log(2)
 %    * Schur-complement (only: Wi, Wj): detailed(0), approximate(1)
 %    * cross gramian partition size (only: Wx, Wj): full(0), partitioned(<N)
 %    * cross gramian partition index (only: Wx, Wj): partition(>0)
-%  ut {handle|1} input function handle: u = ut(t), default: delta impulse
+%  ut {handle|1} input function handle: u_t = ut(t), default: delta-impulse(1)
 %  us {vector|0} steady-state input
 %  xs {vector|0} steady-state and initial state x0
 %  um {matrix|1} input scales
 %  xm {matrix|1} initial-state scales
-%  dp {handle|1} custom inner product handle: z = dp(x,y), default: @mtimes
+%  dp {handle|@mtimes} custom inner product handle: z = dp(x,y)
 %
 % RETURNS:
 %
-%  W {matrix} Gramian Matrix (only: Wc, Wo, Wx, Wy)
-%  W  {cell}  [State-, Parameter-] Gramian (only: Ws, Wi, Wj)
+%  W {matrix} Gramian Matrix (for: Wc, Wo, Wx, Wy)
+%  W  {cell}  [State-, Parameter-] Gramian (for: Ws, Wi, Wj)
 %
 % CITATION:
 %
-%  C. Himpe (2017). emgr - EMpirical GRamian Framework (Version 5.2)
-%  [Software]. Available from http://gramian.de . doi: 10.5281/zenodo.837237
+%  C. Himpe (2018). emgr - EMpirical GRamian Framework (Version 5.3)
+%  [Software]. Available from http://gramian.de . doi: 10.5281/zenodo.1134429
 %
 % SEE ALSO:
 %  gram
 %
 % KEYWORDS:
 %
-%  model reduction, empirical gramians, cross gramian matrix, MOR
+%  model reduction, system gramians, empirical gramians, cross gramian, MOR
 %
 % Further information: http://gramian.de
 
-%% GENERAL SETUP
+%% ARGUMENT SETUP
+
     global ODE; % Integrator Handle
     if(isa(ODE,'function_handle')==0), ODE = @ssp2; end;
 
     % Version Info
-    if(strcmp(f,'version')), W = 5.2; return; end;
+    if(strcmp(f,'version')), W = 5.3; return; end;
 
     % Default Arguments
     if( (nargin<6)  || isempty(pr) ), pr = 0.0; end;
@@ -91,9 +92,7 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     if( (nargin<12) || isempty(xm) ), xm = 1.0; end;
     if( (nargin<13) || isempty(dp) ), dp = @mtimes; end;
 
-    w = lower(w); % Ensure lower case gramian type
-
-%% GRAMIAN SETUP
+%% GENERAL SETUP
 
     % System Dimensions
     M = s(1);                   % Number of inputs
@@ -107,18 +106,20 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 
     % Lazy Arguments
     if(isnumeric(g) && g==1)    % Assume unit output functional
-        g = @(x,u,p,t) x;
+        g = @id;
         Q = N;
     end;
+
+    w = lower(w); % Ensure lower case gramian type
 
     nf = [nf(:)',zeros(1,12-numel(nf))]; % Ensure flag vector length
 
     if(isnumeric(ut) && numel(ut)==1) % Built-in input functions
-        if(ut==Inf)   % Linear Chirp Input
+        if(ut==Inf) % Linear Chirp Input
             mh = ones(M,1);
             sh = (1.0/L - 0.1/h) / L;
             ut = @(t) 0.5 + mh*0.5*cos(2.0*pi*(((0.1/h)+0.5*sh*t).*t));
-        else          % Delta Impulse Input
+        else        % Delta Impulse Input
             mh = ones(M,1)./h;
             ut = @(t) mh * (t<=h);
         end;
@@ -135,18 +136,20 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     C = size(um,2); % Number of input scales sets
     D = size(xm,2); % Number of state scales sets
 
-    if(nf(6)) % Scaled empirical gramians
+%% GRAMIAN SETUP
+
+    if( (w=='c' || w=='o' || w=='x' || w=='y') && nf(6) && A==0) % Normalizing
         TX = ones(N,1);
-        NF = nf;
-        NF(6) = 0;
         switch(nf(6))
 
-            case 1 % Use Jacobi Preconditioner (state only)
-                DP = @(x,y) diag(sum(x.*y',2)); % Diagonal-only pseudo-kernel
+            case 1 % Jacobi preconditioner
+                NF = nf;
+                NF(6) = 0;
+                DP = @(x,y) sum(x.*y',2); % Diagonal-only pseudo-kernel
                 WT = emgr_lgc(f,g,s,t,w,pr,NF,ut,us,xs,um,xm,DP);
-                TX = sqrt(diag(WT));
+                TX = sqrt(WT);
 
-            case 2 % Scale by steady-state and steady-state input
+            case 2 % Steady-state and steady-state input
                 TX(xs~=0) = xs(xs~=0);
         end
         tx = 1.0./TX;
@@ -166,19 +169,20 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     switch(w) % Empirical gramian types
 
         % Common layout:
-        %  Setup: Pre-allocate memory for gramian matrix
-        %  Loop nesting: for-each {parameter set, input|state|parameter scale}
+        %  Setup: Initialize variable for empirical gramian matrix
+        %  Loop nesting: for-each {parameter, input|state(parameter) scale}
         %  Loop bodies: perturb, simulate, center, normalize, store|accumulate
         %  Post-processing: normalize, (symmetrize), (decompose)
         %  Parameter-space gramians call state-space gramians
 
         case 'c' % Controllability gramian
-            W = zeros(N,N); % Pre-allocate gramian matrix
+            W = 0; % Reserve gramian variable
             for k = 1:K
                 for c = 1:C
                     for m = find(um(:,c))' % parfor
-                        uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
-                        x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
+                        em = sparse(m,1,um(m,c),M,1);
+                        uu = @(t) us + ut(t) .* em;
+                        x = ODE(f,@id,t,xs,uu,pr(:,k));
                         x = bsxfun(@minus,x,avg(x,nf(1),xs));
                         x = x * (1.0/um(m,c));
                         W = W + dp(x,x');
@@ -189,8 +193,8 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
             W = 0.5 * (W + W');
 
         case 'o' % Observability gramian
-            W = zeros(N+A,N+A); % Pre-allocate gramian matrix
-            o = zeros(Q*L,N+A);
+            W = 0; % Reserve gramian variable
+            o = zeros(Q*L,N+A); % Pre-allocate observability matrix
             for k = 1:K
                 for d = 1:D
                     for n = find(xm(:,d))' % parfor
@@ -215,19 +219,19 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 
             if(nf(11)>0) % Partitioned cross gramian
 
-                i0 = i0 + (nf(12)-1)*nf(11);
-                i1 = min(i0+nf(11)-1,N);
+                i0 = i0 + (nf(12) - 1) * nf(11);
+                i1 = min(i0 + nf(11) - 1,N);
 
                 if(i0>N)
-                    i0 = i0 - ( ceil( N/nf(11) ) * nf(11) - N);
-                    i1 = min(i0+nf(11)-1,N+A);
+                    i0 = i0 - ( ceil( N / nf(11) ) * nf(11) - N);
+                    i1 = min(i0 + nf(11) - 1,N+A);
                 end;
 
                 if(i0>i1 || i0<0), W = 0; return; end;
             end;
 
-            W = zeros(N,i1-i0+1); % Pre-allocate gramian matrix (partition)
-            o = zeros(L,i1-i0+1,Q);
+            W = 0; % Reserve gramian (partition) variable
+            o = zeros(L,i1-i0+1,Q); % Pre-allocate observability 3-tensor
 
             for k = 1:K
                 for d = 1:D
@@ -242,11 +246,12 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                     if(nf(7)) % Non-symmetric cross gramian: cache average
                         o(:,:,1) = sum(o,3);
                     end;
-                    for c = 1:C
-                        for m = find(um(:,c))' % parfor
-                            uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
+                    for c = 1:C % parfor
+                        for m = find(um(:,c))'
+                            em = sparse(m,1,um(m,c),M,1);
+                            uu = @(t) us + ut(t) .* em;
                             if(A==0), pp = pr(:,k); else, pp = xs(N+1:end); end;
-                            x = ODE(f,@(x,u,p,t) x,t,xs(1:N),uu,pp);
+                            x = ODE(f,@id,t,xs(1:N),uu,pp);
                             x = bsxfun(@minus,x,avg(x,nf(1),xs(1:N)));
                             x = x * (1.0/um(m,c));
                             if(nf(7)) % Non-symmetric cross gramian
@@ -263,30 +268,32 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
         case 'y' % Linear cross gramian
             assert(M==Q || nf(7),'emgr: non-square system!');
 
-            W = zeros(N,N); % Pre-allocate gramian matrix
-            o = zeros(N,L,M);
+            W = 0; % Reserve gramian variable
+            o = zeros(L,N,M); % Pre-allocate adjoint 3-tensor
 
             for k = 1:K
                 for c = 1:C
-                    for m = find(um(:,c))' % parfor
-                        uu = @(t) us + ut(t) .* sparse(m,1,um(m,c),M,1);
-                        x = ODE(f,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        x = bsxfun(@minus,x,avg(x,nf(1),xs));
-                        x = x * (1.0/um(m,c));
-                        o(:,:,m) = x;
+                    for m = find(xm(:,c))' % parfor
+                        em = sparse(m,1,xm(m,c),Q,1);
+                        uu = @(t) us + ut(t) .* em;
+                        z = ODE(g,@id,t,xs,uu,pr(:,k));
+                        z = bsxfun(@minus,z,avg(z,nf(1),xs));
+                        z = z * (1.0/xm(m,c));
+                        o(:,:,m) = z';
                     end;
                     if(nf(7)) % Non-symmetric cross gramian: cache average
                         o(:,:,1) = sum(o,3);
                     end;
-                    for q = find(xm(:,c))' % parfor
-                        uu = @(t) us + ut(t) .* sparse(q,1,xm(q,c),Q,1);
-                        z = ODE(g,@(x,u,p,t) x,t,xs,uu,pr(:,k));
-                        z = bsxfun(@minus,z,avg(z,nf(1),xs));
-                        z = z * (1.0/xm(q,c));
+                    for m = find(um(:,c))' % parfor
+                        em = sparse(m,1,um(m,c),M,1);
+                        uu = @(t) us + ut(t) .* em;
+                        x = ODE(f,@id,t,xs,uu,pr(:,k));
+                        x = bsxfun(@minus,x,avg(x,nf(1),xs));
+                        x = x * (1.0/um(m,c));
                         if(nf(7)) % Non-symmetric cross gramian
-                            W = W + dp(o(:,:,1),z');
+                            W = W + dp(x,o(:,:,1));
                         else      % Regular cross gramian
-                            W = W + dp(o(:,:,q),z');
+                            W = W + dp(x,o(:,:,m));
                         end;
                     end;
                 end;
@@ -299,7 +306,7 @@ function W = emgr_lgc(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
             W{2} = zeros(P,1); % Sensitivity gramian diagonal
             DP = @(x,y) sum(sum(x.*y')); % Trace pseudo-kernel
             UT = @(t) 1.0;
-            for k=1:P
+            for k = 1:P
                 ek = sparse(k,1,1.0,P,1);
                 F = @(x,u,p,t) f(x,up(t),pr + u * ek,t);
                 W{2}(k) = emgr_lgc(F,g,[1,1,Q],t,'c',0,nf,UT,0,xs,pm(k,:),xm,DP);
@@ -360,14 +367,14 @@ function sm = scales(s,d,c)
 
     if(c==0), sc = [-sc,sc]; end;
 
-    sm = s*sc;
+    sm = s * sc;
 end
 
 %% LOCALFUNCTION: pscales
 %  summary: Parameter perturbation scales
 function [pr,pm] = pscales(p,d,c)
 
-    assert(size(p,2)>1,'emgr: min + max parameter required!');
+    assert(size(p,2)>=2,'emgr: min + max parameter required!');
 
     pmin = min(p,[],2);
     pmax = max(p,[],2);
@@ -389,8 +396,14 @@ function [pr,pm] = pscales(p,d,c)
 
         otherwise % None
             pr = pmin;
-            pm = (pmax - pmin)*linspace(0,1.0,c);
+            pm = (pmax - pmin) * linspace(0,1.0,c);
     end;
+end
+
+%% LOCALFUNCTION: id
+%  summary: output identity function
+function x = id(x,u,p,t)
+
 end
 
 %% LOCALFUNCTION: avg
@@ -431,7 +444,7 @@ function x = ainv(m)
 end
 
 %% LOCALFUNCTION: ssp2
-%  summary: Low-Storage Stability Preserving Runge-Kutta SSP32
+%  summary: Low-Storage Strong Stability Preserving Runge-Kutta SSPx2
 function y = ssp2(f,g,t,x0,u,p)
 
     global STAGES;
@@ -455,7 +468,7 @@ function y = ssp2(f,g,t,x0,u,p)
             xk1 = xk1 + hs * f(xk1,uk,p,tk);
             tk = tk + hs;
         end;
-        xk1 = ((STAGES-1) * xk1 + xk2 + h * f(xk2,uk,p,tk)) ./ STAGES;
+        xk1 = (xk2 + (STAGES-1) * xk1 + h * f(xk1,uk,p,tk)) ./ STAGES;
         xk2 = xk1;
         y(:,k) = g(xk1,uk,p,tk);
     end;

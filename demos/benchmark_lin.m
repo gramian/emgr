@@ -18,7 +18,7 @@ function benchmark_lin(o)
             urlwrite(['http://slicot.org/objects/software/shared/bench-data/',D,'.zip'],['/tmp/',D,'.zip']);
         end
     catch
-        disp('benchmark_lin: Cannot download benchmark data.');
+        disp('Cannot download benchmark data!');
         return;
     end
     unzip(['/tmp/',D,'.zip'],'/tmp');
@@ -88,6 +88,7 @@ function benchmark_lin(o)
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    set(gca,'YGrid','on');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

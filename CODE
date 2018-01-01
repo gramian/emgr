@@ -1,8 +1,8 @@
 name: Empirical Gramian Framework
 shortname: emgr
-version: 5.2
-release-date: 2017-08-01
-id:10.5281/zenodo.837237
+version: 5.3
+release-date: 2018-01-01
+id:10.5281/zenodo.1134429
 id-type: doi
 author: Christian Himpe
 orcid: 0000-0003-2194-6754
@@ -17,4 +17,4 @@ dependencies: Octave >=4.2, Matlab >=2016b
 systems: Linux, Windows
 website: gramian.de
 keywords: Controllability, Observability, Cross Gramian, Model Reduction, Model Order Reduction
-msc: 93b99
+msc: 93B99

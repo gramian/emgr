@@ -42,8 +42,8 @@ function emgrtest(m)
         case 'oct',
             EMGR = @emgr_oct;
 
-        case 'legacy',
-            EMGR = @emgr_legacy;
+        case 'lgc',
+            EMGR = @emgr_lgc;
 
         otherwise,
             EMGR = @emgr;

@@ -42,7 +42,7 @@ function decentral(o)
     end
 
     PM = PM./sum(PM(:));	% Normalize participation matrix
-    OFFLINE = toc
+    OFFLINE_TIME = toc
 
 %% PLOT PARTICIPATION MATRIX
     if(nargin>0 && o==0), return; end; 

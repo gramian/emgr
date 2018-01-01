@@ -1,5 +1,5 @@
 function test_kpwz(o)
-%%% summary: test_pwz (non-symmetric cross gramian parametric state reduction)
+%%% summary: test_kpwz (non-symmetric cross gramian parametric state reduction)
 %%% project: emgr - EMpirical GRamian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2017)
@@ -72,6 +72,7 @@ function test_kpwz(o)
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    set(gca,'YGrid','on');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

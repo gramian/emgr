@@ -24,7 +24,7 @@ function benchmark_ilp(o)
     h = 0.01;				% time step size
     T = 1.0;				% time horizon
     X = zeros(N,1);			% initial state
-    U = @(t) ones(M,1)*(t<=h)/h;	% impuse input function
+    U = @(t) ones(M,1)*(t<=h)/h;	% impulse input function
 
     LIN = @(x,u,p,t) A*x + B*u;		% vector field
     OUT = @(x,u,p,t) C*x;		% output functional
@@ -78,6 +78,7 @@ function benchmark_ilp(o)
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    set(gca,'YGrid','on');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 

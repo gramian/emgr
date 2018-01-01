@@ -14,7 +14,7 @@ function benchmark_fss(o)
 
     rand('seed',1009);
 
-%% SETUPs
+%% SYSTEM SETUP
 
     K = 32;				% number of modes
     xi = rand(1,K)*0.001;		% damping ratio
@@ -39,14 +39,14 @@ function benchmark_fss(o)
     LIN = @(x,u,p,t) A*x + B*u;		% vector field
     OUT = @(x,u,p,t) C*x;		% output functional
 
-%% FULL ORDER
+%% FULL ORDER MODEL REFERENCE SOLUTION
     Y = ODE(LIN,OUT,[h,T],X,U,0);
     %figure; plot(0:h:T,Y); return;
     n1 = norm(Y(:),1);
     n2 = norm(Y(:),2);
     n8 = norm(Y(:),Inf);
 
-%% OFFLINE
+%% REDUCED ORDER MODEL PROJECTION ASSEMBLY
     tic;
     s = 16;
     P = ceil(N/s);
@@ -57,7 +57,7 @@ function benchmark_fss(o)
     [UU,DD,VV] = svd(cell2mat(wx));
     OFFLINE_TIME = toc
 
-%% EVALUATION
+%% REDUCED ORDER MODEL EVALUATION
     l1 = zeros(1,N-1);
     l2 = zeros(1,N-1);
     l8 = zeros(1,N-1);
@@ -76,7 +76,7 @@ function benchmark_fss(o)
         l8(n) = norm(Y(:)-y(:),Inf)/n8;
     end;
 
-%% OUTPUT
+%% PLOT REDUCDED ORDER VS RELATIVE ERRORS
     if(nargin>0 && o==0), return; end; 
     figure('Name',mfilename,'NumberTitle','off');
     semilogy(1:N-1,l1,'r','linewidth',2); hold on;
@@ -86,6 +86,7 @@ function benchmark_fss(o)
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
     legend('L1 Error ','L2 Error ','L8 Error ','location','northeast');
+    set(gca,'YGrid','on');
     if(nargin>0 && o==1), print('-dsvg',[mfilename(),'.svg']); end;
 end
 
