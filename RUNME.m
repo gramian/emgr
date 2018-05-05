@@ -1,8 +1,10 @@
-%%% summary: RUNME (Minimal setup and test script)
-%%% project: emgr - Empirical Gramian Framework ( gramian.de )
+%%% summary: RUNME (Minimal test script)
+%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2017)
+%%% license: 2-Clause BSD (2017--2018)
 %$
+
+emgr_version = emgr('version')
 
 % Linear System
 A = -eye(4)

@@ -1,13 +1,13 @@
 Cite As:
 
-C. Himpe (2018). emgr - EMpirical GRamian Framework (Version 5.3) [Software]. Available from http://gramian.de . doi:10.5281/zenodo.1134429
+C. Himpe (2018). emgr - EMpirical GRamian Framework (Version 5.4) [Software]. Available from http://gramian.de . doi:10.5281/zenodo.1241532
 
 BibTeX Entry:
 
 @MISC{emgr,
  author = {C. Himpe},
- title = {{emgr - EMpirical GRamian Framework (Version 5.3)}},
+ title = {{emgr - EMpirical GRamian Framework (Version 5.4)}},
  howpublished = {\url{http://gramian.de}},
  year = {2018},
- doi = {10.5281/zenodo.1134429}
+ doi = {10.5281/zenodo.1241532}
 }

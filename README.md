@@ -2,11 +2,11 @@
 =========================================================
 
 ![code meta-data.](https://img.shields.io/badge/code_meta--data-%E2%9C%93-brightgreen.svg) 
-![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.1134429.png)
+![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.1241532.png)
 ![matlab compatible](https://img.shields.io/badge/matlab-compatible-lightgrey.svg)
 
 * emgr - EMpirical GRamian Framework ( http://gramian.de )
-* version: **5.3** ( 2018-01-01 )
+* version: **5.4** ( 2018-05-05 )
 * by: Christian Himpe ( 0000-0003-2194-6754 )
 * under: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
 * summary: Empirical Gramians for model reduction of input-output systems.
@@ -58,8 +58,6 @@ RUNME
 
 To use specific utilities, tests or demos include:
 ```
-addpath('utils')
-addpath('tests')
 addpath('demos')
 ```
 
@@ -81,17 +79,11 @@ addpath('demos')
 
 [`emgr_lgc.m`](emgr_lgc.m) Empirical Gramian Framework (Pre 2016b Matlab)
 
-[`emgrtest.m`](emgrtest.m) Sanity test via experimental order of convergence (EOC)
-
-[`testall.m`](testall.m) Run all tests and demos
+[`emgrtest.m`](emgrtest.m) Run tests
 
 [`emgr_ref.pdf`](emgr_ref.pdf) emgr reference cheat sheet
 
-[`utils`](utils) Folder containing utilities
-
-[`tests`](tests) Folder containing tests
-
-[`demos`](demos) Folder containing demos
+[`examples.m`](examples.m) Run demos
 
 ## Documentation ToC
 
