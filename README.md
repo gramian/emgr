@@ -56,10 +56,16 @@ Run a minimal example in a Matlab interpreter like OCTAVE or MATLAB:
 RUNME
 ```
 
-To use specific utilities, tests or demos include:
+To run all tests use:
 ```
-addpath('demos')
+emgrtest
 ```
+
+To run demos use:
+```
+examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
+```
+
 
 ## Files and Folders
 
@@ -81,9 +87,9 @@ addpath('demos')
 
 [`emgrtest.m`](emgrtest.m) Run tests
 
-[`emgr_ref.pdf`](emgr_ref.pdf) emgr reference cheat sheet
+[`emgr-ref.pdf`](emgr-ref.pdf) emgr reference cheat sheet
 
-[`examples.m`](examples.m) Run demos
+[`examples.m`](examples.m) Run demo
 
 ## Documentation ToC
 
@@ -107,7 +113,7 @@ addpath('demos')
 
 ### [Custom Solver](http://gramian.de/#solver)
 
-### [Extra Utilities](http://gramian.de/#utilities)
+### [Extra Utilities](http://gramian.de/#extra)
 
 ### [Tests](http://gramian.de/#tests)
 
@@ -121,6 +127,6 @@ addpath('demos')
 
 ### [Notes](http://gramian.de/#notes)
 
-### [Troubleshooting](http://gramian.de/#troubleshooting)
+### [Troubleshooting](http://gramian.de/#trouble)
 
 ## More information at: http://gramian.de
