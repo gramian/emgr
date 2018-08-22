@@ -2,14 +2,14 @@
 =========================================================
 
 ![code meta-data.](https://img.shields.io/badge/code_meta--data-%E2%9C%93-brightgreen.svg) 
-![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.1241532.png)
+![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.1401500.png)
 ![matlab compatible](https://img.shields.io/badge/matlab-compatible-lightgrey.svg)
 
-* emgr - EMpirical GRamian Framework ( http://gramian.de )
-* version: **5.4** ( 2018-05-05 )
-* by: Christian Himpe ( 0000-0003-2194-6754 )
-* under: BSD 2-Clause License ( opensource.org/licenses/BSD-2-Clause )
-* summary: Empirical Gramians for model reduction of input-output systems.
+* emgr - EMpirical GRamian Framework ([gramian.de](https://gramian.de))
+* version: **5.5** (2018-08-22)
+* by: Christian Himpe ([0000-0003-2194-6754](https://orcid.org/0000-0003-2194-6754))
+* under: [BSD-2-Clause](https://opensource.org/licenses/BSD-2-Clause) License
+* summary: Empirical Gramians for (model reduction of) input-output systems.
 
 ## Scope
 
@@ -38,7 +38,7 @@
 * Interfaces for:
   * custom solvers / integrators
   * custom inner products / dot products / kernels / pseudo-kernels
-  * distributed memory / column-wise computation of the cross Gramian
+  * distributed / partitioned / low-rank cross Gramian
 * Non-symmetric cross gramian option for:
   * Empirical Cross Gramian
   * Empirical Linear Cross Gramian
@@ -48,6 +48,18 @@
   * Mathworks MATLAB
 * Vectorized and parallelizable
 * Functional design
+
+### Details
+
+For a mathematical summary and technical documentation of the empirical Gramian framework
+detailing all features and capabilities see:
+
+* C. Himpe. "[emgr -- the Empirical Gramian Framework](https://doi.org/10.3390/a11070091)". Algorithms 11(7): 91, 2018.
+
+## Compatbility
+
+* GNU Octave >=4.2.0 (available in Ubuntu **18.04** LTS repositories)
+* Mathworks MATLAB >=2016b (use `emgr_lgc.m` for earlier version)
 
 ## Basic Usage
 
@@ -66,7 +78,6 @@ To run demos use:
 examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 ```
 
-
 ## Files and Folders
 
 [`README.md`](README.md) Basic Information
@@ -77,56 +88,69 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 
 [`CITATION`](CITATION) Citation Information
 
-[`LICENSE`](LICENSE) License Indormation
+[`LICENSE`](LICENSE) License Information
+
+[`CHANGELOG`](CHANGELOG) Version Change Information
 
 [`emgr.m`](emgr.m) Empirical Gramian Framework (Main File)
 
 [`emgr_oct.m`](emgr_oct.m) Empirical Gramian Framework (Optional Octave Variant) 
 
-[`emgr_lgc.m`](emgr_lgc.m) Empirical Gramian Framework (Pre 2016b Matlab)
+[`emgr_lgc.m`](emgr_lgc.m) Empirical Gramian Framework (Pre 2016b Matlab Variant)
 
-[`emgrtest.m`](emgrtest.m) Run tests
+[`curios.m`](curios.m) Clearing Up Reducibility of Input-Output Systems (Simple frontend)
+
+[`emgrtest.m`](emgrtest.m) Run tests (system tests)
+
+[`moretests.m`](moretests.m) More tests (functionality tests)
+
+[`examples.m`](examples.m) Run demo
+  * `'hnm'` Hyperbolic Network Model
+  * `'isp'` Inverse Sylvester Procedure
+  * `'fss'` Flexible Space Structures
+  * `'nrc'` Nonlinear Resistor-Capacitor Cascade
+  * `'lte'` Linear Transport Equation
+  * `'fbc'` Five Body Choreography
+  * `'qso'` Quasi-Stable Orbits Inside Black Holes
 
 [`emgr-ref.pdf`](emgr-ref.pdf) emgr reference cheat sheet
 
-[`examples.m`](examples.m) Run demo
+## Documentation Table-of-Contents
 
-## Documentation ToC
+### [Summary](https://gramian.de/#summary)
 
-### [Summary](http://gramian.de/#summary)
+### [Scope](https://gramian.de/#scope)
 
-### [Scope](http://gramian.de/#scope)
+### [Download](https://gramian.de/#download)
 
-### [Download](http://gramian.de/#download)
+### [License](https://gramian.de/#license)
 
-### [License](http://gramian.de/#license)
+### [Disclaimer](https://gramian.de/#disclaimer)
 
-### [Disclaimer](http://gramian.de/#disclaimer)
+### [Usage](https://gramian.de/#usage)
 
-### [Usage](http://gramian.de/#usage)
+### [Arguments](https://gramian.de/#arguments)
 
-### [Arguments](http://gramian.de/#arguments)
+### [Empirical Gramian Types](https://gramian.de/#gramians)
 
-### [Empirical Gramian Types](http://gramian.de/#gramians)
+### [Option Flags](https://gramian.de/#options)
 
-### [Option Flags](http://gramian.de/#options)
+### [Custom Solver](https://gramian.de/#solver)
 
-### [Custom Solver](http://gramian.de/#solver)
+### [Extra Utilities](https://gramian.de/#extra)
 
-### [Extra Utilities](http://gramian.de/#extra)
+### [Tests](https://gramian.de/#tests)
 
-### [Tests](http://gramian.de/#tests)
+### [Demos](https://gramian.de/#demos)
 
-### [Demos](http://gramian.de/#demos)
+### [About](https://gramian.de/#about)
 
-### [About](http://gramian.de/#about)
+### [References](https://gramian.de/#references)
 
-### [References](http://gramian.de/#references)
+### [Links](https://gramian.de/#links)
 
-### [Links](http://gramian.de/#links)
+### [Notes](https://gramian.de/#notes)
 
-### [Notes](http://gramian.de/#notes)
+### [Troubleshooting](https://gramian.de/#trouble)
 
-### [Troubleshooting](http://gramian.de/#trouble)
-
-## More information at: http://gramian.de
+## More information at: https://gramian.de

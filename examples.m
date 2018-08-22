@@ -1,6 +1,6 @@
 function examples(t)
 %%% summary: emgrtest (run emgr demos)
-%%% project: emgr - Empirical Gramian Framework ( http://gramian.de )
+%%% project: emgr - Empirical Gramian Framework ( https://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: 2-Clause BSD (2018)
 %$
@@ -104,6 +104,7 @@ function examples(t)
             sys.T = 1.0;							% Time horizon
 
             A = sys.N * spdiags(ones(sys.N,1)*[1,-1],[-1,0],sys.N,sys.N);	% System matrix
+            A(1,1) = 0;
             B = sparse(1,1,sys.N,sys.N,1);					% Input matrix
             C = sparse(1,sys.N,1.0,1,sys.N);					% Output matrix
 
@@ -115,7 +116,7 @@ function examples(t)
             sys.p = 1.4;							% Transport velocity
             sys.q = sys.p;
 
-            curios(sys,'state-reduction','linear-direct-truncation');
+            curios(sys,'state-reduction','linear-direct-truncation',{'tweighted'});
 
         case 'fbc' % Five-Body Choreography
 
@@ -135,7 +136,7 @@ function examples(t)
                      -0.349;  0.919; -0.349;  1.335;  0.810];
             sys.p = ones(n,1);							% Parameters
 
-            curios(sys,'state-reduction','observability-truncation',{'position'});
+            curios(sys,'state-reduction','observability-truncation',{'velocity'});
 
         case 'qso' % Quasi-Stable Orbits inside black holes
 
@@ -148,20 +149,24 @@ function examples(t)
             sys.f = @(x,u,p,t) orbit(x,u,p,t);					% Vector field
             sys.g = @(x,u,p,t) bl2c(x,u,p,t);					% Output functional
 
-            fprintf('\nParameters: E, L, Q, a, e, epsilon, mu\n\n');
+            fprintf('\nParameters: E, L, Q, a, e, mu, epsilon,\n\n');
 
             % Fermion
-            sys.xs = [0.4;pi/2;0;0];						% Initial state
-            sys.p = [0.568;1.13;0.13;0.9982;0.05;0;1] * [0.9,1.1];		% Parameter range
+            sys.xs = [0.4;0.5*pi;0;0];						% Initial state
+            sys.p = [0.568;1.13;0.13;0.9982;0.05;1;0] * [0.9,1.1];		% Parameter range
 
             curios(sys,'sensitivity-analysis','input-output-based');
 
             % Photon
             EE = 10.5;
-            sys.xs = [0.2;pi/2;0;0];						% Initial state
+            sys.xs = [0.2;0.5*pi;0;0];						% Initial state
             sys.p = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05;0;0]*[0.9,1.1];		% Parameter range
 
             curios(sys,'sensitivity-analysis','input-output-based',{'hold'});
+
+        otherwise
+
+           error('Unknown example code!');
     end
 end
 
@@ -188,8 +193,8 @@ function x = orbit(x,u,p,t) % Generalized orbit vector-field
     Q = p(3); % Q
     a = p(4); % a
     e = p(5); % e
-    ep = p(6); % epsilon
-    mu = p(7); % mu
+    mu = p(6); % mu
+    ep = p(7); % epsilon
 
     D  = x(1)^2 - 2*x(1) + a^2 + e^2;
     S  = x(1)^2 + a^2*cos(x(2))^2;

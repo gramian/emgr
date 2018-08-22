@@ -1,5 +1,7 @@
 emgrtest;
 
+moretests();
+
 examples('hnm');
 examples('isp');
 examples('fss');

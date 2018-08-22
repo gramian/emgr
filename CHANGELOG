@@ -1,0 +1,239 @@
+# emgr Changelog
+
+## emgr 5.5 (2018-08)
+
+ * ADDED sensitivity gramian normalization
+ * FIXED distributed cross gramian computation
+ * FIXED linear cross gramian scales
+ * FIXED approximate inverse computation
+ * FIXED mean centering
+ * FIXED parameter centering
+
+## emgr 5.4 (2018-05)
+
+ * ADDED input-output sensitivity gramian
+ * ADDED builtin pseudo-random binary input
+ * CHANGED linear chirp to exponential chirp
+ * FIXED preconditioner computation
+
+## emgr 5.3 (2018-01)
+
+ * ADDED local identity function
+ * ADDED preallocation for input perturbation
+ * CHANGED preallocation of gramian variables to reservation
+ * CHANGED sequence of computation in linear cross gramian
+ * FIXED averaging in default integrator
+
+## emgr 5.2 (2017-08)
+
+ * IMPROVED sparse scales
+ * FIXED root-mean-square centering
+ * REMOVED zero parameter scaling
+ * REMOVED wave centering
+
+## emgr 5.1 (2017-05)
+
+ * ADDED wave centering (beta)
+ * ADDED zero centering
+ * ADDED option flags for distributed computation
+ * ADDED argument for dot product handle
+ * ADDED comment on general gramian computation
+ * IMPROVED preconditioner computation via pseudo kernel
+ * IMPROVED handling of extra input
+ * IMPROVED partion setup
+ * CHANGED parameter Gramian computation to unified form
+ * CHANGED sensitivity Gramian via pseudo kernel
+ * FIXED steady state centering
+ * FIXED default integrator
+ * REMOVE global variables for distributed computation
+ * REMOVE global variable for dot product handle
+ * REMOVE argument for parameter scales
+
+## emgr 5.0 (2016-10)
+
+ * ADDED midrange centering
+ * ADDED extra input for state Gramians
+ * IMPROVED perturbations with sparse vectors
+ * CHANGED bsxfun to automatic broadcasting
+ * CHANGED output trajectory storage to 3-tensor for cross Gramians
+ * CHANGED identifiability Schur complement computation to approximate inverse
+ * CHANGED cross-identifiability Schur complement computation to approximate inverse
+ * CHANGED defualt integrator to optimal 2nd order SSP in low-storage implementation method with configurable stability
+ * FIXED built-in chirp input
+
+## emgr 4.0 (2016-06)
+
+ * ADDED parameter scales argument pm
+ * ADDED inner product handle
+ * ADDED distributed cross Gramian computation
+ * ADDED distributed cross Gramian configuration
+ * ADDED linear non-symmetric cross Gramian
+ * ADDED enforced symmetriy for controllability and observability Gramian
+ * ADDED zero scales filtering
+ * IMPROVED built-in chirp input
+ * IMPROVED observability trajectory storage
+ * CHANGED input scale option order
+ * CHANGED state scale option order
+ * CHANGED active parameter option
+ * CHANGED Gramian pre-allocation
+ * CHANGED state and parameter trajectory computations
+ * CHANGED centering from lambda to local function
+ * CHANGED identifiability Schur complement computation to pseudo inverse
+ * CHANGED defualt integrator to 2nd order Heun's method
+ * REMOVED robust parameter option
+ * REMOVED median centering
+ * REMOVED midrange centering
+ * REMOVED dyadic rotations
+ * REMOVED reciprocal rotations
+ * REMOVED sensitivity gramian centering
+ * REMOVED symmetry enforcement option
+
+## emgr 3.9 (2016-02)
+
+ * IMPROVED built-in chirp input
+ * FIXED enforce symmetry option
+
+## emgr 3.8 (2015-12)
+
+ * ADDED active parameter option
+ * ADDED enforce symmetry option
+ * IMPROVED observability trajectory transformation
+ * CHANGED parameter gramian signal
+ * CHANGED default parameter centering to none
+ * CHANGED parameter sensitivity gramian is now sparse
+ * CHANGED cross-identifiability Schur complement computation to pseudo inverse 
+ * REMOVED time start from time discretization vector
+
+## emgr 3.6 (2015-10)
+
+ * ADDED min/max check for parameter gramians
+ * ADDED caching for non-symmetric cross gramian
+ * CHANGED predefined sparse scales
+
+## emgr 3.5 (2015-10)
+
+ * ADDED non-symmetric cross Gramian option
+ * ADDED logarithmic parameter scale centering
+ * CHANGED defualt integrator to Ralston's 2nd order Runge Kutta method
+ * FIXED time-series length
+ * REMOVED data-driven Gramians option
+ * REMOVED symmetrization option (now user responsibility)
+ * REMOVED integrator selection option
+
+## emgr 3.1 (2015-05)
+
+ * ADDED midrange centering
+ * ADDED root-mean-squared centering
+ * ADDED sparse scales
+ * IMPROVED default integrators
+ * REMOVED pca centering
+ * REMOVED pod centering
+ * REMOVED trajectory data argument yd
+
+## emgr 3.0 (2015-03)
+
+ * ADDED gpu hunts
+ * IMPROVED performance for observability gramian product
+ * IMPROVED performance for cross gramian product
+ * IMPROVED approximate inverse
+ * CHANGED constraints for options
+
+## emgr 2.9 (2015-01)
+
+ * ADDED zero scales check
+ * ADDED non-symmetric cross Gramian (w=x, w=j)
+ * ADDED version getter (f='version')
+ * CHANGED 3rd accelerated Runge-Kutta to improved 3rd order Runge Kutta solver
+ * REMOVED 1st order Euler integrator
+ * REMOVED 2nd order Adams-Bashforth integrator
+ * REMOVED 2nd order Ralston integrator
+ * REOMVED 2nd order leapfrog integrator
+
+## emgr 2.5 (2014-09)
+
+ * ADDED optional linear chirp input 
+ * ADDED output applicator function
+ * ADDED parameter scales
+ * CHANGED centering flag values
+
+## emgr 2.2 (2014-06)
+
+ * ADDED sensitivity Gramian centering
+
+## emgr 2.1 (2014-05)
+
+ * ADDED zero centering
+ * ADDED 3rd order accelerated Runge-Kutta integrator
+ * IMPROVED gramian preallocation
+
+## emgr 2.0 (2014-03)
+
+ * ADDED enforce symmetry option
+ * CHANGED config vector order
+ * REMOVED rotation configuration
+
+## emgr 1.7 (2014-02)
+
+ * ADDED 2nd order Ralston integrator
+ * ADDED fast approximate inverse
+ * ADDED optional input function as handle
+ * ADDED constant parameter excitation
+ * CHANGED Schur complement behavior
+ * CHANGED centering and rotations to lambdas
+ * FIXED pod centering
+
+## emgr 1.6 (2013-12)
+
+ * ADDED empirical linear cross Gramian
+ * ADDED custom integrator global handle
+ * CHANGED factorial rotations
+ * CHANGED config vector name from cf to nf
+ * FIXED normalization
+
+## emgr 1.5 (2013-08)
+
+ * CHANGED parameter argument is now optional
+ * REMOVED controllability-observability joint gramian
+
+## emgr 1.3 (2013-07)
+
+ * ADDED Leapfrog Integrator
+ * ADDED observability-only joint gramian
+ * ADDED lazy output functional
+ * CHANGED output trajectory computation
+ * CHANGED tabs to spaces
+ * CHANGED identifiability gramian to approximation
+ * IMPROVED performance for observability gramian product
+ * IMPROVED performance for cross gramian product
+ * REMOVED output integrators
+
+## emgr 1.2 (2013-06)
+
+ * ADDED median centering
+ * ADDED 3-tensor storage for observability data
+ * IMPROVED performance for observability gramian product
+ * IMPROVED performance for cross gramian product
+
+## emgr 1.1 (2013-02)
+
+ * ADDED Adams-Bashforth integrator
+ * IMPROVED source code comments
+
+## emgr 1.0 (2013-01)
+
+ * ADDED default argument handling
+ * ADDED sensitivity Gramian
+ * ADDED empirical cross Gramian
+ * ADDED empirical joint Gramian
+ * ADDED double run option
+ * ADDED robust parameter option
+ * ADDED sparse option
+ * ADDED dirs local function
+ * ADDED parfor hints
+ * CHANGED configuration flags
+ * CHANGED pca to pod
+ * CHANGED symmetrization behavior
+
+## emgr 0.9 (2012-10)
+
+ * Initial release for MoRePaS 2
