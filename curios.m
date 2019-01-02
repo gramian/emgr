@@ -2,24 +2,23 @@ function curios(sys,task,method,options)
 %%% summary: curios - Clearing Up Reducibility of Input-Output Systems
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2018)
-%$
+%%% license: BSD-2-Clause (2019)
+
     global ODE;
-    global DEG;
 
     persistent WX;
 
 %% Default Arguments
 
-    if(not(isfield(sys,'g'))),  sys.g = 1; end;
-    if(not(isfield(sys,'p'))),  sys.p = 0; end;
-    if(not(isfield(sys,'q'))),  sys.q = 0; end;
-    if(not(isfield(sys,'ut'))), sys.ut = 1; end;
-    if(not(isfield(sys,'vt'))), sys.vt = @(t) ones(sys.M,1)*(t<=sys.h)./sys.h; end;
-    if(not(isfield(sys,'us'))), sys.us = 0; end;
-    if(not(isfield(sys,'xs'))), sys.xs = zeros(sys.N,1); end;
-    if(not(isfield(sys,'um'))), sys.um = 1; end;
-    if(not(isfield(sys,'xm'))), sys.xm = 1; end;
+    if(not(isfield(sys,'g'))),  sys.g = 1; end
+    if(not(isfield(sys,'p'))),  sys.p = 0; end
+    if(not(isfield(sys,'q'))),  sys.q = 0; end
+    if(not(isfield(sys,'ut'))), sys.ut = 1; end
+    if(not(isfield(sys,'vt'))), sys.vt = @(t) ones(sys.M,1)*(t<=sys.h)./sys.h; end
+    if(not(isfield(sys,'us'))), sys.us = 0; end
+    if(not(isfield(sys,'xs'))), sys.xs = zeros(sys.N,1); end
+    if(not(isfield(sys,'um'))), sys.um = 1; end
+    if(not(isfield(sys,'xm'))), sys.xm = 1; end
 
 %% Argument Check
 
@@ -39,7 +38,6 @@ function curios(sys,task,method,options)
 %% Utility Library
 
     picked = @(name) any(strcmp(options,name));
-    offline = @(t) fprintf(' offline time: %.2f s\n',t);
     gtimes = @(m) m*m';
     rcumsum = @(v) flipud(cumsum(flipud(v(:))));
 
@@ -66,10 +64,10 @@ function curios(sys,task,method,options)
     if(picked('gauss')),      dp = @(x,y) exp(-gtimes(x - y')); end
 
     % Second-order position kernel
-    if(picked('position')),   dp = @(x,y) x(1:sys.N/2,:)*y(:,1:sys.N/2); proj = 'secondo'; end;
+    if(picked('position')),   dp = @(x,y) x(1:sys.N/2,:)*y(:,1:sys.N/2); proj = 'secondo'; end
 
     % Second-order velocity kernel
-    if(picked('velocity')),   dp = @(x,y) x(sys.N/2+1:end,:)*y(:,sys.N/2+1:end); proj = 'secondo'; end;
+    if(picked('velocity')),   dp = @(x,y) x(sys.N/2+1:end,:)*y(:,sys.N/2+1:end); proj = 'secondo'; end
 
 %% Solver Library
 
@@ -77,53 +75,51 @@ function curios(sys,task,method,options)
 
 %% Configuration Library
 
-    if(picked('jacobi')),     config(6) = 1; end
-    if(picked('scaled')),     config(6) = 2; end
-    if(picked('nonsym')),     config(7) = 1; end
-    if(picked('active')),     config(8) = 1; end
-    if(picked('linpar')),     config(9) = 1; end
-    if(picked('logpar')),     config(9) = 2; end
-    if(picked('coarse')),     config(10) = 1; end
+    if(picked('jacobi')),   config(6) = 1; end
+    if(picked('scaled')),   config(6) = 2; end
+    if(picked('nonsym')),   config(7) = 1; end
+    if(picked('active')),   config(8) = 1; end
+    if(picked('linpar')),   config(9) = 1; end
+    if(picked('logpar')),   config(9) = 2; end
+    if(picked('coarse')),   config(10) = 1; end
 
-    if(picked('steady')),     config(1) = 1; end
-    if(picked('final')),      config(1) = 2; end
-    if(picked('mean')),       config(1) = 3; end
-    if(picked('rms')),        config(1) = 4; end
-    if(picked('midrange')),   config(1) = 5; end
+    if(picked('steady')),   config(1) = 1; end
+    if(picked('final')),    config(1) = 2; end
+    if(picked('mean')),     config(1) = 3; end
+    if(picked('rms')),      config(1) = 4; end
+    if(picked('midrange')), config(1) = 5; end
 
-%% Subplot Config
+    if(picked('linear')),   config(2:3) = 1; end
+    if(picked('log')),      config(2:3) = 2; end
+    if(picked('geom')),     config(2:3) = 3; end
+    if(picked('sparse')),   config(2:3) = 4; end
 
+    % Check for subplot configuration
     sc = cellfun(@(c) isnumeric(c) && numel(c)==3,options);
     if(any(sc))
-        subconf = options{sc};
+        subpl = options{sc};
         options(sc) = [];
-        if(isempty(options)), options = {'none'}; end;
+        if(isempty(options)), options = {'none'}; end
     else
-        subconf = [];
-    end;
+        subpl = [];
+    end
+
+    if(picked('hold')), holding = 1; else, holding = 0; end
 
 %% Backend Setup
 
-    EMGR = @emgr;
-    mdf = '';
-
-    if(exist('OCTAVE_VERSION','builtin'))
-        EMGR = @emgr_oct;
-        mdf = '-oct';
-    elseif(verLessThan('matlab','9.1'))
-        EMGR = @emgr_lgc;
-        mdf = '-lgc';
-    end
+   [EMGR,mdf] = sel();
 
 %% Print Welcome
 
+    fprintf('\n');
     disp('======== curios - Clearing Up Reducibility of Input-Output Systems ========');
     fprintf(' backend: emgr %.1f%s\n',EMGR('version'),mdf)
     fprintf(' %s: %s \n',task,method);
     fprintf(' options: ');
-    for k=1:numel(options)-1, fprintf([options{k},', ']); end;
+    for k=1:numel(options)-1, fprintf([options{k},', ']); end
     fprintf([options{end},'\n']);
-    fprintf(' system dims: %d inputs, %d states, %d outputs \n',sys.M,sys.N,sys.Q); 
+    fprintf(' system dims: %d input(s), %d states, %d output(s) \n',sys.M,sys.N,sys.Q); 
 
 %% Main body
 
@@ -195,9 +191,10 @@ function curios(sys,task,method,options)
             end
 
             if(picked('gains')), [UX,DX,VX] = gains(sys,UX,DX,VX); end
-            offline(toc);
+            fprintf(' offline time: %.2f s\n',toc);
             [ord,err,nam] = assess(sys,UX,VX,[],[],proj);
-            plot_error_1D(ord,err,nam,method,subconf);
+            plot_error_1d(ord,err,nam,method,subpl);
+            %morscore(ord{1},err{3},sys.N); % EXPERIMENTAL
 
 %% Parameter Reduction
 
@@ -222,17 +219,23 @@ function curios(sys,task,method,options)
                             config(12) = k;
                             wi{1,k} = EMGR(sys.f,sys.g,sysdim,tdisc,'j',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                         end
+                        WI{1} = cell2mat(wi(1:ceil(sys.N/config(11))));
                         WI{2} = cell2mat(wi(ceil(sys.N/config(11))+1:end));
-                        WI{2} = -0.5*WI{2}'*WI{2};
+                        if(config(10))
+                            WI{2} = -0.5*WI{2}'*WI{2};
+                        aelse
+                            WI{2} = -0.5*WI{2}'*ainv(WI{1}+WI{1}')*WI{2};
+                        end
                     else
                         WI = EMGR(sys.f,sys.g,sysdim,tdisc,'j',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                     end
             end
 
             [UP,DP,VP] = svd(WI{2});
-            offline(toc);
+            fprintf(' offline time: %.2f s\n',toc);
             [ord,err,nam] = assess(sys,[],[],UP,UP,proj);
-            plot_error_1D(ord,err,nam,method,subconf);
+            plot_error_1d(ord,err,nam,method,subpl);
+            %morscore(ord{1},err{3},size(sys.p)); % EXPERIMENTAL
 
 %% Combined State and Parameter Reduction
 
@@ -263,7 +266,11 @@ function curios(sys,task,method,options)
                         end
                         WI{1} = cell2mat(wi(1:ceil(sys.N/config(11))));
                         WI{2} = cell2mat(wi(ceil(sys.N/config(11))+1:end));
-                        WI{2} = -0.5*WI{2}'*WI{2};
+                        if(config(10))
+                            WI{2} = -0.5*WI{2}'*WI{2};
+                        else
+                            WI{2} = -0.5*WI{2}'*ainv(WI{1}+WI{1}')*WI{2};
+                        end
                     else
                         WI = EMGR(sys.f,sys.g,sysdim,tdisc,'j',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                     end
@@ -278,9 +285,9 @@ function curios(sys,task,method,options)
             end
 
             [UP,DP,VP] = svd(WI{2});
-            offline(toc);
+            fprintf(' offline time: %.2f s\n',toc);
             [ord,err,nam] = assess(sys,UX,VX,UP,UP,proj);
-            plot_error_2D(ord,err,nam,method,subconf);
+            plot_error_2d(ord,err,nam,method,subpl);
 
 %% Sensitivity Analysis
 
@@ -298,8 +305,8 @@ function curios(sys,task,method,options)
                     WS = EMGR(sys.f,sys.g,sysdim,tdisc,'s',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm);
             end
 
-            offline(toc);
-            plot_mag_1D(WS{2}./sum(WS{2}),method,'sensitivity',picked('hold'),'log',subconf);
+            fprintf(' offline time: %.2f s\n',toc);
+            plot_mag_1d(WS{2}./sum(WS{2}),method,'sensitivity',holding,subpl);
 
 %% Parameter Identification
 
@@ -317,8 +324,8 @@ function curios(sys,task,method,options)
             end
 
             EO = sort(abs(eig(WI{2})),'descend');
-            offline(toc);
-            plot_mag_1D(abs(EO)./sum(EO),method,'identifiability',picked('hold'),'log',subconf);
+            fprintf(' offline time: %.2f s\n',toc);
+            plot_mag_1d(abs(EO)./sum(EO),method,'identifiability',holding,subpl);
 
 %% Decentralized Control
 
@@ -349,9 +356,8 @@ function curios(sys,task,method,options)
 
             PM = PM - min(PM(:));
             PM = PM./max(PM(:));
-            offline(toc);
-
-            plot_iomat(PM,sys.M,sys.Q,method,subconf);
+            fprintf(' offline time: %.2f s\n',toc);
+            plot_iomat(PM,sys.M,sys.Q,method,subpl);
 
 %% Nonlinearity Quantification
 
@@ -385,8 +391,8 @@ function curios(sys,task,method,options)
             nl = abs(nl);
             nl = nl - min(nl);
             nl = nl./max(nl);
-            offline(toc);
-            plot_mag_1D(nl,method,'identifiability',picked('hold'),'log',subconf);
+            fprintf(' offline time: %.2f s\n',toc);
+            plot_mag_1d(nl,method,'nonlinearity',holding,subpl);
 
 %% State Index
 
@@ -407,8 +413,8 @@ function curios(sys,task,method,options)
                     w = EMGR(sys.f,sys.g,sysdim,tdisc,'x',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,o_diag);
             end
 
-            offline(toc);
-            plot_mag_1D(abs(w)./sum(abs(w)),method,task,picked('hold'),'log',subconf);
+            fprintf(' offline time: %.2f s\n',toc);
+            plot_mag_1d(abs(w)./sum(abs(w)),method,task,holding,subpl);
 
 %% System Indices
 
@@ -427,77 +433,98 @@ function curios(sys,task,method,options)
                 case 'cauchy-index'
 
                     in = sum(sign(real(ev))) - cumsum(sign(real(ev)));
-                    typ = 'lin';
 
                 case 'system-entropy'
 
                     in = 1.0 - ([1:sys.N]'*log(2*pi*exp(1)) + cumsum(log(EV)))./(sys.N*log(2*pi*exp(1)) + sum(log(EV)));
-                    typ = 'lin';
 
                 case 'system-gain'
 
                     in = 1.0 - cumsum(EV)./sum(EV);
-                    typ = 'log';
 
                 case 'hinf-bound'
 
                     in = 2.0 * rcumsum([EV(2:end);0])./sum(EV);
-                    typ = 'log';
 
                 case 'hankel-bound'
 
                     in = [EV(2:end);0]./sum(EV);
-                    typ = 'log';
 
                 case 'system-symmetry'
 
                     in = cumsum(SV.^2)./sum(SV.^2) - cumsum(EV.^2)./sum(EV.^2);
-                    typ = 'log';
 
                 case 'energy-fraction'
 
                     in = 1.0 - cumsum(SV)./sum(SV);
-                    typ = 'log';
 
                 case 'storage-efficiency'
 
                     in = abs(cumprod(SV).^(1.0./numel(SV)));
-                    typ = 'log';
 
                 case 'nyquist-area'
 
                     in = 1.0 - sqrt(pi*cumsum(EV.^2))./sqrt(pi*sum(EV.^2));
-                    typ = 'log';
 
                 case 'robustness-index'
 
                     in = abs(2.0 - (4.0/pi) * atan(sqrt(cumsum(EV)./rcumsum(EV))));
-                    typ = 'log';
 
                 case 'recoverability-index'
 
                     in = fliplr(EV)./max(EV);
-                    typ = 'log';
 
                 case 'io-coherence'
 
-                    in = abs(cumsum(ev).^2./cumsum(ev.^2)); in = 1.0 - in./max(in);
-                    typ = 'log';
+                    in = abs(cumsum(ev).^2./cumsum(ev.^2));
+                    in = 1.0 - in./max(in);
             end
 
-            offline(toc);
-            plot_mag_1D(in,method,task,picked('hold'),typ,subconf);
+            fprintf(' offline time: %.2f s\n',toc);
+            plot_mag_1d(in,method,task,holding,subpl);
 
         otherwise
 
             error('Unknown Task!');
     end
 
+%% Clean up
+
+    ODE = [];
+
     fprintf('\n');
 end
 
-%% Balancing Controllability and Observability
+%% LOCAL FUNCTION: select emgr backend
+function [EMGR,mdf] = sel()
 
+    if(exist('OCTAVE_VERSION','builtin'))
+        assert(exist('emgr_oct')==2,'emgr_oct not found! Get emgr at: https://gramian.de');
+        EMGR = @emgr_oct;
+        mdf = '-oct';
+    elseif(verLessThan('matlab','9.1'))
+        assert(exist('emgr_lgc')==2,'emgr_lgc not found! Get emgr at: https://gramian.de');
+        EMGR = @emgr_lgc;
+        mdf = '-lgc';
+    else
+        assert(exist('emgr')==2,'emgr not found! Get emgr at: https://gramian.de');
+        EMGR = @emgr;
+        mdf = '';
+    end
+end
+
+%% LOCAL FUNCTION: ainv (approximate inverse)
+function x = ainv(m)
+
+    d = diag(m);
+    k = find(abs(d)>sqrt(eps));
+    d(k) = 1.0./d(k);
+    x = bsxfun(@times,m,-d);
+    x = bsxfun(@times,x,d');
+    x(1:numel(d)+1:end) = d;
+end
+
+%% LOCAL FUNCTION: balco (Balancing Controllability and Observability)
 function [TR,HSV,TL] = balco(WC,WO)
 
     switch(nargin)
@@ -523,11 +550,13 @@ function [TR,HSV,TL] = balco(WC,WO)
     TL = LC*U*diag(y);
 end
 
-%% Balanced Gains Sorting
-
+%% LOCAL FUNCTION: gains (Balanced Gains Sorting)
 function [TR,HSV,TL] = gains(sys,tr,hs,tl)
 
-    B = sys.f(sparse(sys.N,sys.M),1,sparse(sys.N,sys.M),0);
+    B = zeros(sys.N,sys.M);
+    for k = 1:sys.M
+        B(:,k) = sys.f(sys.xs,(1:sys.M==1)',sys.p,0);
+    end
     C = sys.g(1,sys.us,sys.p,0);
     HSV = abs(sum((tr'*B).*(C*tl)',2)).*hs;
     [TMP,IX] = sort(HSV,'descend');
@@ -535,36 +564,7 @@ function [TR,HSV,TL] = gains(sys,tr,hs,tl)
     TR = tr(:,IX);
 end
 
-%% L0 Signal Norm (Nonzeroness)
-
-function n = l0norm(y)
-
-    n = sum(prod(abs(y),1).^(1.0/size(y,1)),2);
-end
-
-%% L1 Signal Norm (Action)
-
-function n = l1norm(y)
-
-    n = norm(y(:),1);
-end
-
-%% L2 signal Norm (Energy)
-
-function n = l2norm(y)
-
-    n = norm(y(:),2);
-end
-
-%% Linfinity Signal Norm (Peak)
-
-function n = l8norm(y)
-
-    n = norm(y(:),Inf);
-end
-
-%% Assess Reduced Order Model
-
+%% LOCAL FUNCTION: assess (Assess Reduced Order Model)
 function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
 
     global ODE;
@@ -595,6 +595,11 @@ function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
         ptest = 1;
     end
 
+    l0norm = @(y) sum(prod(abs(y),1).^(1.0/size(y,1)),2);
+    l1norm = @(y) norm(y(:),1);
+    l2norm = @(y) norm(y(:),2);
+    l8norm = @(y) norm(y(:),Inf);
+
     l0 = zeros(numel(xtest),numel(ptest));
     l1 = zeros(numel(xtest),numel(ptest));
     l2 = zeros(numel(xtest),numel(ptest));
@@ -612,14 +617,15 @@ function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
 
             switch(m)
 
-                case 'secondo'
-                    ux = [UX(:,1:n),zeros(sys.N/2,n);zeros(sys.N/2,n),UX(:,1:n)];
-                    vx = [VX(:,1:n),zeros(sys.N/2,n);zeros(sys.N/2,n),VX(:,1:n)]';
-
                 case 'dominant'
                     [ux,~,~] = svd([UX(:,1:n),VX(:,1:n)],'econ');
                     ux = ux(:,1:n);
                     vx = ux';
+
+                case 'secondo'
+                    nn = numel(sys.xs)/2;
+                    ux = [UX(:,1:n),zeros(nn,n);zeros(nn,n),UX(:,1:n)];
+                    vx = [VX(:,1:n),zeros(nn,n);zeros(nn,n),VX(:,1:n)]';
 
                 otherwise
                     ux = UX(:,1:n);
@@ -665,13 +671,23 @@ function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
         l8 = sqrt(l8 ./ Q);
     end
 
-    orders = {xtest,ptest};
+    orders = {xtest, ptest};
     errors = {l0, l1, l2, l8};
     names = {'L_1 Error', 'L_2 Error', 'L_\infty Error', 'L_0 Error'};
 end
 
-%% Custom Embedded Runge Kutta 4th / 5th Solver
+%% LOCAL FUNCTION: morscore (MORscore [Experimental; determine weighting])
+function morscore(orders,errors,N)
 
+    sigm = @(x,L,k,z) L ./ (1.0 + exp(-k * (x - z)));
+    obj = @(p) norm(log10(errors(:))./16.0 - sigm(orders(:),p(1),p(2),p(3)),2);
+    depvelshi = fminunc(obj,[-0.5,1,0],optimset('Display','off'));
+    score = norm(depvelshi,2);
+    fprintf(' MOR score: %.2f',score);
+    text(0.5,0.5,num2str(score,'%.2f'),'Units','normalized');
+end
+
+%% LOCAL FUNCTION: rk45e (Custom Embedded Runge Kutta 4th / 5th Solver)
 function y = rk45e(f,g,t,x0,u,p)
 
     [S,x] = ode45(@(t,x) f(x,u(t),p,t),[0,t(2)],x0,'InitialStep',t(1)); % Compute State Trajectory
@@ -686,18 +702,18 @@ function y = rk45e(f,g,t,x0,u,p)
     y = interp1(S,z',0:t(1):t(2))';
 end
 
-%% 1D Error Plot
+%% LOCAL FUNCTION: plot_error_1d (1D Error Plot)
+function plot_error_1d(orders,errors,names,ident,subpl)
 
-function plot_error_1D(orders,errors,names,ident,sconf)
+    if(orders{1}==1), dom = orders{2}; else, dom = orders{1}; end
 
-    if(orders{1}==1), dom = orders{2}; else, dom = orders{1}; end;
-
-    if(not(isempty(sconf)))
-        if(sconf(3)==1), figure; end;
-        subplot(sconf(1),sconf(2),sconf(3));
-    else
+    if(isempty(subpl))
         figure('Name',ident,'NumberTitle','off');
+    else
+        if(subpl(3)==1), figure; end
+        subplot(subpl(1),subpl(2),subpl(3));
     end
+
     semilogy(dom,errors{2},'r','linewidth',2); hold on;
     semilogy(dom,errors{3},'g','linewidth',2);
     semilogy(dom,errors{4},'b','linewidth',2);
@@ -705,68 +721,75 @@ function plot_error_1D(orders,errors,names,ident,sconf)
     xlim([dom(1),dom(end)]);
     ylim([1e-16,1]);
     pbaspect([2,1,1]);
-    if(isempty(sconf))
+
+    if(isempty(subpl))
         xlabel('Reduced Dimension');
         ylabel('Relative Error');
         legend(names{1},names{2},names{3},names{4},'location','northeast');
     else
         set(gca,'Ytick',[]);
         set(gca,'Xtick',[]);
+        if(subpl(3)<=subpl(2)), title(ident); end
+        set([gca; findall(gca,'Type','text')],'FontSize',6);
     end
     set(gca,'YGrid','on');
 end
 
-%% 2D Error Plot
+%% LOCAL FUNCTION: plot_error2d (2D Error Plot)
+function plot_error_2d(orders,errors,names,ident,subpl)
 
-function plot_error_2D(orders,errors,names,ident,sconf)
-
-    if(not(isempty(sconf)))
-        if(sconf(3)==1), figure; end;
-        subplot(sconf(1),sconf(2),sconf(3));
-    else
+    if(isempty(subpl))
         figure('Name',ident,'NumberTitle','off');
+    else
+        if(subpl(3)==1), figure; end
+        subplot(subpl(1),subpl(2),subpl(3));
     end
+
     h = surf(orders{1},orders{2},min(1.0,errors{3}));
     set(gca,'ZScale','log');
     zl = zlim();
     zlim([zl(1),1]);
     set(h,'CData',log10(get(h,'CData')));
     set(gca,'CLim',log10(get(gca,'ZLim')));
-    view(135,30);
-    if(isempty(sconf))
+    view(135,25);
+
+    if(isempty(subpl))
         ylabel('State Dimension')
         xlabel('Parameter Dimension');
         zlabel('Relative Error');
     else
         set(gca,'Ytick',[]);
         set(gca,'Xtick',[]);
+        if(subpl(3)<=subpl(2)), title(ident); end
+        set([gca; findall(gca,'Type','text')],'FontSize',6);
     end
 end
 
-%% Plot Participation Matrix
+%% LOCAL FUNCTION: plot_iomat (Plot Participation Matrix)
+function plot_iomat(PM,M,Q,ident,subpl)
 
-function plot_iomat(PM,M,Q,ident,sconf)
-
-    if(not(isempty(sconf)))
-        if(sconf(3)==1), figure; end;
-        subplot(sconf(1),sconf(2),sconf(3));
-    else
+    if(isempty(subpl))
         figure('Name',ident,'NumberTitle','off');
+    else
+        if(subpl(3)==1), figure; end
+        subplot(subpl(1),subpl(2),subpl(3));
     end
+
     imagesc(PM);
-    if(isempty(sconf))
+
+    if(isempty(subpl))
         colorbar;
         set(gca,'XTick',1:1:M,'YTick',1:1:Q);
     else
         set(gca,'Ytick',[]);
         set(gca,'Xtick',[]);
         set(gca,'Ztick',[]);
+        title(ident);
     end
 end
 
-%% 1D Magnitude Plot
-
-function plot_mag_1D(mag,name,ident,holding,typ,sconf)
+%% LOCAL FUNCTION: plot_mag_1d (1D Magnitude Plot)
+function plot_mag_1d(mag,name,ident,holding,subpl)
 
     persistent c;
 
@@ -782,22 +805,20 @@ function plot_mag_1D(mag,name,ident,holding,typ,sconf)
     else
         col = zeros(11,3);
 
-        if(not(isempty(sconf)))
-            if(sconf(3)==1), figure; end;
-            subplot(sconf(1),sconf(2),sconf(3));
-        else
+        if(isempty(subpl))
             figure('Name',ident,'NumberTitle','off');
+        else
+            if(subpl(3)==1), figure; end
+            subplot(subpl(1),subpl(2),subpl(3));
         end
     end
 
-    switch(typ)
+    if(strcmp(name,'cauchy-index') || strcmp(name,'system-entropy'))
 
-        case 'lin'
-            plot(1:dom,mag,'Color',col(c,:),'linewidth',2,'DisplayName',name);
-
-        case 'log'
-            mag(mag==0) = min(mag(mag>0));
-            semilogy(1:dom,mag,'Color',col(c,:),'linewidth',2,'DisplayName',name);
+        plot(1:dom,mag,'Color',col(c,:),'linewidth',2,'DisplayName',name);
+    else
+        mag(mag==0) = min(mag(mag>0));
+        semilogy(1:dom,mag,'Color',col(c,:),'linewidth',2,'DisplayName',name);
     end
 
     if(holding)
@@ -805,9 +826,11 @@ function plot_mag_1D(mag,name,ident,holding,typ,sconf)
         c = c + 1;
     end
 
-    if(isempty(sconf))
+    if(isempty(subpl))
         legend show
         set(legend,'location','northeast');
+    else
+        title(ident);
     end
 
     xlim([1,dom]);

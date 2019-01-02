@@ -2,11 +2,11 @@
 =========================================================
 
 ![code meta-data.](https://img.shields.io/badge/code_meta--data-%E2%9C%93-brightgreen.svg) 
-![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.1401500.png)
+![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.2530021.png)
 ![matlab compatible](https://img.shields.io/badge/matlab-compatible-lightgrey.svg)
 
 * emgr - EMpirical GRamian Framework ([gramian.de](https://gramian.de))
-* version: **5.5** (2018-08-22)
+* version: **5.6** (2019-01-02)
 * by: Christian Himpe ([0000-0003-2194-6754](https://orcid.org/0000-0003-2194-6754))
 * under: [BSD-2-Clause](https://opensource.org/licenses/BSD-2-Clause) License
 * summary: Empirical Gramians for (model reduction of) input-output systems.
@@ -30,7 +30,7 @@
 * Empirical Cross Gramian
 * Empirical Linear Cross Gramian
 * Empirical Sensitivity Gramian
-* Empirical Identifiability Gramian
+* Empirical Augmented Observability Gramian (Empirical Identifiability Gramian)
 * Empirical Joint Gramian (Empirical Cross-Identifiability Gramian)
 
 ### Features
@@ -47,6 +47,8 @@
   * GNU Octave
   * Mathworks MATLAB
 * Vectorized and parallelizable
+  * matrix transformation as bulk operations
+  * `parfor` hints highlighting outer-most parallelizable loops
 * Functional design
 
 ### Details
@@ -54,12 +56,15 @@
 For a mathematical summary and technical documentation of the empirical Gramian framework
 detailing all features and capabilities see:
 
-* C. Himpe. "[emgr -- the Empirical Gramian Framework](https://doi.org/10.3390/a11070091)". Algorithms 11(7): 91, 2018.
+* C. Himpe.
+  "[emgr -- the Empirical Gramian Framework](https://doi.org/10.3390/a11070091)".
+  Algorithms 11(7): 91, 2018.
 
-## Compatbility
+## Compatibility
 
 * GNU Octave >=4.2.0 (available in Ubuntu **18.04** LTS repositories)
 * Mathworks MATLAB >=2016b (use `emgr_lgc.m` for earlier version)
+* Python 2.X and 3.X (experimental)
 
 ## Basic Usage
 
@@ -70,7 +75,7 @@ RUNME
 
 To run all tests use:
 ```
-emgrtest
+testall
 ```
 
 To run demos use:
@@ -82,29 +87,29 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 
 [`README.md`](README.md) Basic Information
 
-[`RUNME.m`](RUNME.m) Minimal Code Example
-
-[`CODE`](CODE) Code Meta Information
+[`CODE`](CODE) Meta Information
 
 [`CITATION`](CITATION) Citation Information
 
 [`LICENSE`](LICENSE) License Information
 
-[`CHANGELOG`](CHANGELOG) Version Change Information
+[`CHANGELOG`](CHANGELOG) Version Information
 
-[`emgr.m`](emgr.m) Empirical Gramian Framework (Main File)
+[`RUNME.m`](RUNME.m) Minimal Code Example
 
-[`emgr_oct.m`](emgr_oct.m) Empirical Gramian Framework (Optional Octave Variant) 
+[`emgr.m`](emgr.m) Empirical Gramian Framework (main file, crc32:999979f4)
 
-[`emgr_lgc.m`](emgr_lgc.m) Empirical Gramian Framework (Pre 2016b Matlab Variant)
+[`emgr_oct.m`](emgr_oct.m) Empirical Gramian Framework (Optional Octave variant) 
 
-[`curios.m`](curios.m) Clearing Up Reducibility of Input-Output Systems (Simple frontend)
+[`emgr_lgc.m`](emgr_lgc.m) Empirical Gramian Framework (Pre 2016b Matlab variant)
 
-[`emgrtest.m`](emgrtest.m) Run tests (system tests)
+[`curios.m`](curios.m) Clearing Up Reducibility of Input-Output Systems (simple frontend)
 
-[`moretests.m`](moretests.m) More tests (functionality tests)
+[`emgrtest.m`](emgrtest.m) System Tests
 
-[`examples.m`](examples.m) Run demo
+[`moretests.m`](moretests.m) Component Tests
+
+[`examples.m`](examples.m) Run demo (sample applications)
   * `'hnm'` Hyperbolic Network Model
   * `'isp'` Inverse Sylvester Procedure
   * `'fss'` Flexible Space Structures
@@ -114,6 +119,8 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
   * `'qso'` Quasi-Stable Orbits Inside Black Holes
 
 [`emgr-ref.pdf`](emgr-ref.pdf) emgr reference cheat sheet
+
+[`py/emgr.py`](py/emgr.py) Empirical Gramian Framework (experimental Python variant)
 
 ## Documentation Table-of-Contents
 

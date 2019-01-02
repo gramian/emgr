@@ -1,5 +1,15 @@
 # emgr Changelog
 
+## emgr 5.6 (2019-01)
+
+ * ADDED experimental python version
+ * ADDED commented custom ends
+ * IMPROVED code complexity
+ * IMPROVED default integrator
+ * IMPROVED parameter perturbations
+ * IMPROVED gramian normalization
+ * FIXED bug in linear cross gramian
+
 ## emgr 5.5 (2018-08)
 
  * ADDED sensitivity gramian normalization

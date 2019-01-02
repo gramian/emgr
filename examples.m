@@ -1,9 +1,9 @@
 function examples(t)
-%%% summary: emgrtest (run emgr demos)
+%%% summary: examples(run emgr demos)
 %%% project: emgr - Empirical Gramian Framework ( https://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2018)
-%$
+%%% license: BSD-2-Clause (2019)
+
     rand('seed',1009);
     randn('seed',1009);
 
@@ -103,8 +103,7 @@ function examples(t)
             sys.h = 1.0./sys.N;							% Time step
             sys.T = 1.0;							% Time horizon
 
-            A = sys.N * spdiags(ones(sys.N,1)*[1,-1],[-1,0],sys.N,sys.N);	% System matrix
-            A(1,1) = 0;
+            A = gallery('tridiag',sys.N,sys.N,-sys.N,0);			% System matrix
             B = sparse(1,1,sys.N,sys.N,1);					% Input matrix
             C = sparse(1,sys.N,1.0,1,sys.N);					% Output matrix
 
@@ -113,10 +112,10 @@ function examples(t)
             sys.g = @(x,u,p,t) C*x;						% Output functional
             sys.ut = Inf;
             sys.v = @(t) exp(((t-0.1).^2)./(-0.001));				% Input function
-            sys.p = 1.4;							% Transport velocity
+            sys.p = 1.25;							% Transport velocity
             sys.q = sys.p;
 
-            curios(sys,'state-reduction','linear-direct-truncation',{'tweighted'});
+            curios(sys,'state-reduction','linear-direct-truncation',{'rms'});
 
         case 'fbc' % Five-Body Choreography
 
@@ -129,7 +128,7 @@ function examples(t)
             sys.T = 1.0;							% Time horizon
 
             sys.f = @(x,u,p,t) [x((2*n)+1:end);acc(x(1:2*n),u,p)];		% Vector field
-            sys.g = @(x,u,p,t)  x(1:2*n);					% output functional
+            sys.g = @(x,u,p,t) x(1:2*n);					% Output functional
             sys.xs = [1.449;  0.0;    0.400; -0.345; -1.125;...			% Initial condition
                       0.448; -1.125; -0.448;  0.400;  0.345;...
                       0.0;   -0.922; -1.335;  0.810; -0.919;...
@@ -170,7 +169,7 @@ function examples(t)
     end
 end
 
-function y = acc(x,u,p,t) % Acceleration vector field component
+function a = acc(x,u,p,t) % N-body acceleration vector field component
 
     N = numel(x)/2;
     A = reshape(x,[2,N]);
@@ -183,16 +182,16 @@ function y = acc(x,u,p,t) % Acceleration vector field component
         y(:,n) = sum(B,2);
     end
 
-    y = y(:);
+    a = y(:);
 end
 
 function x = orbit(x,u,p,t) % Generalized orbit vector-field
 
-    E = p(1); % E
-    L = p(2); % L
-    Q = p(3); % Q
-    a = p(4); % a
-    e = p(5); % e
+    E = p(1);  % E
+    L = p(2);  % L
+    Q = p(3);  % Q
+    a = p(4);  % a
+    e = p(5);  % e
     mu = p(6); % mu
     ep = p(7); % epsilon
 

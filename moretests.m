@@ -1,15 +1,20 @@
-function moretests()
+function moretests(ut)
 %%% summary: moretests
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: BSD-2-Clause (2018)
-%$
-    if(exist('emgr')~=2)
-        error('emgr not found! Get emgr at: http://gramian.de');
+%%% license: BSD-2-Clause (2019)
+
+    if( (nargin<1)  || isempty(ut) ), ut = 1; end
+
+    if(exist('OCTAVE_VERSION','builtin'))
+        EMGR = @emgr_oct;
+        fprintf('emgr (version: %1.1f%s)\n',EMGR('version'),'-oct');
+    elseif(verLessThan('matlab','9.1'))
+        EMGR = @emgr_lgc;
+        fprintf('emgr (version: %1.1f%s)\n',EMGR('version'),'-lgc');
     else
-        global ODE;
-        ODE = [];
-        fprintf('emgr (version: %1.1f)\n',emgr('version'));
+        EMGR = @emgr;
+        fprintf('emgr (version: %1.1f%s)\n',EMGR('version'),'');
     end
 
 %% SYSTEM SETUP
@@ -31,326 +36,434 @@ function moretests()
     ADJ = @(x,u,p,t) A'*x + C'*u;	% adjoint vector field
     OUT = @(x,u,p,t) C*x;		% output functional
 
-    % figure; plot(0:h:T,ODE(LIN,OUT,[h,T],X,U,P)); return;
-
-    if(exist('OCTAVE_VERSION','builtin'))
-        EMGR = @emgr_oct;
-    elseif(verLessThan('matlab','9.1'))
-        EMGR = @emgr_lgc;
-    else
-        EMGR = @emgr;
-    end
-
 %% Controllability Gramian
 
     fprintf('Empirical Controllability Gramian: ');
-    W = {}; k = 1;
+    W = {};
 
     % Baseline
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Centering
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[2,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[3,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[4,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[5,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Input scales
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,1,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,2,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,3,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,4,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,2,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#'); % fast drop
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Input Rotations
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,1,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,1,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Normalization
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,0,0,2,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'c',P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
-    plotsingvals(W,[2,4,1],'Controllability Gramian'); fprintf('\n');
+    plotsingvals(W,[2,6,1],'Controllability Gramian',9); fprintf('\n');
 
 %% Observability Gramian
 
-    fprintf('Empirical Observability Gramian: ');
-    W = {}; k = 1;
+    fprintf('Empirical Observability Gramian:   ');
+    W = {};
 
     % Baseline
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Centering
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[2,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[3,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[4,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[5,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % State scales
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,1,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,2,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,3,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,4,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#'); % fast drop
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,4,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % State Rotations
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,1,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Normalization
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Extra Input
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,0,0,1,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X)); fprintf('#');
 
-    plotsingvals(W,[2,4,2],'Observability Gramian'); fprintf('\n');
-
-%% Cross Gramian
-
-    fprintf('Empirical Cross Gramian: ');
-    W = {}; k = 1;
-
-    % Baseline
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % Centering
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[2,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[3,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[4,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[5,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % Input scales
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,1,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,2,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,3,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,4,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % State scales
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,1,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,2,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,3,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'o',P,[0,0,4,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % Input Rotations
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,1,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % State Rotations
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,1,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % Normalization
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    % Non-Symmetric Cross Gramian
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,1,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1; % fast drop
-
-    % Extra Input
-    W{k} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,0,1,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-
-    plotsingvals(W,[2,4,3],'Cross Gramian'); fprintf('\n');
+    plotsingvals(W,[2,6,2],'Observability Gramian',9); fprintf('\n');
 
 %% Linear Cross Gramian
 
-    fprintf('Empirical Linear Cross Gramian: ');
-    W = {}; k = 1;
+    fprintf('Empirical Linear Cross Gramian:    ');
+    W = {};
 
     % Baseline
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Centering
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[2,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[3,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[4,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[5,0,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Input scales
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,1,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,2,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,3,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,4,0,0,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,2,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#'); % fast drop
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Adjoint scales
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,4,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Input Rotations
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,1,0,0,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,1,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Adjoint Rotations
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
 
     % Normalization
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,1,0,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1;
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    plotsingvals(W,[2,6,3],'Linear Cross Gramian',9);
+    W = {};
 
     % Non-Symmetric Cross Gramian
-    W{k} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,0,1,0,0,0,0,0],1,0,X)); fprintf('#'); k = k + 1; % fast drop
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
 
-    plotsingvals(W,[2,4,4],'Linear Cross Gramian'); fprintf('\n');
+    % Centering
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[1,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[2,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[3,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[4,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[5,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Input scales
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,1,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,2,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,3,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#'); % fast drop
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,4,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Adjoint scales
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,1,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,2,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,3,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,4,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Input Rotations
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,1,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#'); % deep drop
+
+    % Adjoint Rotations
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,1,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Normalization
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,1,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,ADJ,[M,N,Q],[h,T],'y',P,[0,0,0,0,0,2,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    plotsingvals(W,[2,6,4],'Linear Cross Gramian (Non-Symmetric)',9); fprintf('\n');
+
+%% Cross Gramian
+
+    fprintf('Empirical Cross Gramian:           ');
+    W = {};
+
+    % Baseline
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Centering
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Input scales
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,2,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % State scales
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,4,0,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Input Rotations
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,1,0,0,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % State Rotations
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X)); fprintf('#'); % fast drop
+
+    % Normalization
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Extra Input
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X)); fprintf('#');
+
+    plotsingvals(W,[2,6,5],'Cross Gramian',16);
+    W = {};
+
+    % Baseline
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Centering
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[1,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[2,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[3,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[4,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[5,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Input scales
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,1,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,2,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,3,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,4,0,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % State scales
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,1,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,2,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,3,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,4,0,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % Input Rotations
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,1,0,0,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+
+    % State Rotations
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,1,0,1,0,0,0,0,0],ut,0,X)); fprintf('#'); % fast drop
+
+    % Normalization
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,1,1,0,0,0,0,0],ut,0,X)); fprintf('#');
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,2,1,0,0,0,0,0],ut,0,X)); fprintf('#'); 
+
+    % Extra Input
+    W{end+1} = svd(EMGR(LIN,OUT,[M,N,Q],[h,T],'x',P,[0,0,0,0,0,0,1,1,0,0,0,0],ut,0,X)); fprintf('#');
+
+    plotsingvals(W,[2,6,6],'Cross Gramian (Non-Symmetric)',16); fprintf('\n');
 
 %% Sensitivity Gramian
 
-    fprintf('Empirical Sensitivity Gramian: ');
-    W = {}; k = 1;
+    fprintf('Empirical Sensitivity Gramian:     ');
+    W = {};
 
     % Baseline
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Centering
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[1,0,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[2,0,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[3,0,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[4,0,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[5,0,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Input scales
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,1,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,2,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,3,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,4,0,0,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,2,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Input Rotations
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,1,0,0,0,0,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,1,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Extra Input
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,1,0,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Parameter Scaling
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,1,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,2,0,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,1,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#'); % fast drop
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,2,0,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
-    plotsingvals(W,[2,4,5],'Sensitivity Gramian');
-    W = {}; k = 1;
+    plotsingvals(W,[2,6,9],'Sensitivity Gramian',13);
+    W = {};
 
-    % Averaging Type
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    % Baseline
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Centering
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[1,0,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1; % fast drop
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[2,0,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[3,0,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[4,0,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[5,0,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[1,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[2,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[3,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[4,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[5,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Input scales
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,1,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,2,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,3,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,4,0,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,1,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,2,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,3,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,4,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % State scales
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,1,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,2,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,3,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,4,0,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,1,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,2,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,3,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,4,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Input Rotations
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,1,0,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,1,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % State Rotations
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,1,0,0,0,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,1,0,0,0,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Extra Input
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,1,0,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,1,0,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
 
     % Parameter Scaling
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,1,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,2,1,0,0],1,0,X); W{k} = sort(w{2},'descend'); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,1,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'s',R,[0,0,0,0,0,0,0,0,2,1,0,0],ut,0,X); W{end+1} = sort(w{2},'descend'); fprintf('#'); % fast drop
 
-    plotsingvals(W,[2,4,6],'Sensitivity Gramian (Input-Output)'); fprintf('\n');
+    plotsingvals(W,[2,6,10],'Sensitivity Gramian (Input-Output)',19); fprintf('\n');
 
 %% Identifiability Gramian
 
     fprintf('Empirical Identifiability Gramian: ');
-    W = {}; k = 1;
+    W = {};
 
     % Baseline
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Centering
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[1,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[2,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[3,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[4,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[5,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % State scales
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,1,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,2,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,3,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,4,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,4,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % State Rotations
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,1,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Extra Input
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,1,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#'); % fast drop
 
     % Parameter Scaling
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,1,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,2,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,1,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,2,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Schur Complement
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,0,1,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'i',R,[0,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
-    plotsingvals(W,[2,4,7],'Identifiability Gramian'); fprintf('\n');
+    plotsingvals(W,[2,6,8],'Identifiability Gramian',12); fprintf('\n');
 
 %% Joint Gramian
 
-    fprintf('Empirical Joint Gramian: ');
+    fprintf('Empirical Joint Gramian:           ');
     W = {}; k = 1;
 
     % Baseline
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Centering
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[1,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[2,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[3,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[4,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[5,0,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[1,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[2,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Input scales
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,1,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,2,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,3,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,4,0,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,2,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % State scales
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,1,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,2,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,3,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,4,0,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,4,0,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Input Rotations
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,1,0,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,1,0,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % State Rotations
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,1,0,0,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-
-    % Non-Symmetric Cross Gramian
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,0,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1; % fast drop
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Extra Input
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,1,0,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#'); % fast drop
 
     % Parameter Scaling
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,1,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,2,0,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,1,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,2,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
     % Schur Complement
-    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,0,1,0,0]); W{k} = svd(w{2}); fprintf('#'); k = k + 1;
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,0,0,0,1,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
 
-    plotsingvals(W,[2,4,8],'Cross-Identifiability Gramian'); fprintf('\n\n');
+    plotsingvals(W,[2,6,11],'Cross-Identifiability Gramian',17);
+    W = {};
+
+    % Baseline
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % Centering
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[1,0,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[2,0,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[3,0,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[4,0,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[5,0,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % Input scales
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,1,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,2,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,3,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,4,0,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % State scales
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,1,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,2,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,3,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,4,0,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % Input Rotations
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,1,0,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % State Rotations
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,1,0,1,0,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % Extra Input
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,1,0,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#'); % fast drop
+
+    % Parameter Scaling
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,0,1,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,0,2,0,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    % Schur Complement
+    w = EMGR(LIN,OUT,[M,N,Q],[h,T],'j',R,[0,0,0,0,0,0,1,0,0,1,0,0],ut,0,X); W{end+1} = svd(w{2}); fprintf('#');
+
+    plotsingvals(W,[2,6,12],'Cross-Identifiability Gramian (Non-symmetric)',17); fprintf('\n\n');
 end
 
-function plotsingvals(W,s,l)
+function plotsingvals(W,s,l,b)
 
-    if(s(3)==1),figure; end;
+    if(s(3)==1), figure; end;
     subplot(s(1),s(2),s(3))
     c = winter(numel(W)-1);
     semilogy(W{2}./max(W{2}),'Linewidth',2,'color',c(1,:));
     hold on;
     for k=3:numel(W)
+
         semilogy(W{k}./max(W{k}),'Linewidth',2,'color',c(k-1,:));
     end
     semilogy(W{1}./max(W{1}),'Linewidth',2,'color',[1,0,0]);
+    semilogy(W{b}./max(W{b}),'Linewidth',2,'color',[1,0,1]);
     hold off;
     xlim([1,numel(W{1})]);
+    yl = ylim();
+    ylim([min(yl(1),0.1),1]);
     xlabel(l)
-    legend(strsplit(num2str([2:numel(W),1]))','location','eastoutside');
+    set([gca; findall(gca,'Type','text')],'FontSize',6);
 end

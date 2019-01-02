@@ -1,9 +1,9 @@
-function emgrtest(m)
+function emgrtest()
 %%% summary: emgrtest (run emgr tests)
 %%% project: emgr - Empirical Gramian Framework ( https://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
-%%% license: 2-Clause BSD (2015--2018)
-%$
+%%% license: BSD-2-Clause (2019)
+
     rand('seed',1009);								% Seed uniform random number generator
 
 %% SYSTEM SETUP
@@ -135,9 +135,12 @@ function emgrtest(m)
 
     % Distributed cross operator
 
-    curios(sys,'state-reduction','nonlinear-direct-truncation',{'partitioned'});
-    curios(sys,'parameter-reduction','minimality-based',{'partitioned'});
-    curios(sys,'combined-reduction','minimality-based',{'partitioned'});
+    curios(sys,'state-reduction','nonlinear-direct-truncation',{[2,3,1]});
+    curios(sys,'state-reduction','nonlinear-direct-truncation',{'partitioned',[2,3,4]});
+    curios(sys,'parameter-reduction','minimality-based',{[2,3,2]});
+    curios(sys,'parameter-reduction','minimality-based',{'partitioned',[2,3,5]});
+    curios(sys,'combined-reduction','minimality-based',{[2,3,3]});
+    curios(sys,'combined-reduction','minimality-based',{'partitioned',[2,3,6]});
 
 %% SENSITIVITY ANALYSIS
 
@@ -203,16 +206,16 @@ function emgrtest(m)
 
 %% SYSTEM INDEX
 
-    curios(sys,'system-index','cauchy-index',{[1,3,1]});
-    curios(sys,'system-index','system-entropy',{'cached',[1,3,2]});
-    curios(sys,'system-index','system-gain',{'cached',[1,3,3]});
-    curios(sys,'system-index','hinf-bound',{'cached','hold',[1,3,4]})
-    curios(sys,'system-index','hankel-bound',{'cached','hold',[1,3,5]})
-    curios(sys,'system-index','system-symmetry',{'cached','hold',[1,3,6]});
-    curios(sys,'system-index','nyquist-area',{'cached','hold',[1,3,7]});
-    curios(sys,'system-index','energy-fraction',{'cached','hold',[1,3,8]});
-    curios(sys,'system-index','storage-efficiency',{'cached','hold',[1,3,9]});
-    curios(sys,'system-index','robustness-index',{'cached','hold',[1,3,10]});
-    curios(sys,'system-index','recoverability-index',{'cached','hold',[1,3,11]});
-    curios(sys,'system-index','io-coherence',{'cached','hold',[1,3,12]});
+    curios(sys,'system-index','cauchy-index');
+    curios(sys,'system-index','system-entropy',{'cached'});
+    curios(sys,'system-index','system-gain',{'cached'});
+    curios(sys,'system-index','hinf-bound',{'cached','hold'})
+    curios(sys,'system-index','hankel-bound',{'cached','hold'})
+    curios(sys,'system-index','system-symmetry',{'cached','hold'});
+    curios(sys,'system-index','nyquist-area',{'cached','hold'});
+    curios(sys,'system-index','energy-fraction',{'cached','hold'});
+    curios(sys,'system-index','storage-efficiency',{'cached','hold'});
+    curios(sys,'system-index','robustness-index',{'cached','hold'});
+    curios(sys,'system-index','recoverability-index',{'cached','hold'});
+    curios(sys,'system-index','io-coherence',{'cached','hold'});
 end
