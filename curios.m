@@ -223,7 +223,7 @@ function curios(sys,task,method,options)
                         WI{2} = cell2mat(wi(ceil(sys.N/config(11))+1:end));
                         if(config(10))
                             WI{2} = -0.5*WI{2}'*WI{2};
-                        aelse
+                        else
                             WI{2} = -0.5*WI{2}'*ainv(WI{1}+WI{1}')*WI{2};
                         end
                     else
