@@ -5,16 +5,55 @@ function curios(sys,task,method,options)
 %%% license: BSD-2-Clause (2019)
 
     global ODE;
+    global STAGES;
 
-    persistent WX;
+    persistent EV;
+    persistent ev;
+    persistent SV;
+
+%% State-Space Structure
+
+    if(isobject(sys))
+
+        sys = struct(sys);
+
+        if(isfield(sys,'A')), [sys.a] = sys.A; end;
+        if(isfield(sys,'B')), [sys.b] = sys.B; end;
+        if(isfield(sys,'C')), [sys.c] = sys.C; end;
+        if(isfield(sys,'D')), [sys.d] = sys.D; end;
+        if(isfield(sys,'E')), [sys.e] = sys.E; end;
+
+        sys.M = size(sys.b,2);
+        sys.N = size(sys.a,2);
+        sys.Q = size(sys.c,1);
+        sys.dt = 1.0/sys.N;
+        sys.Tf = 1.0;
+
+        if(isfield(sys,'e') && not(isempty(sys.e)))
+            [L,U,P] = lu(sys.e);
+            sys.f = @(x,u,p,t) L\(U\(P*(sys.a*x + sys.b*u)));
+            sys.F = @(x,u,p,t) L\(U\(P*(sys.a*x))) + sys.c'*u;
+        else
+            sys.f = @(x,u,p,t) sys.a*x + sys.b*u;
+            sys.F = @(x,u,p,t) sys.a'*x + sys.c'*u;
+        end
+
+        if(not(isfield(sys,'d')) || isempty(sys.d) || sys.d==0)
+            sys.g = @(x,u,p,t) sys.c*x;
+        else
+            sys.g = @(x,u,p,t) sys.c*x + sys.d*u;
+        end
+    end
 
 %% Default Arguments
+
+    in = ones(sys.M,1);
 
     if(not(isfield(sys,'g'))),  sys.g = 1; end
     if(not(isfield(sys,'p'))),  sys.p = 0; end
     if(not(isfield(sys,'q'))),  sys.q = 0; end
-    if(not(isfield(sys,'ut'))), sys.ut = 1; end
-    if(not(isfield(sys,'vt'))), sys.vt = @(t) ones(sys.M,1)*(t<=sys.h)./sys.h; end
+    if(not(isfield(sys,'ut'))), sys.ut = 'i'; end
+    if(not(isfield(sys,'vt'))), sys.vt = @(t) in*((t<=sys.dt)./sys.dt); end
     if(not(isfield(sys,'us'))), sys.us = 0; end
     if(not(isfield(sys,'xs'))), sys.xs = zeros(sys.N,1); end
     if(not(isfield(sys,'um'))), sys.um = 1; end
@@ -30,7 +69,7 @@ function curios(sys,task,method,options)
 %% Internal Argument setup
 
     sysdim = [sys.M,sys.N,sys.Q];
-    tdisc = [sys.h,sys.T];
+    tdisc = [sys.dt,sys.Tf];
     config = zeros(1,12);
     proj = '';
     dp = @mtimes;
@@ -40,6 +79,12 @@ function curios(sys,task,method,options)
     picked = @(name) any(strcmp(options,name));
     gtimes = @(m) m*m';
     rcumsum = @(v) flipud(cumsum(flipud(v(:))));
+
+%% Input Library:
+
+    if(picked('step')),   sys.ut = 's'; end
+    if(picked('chirp')),  sys.ut = 'c'; end
+    if(picked('random')), sys.ut = 'r'; end
 
 %% Kernel Library:
 
@@ -52,7 +97,7 @@ function curios(sys,task,method,options)
     o_trac = @(x,y) sum(sum(x.*y'));
 
     % Time-weighted kernel
-    if(picked('tweighted')),  dp = @(x,y) bsxfun(@times,x,(sys.h * [1:1:size(x,2)]).^DEG) * y; end
+    if(picked('tweighted')),  dp = @(x,y) bsxfun(@times,x,(sys.dt * [1:1:size(x,2)]).^DEG) * y; end
 
     % Polynomial kernel
     if(picked('polynomial')), dp = @(x,y) (x*y).^DEG + 1.0; end
@@ -71,6 +116,7 @@ function curios(sys,task,method,options)
 
 %% Solver Library
 
+    if(picked('rk1e')),       STAGES = 1; end
     if(picked('rk45')),       ODE = @rk45e; end
 
 %% Configuration Library
@@ -87,7 +133,8 @@ function curios(sys,task,method,options)
     if(picked('final')),    config(1) = 2; end
     if(picked('mean')),     config(1) = 3; end
     if(picked('rms')),      config(1) = 4; end
-    if(picked('midrange')), config(1) = 5; end
+    if(picked('midr')),     config(1) = 5; end
+    if(picked('gmean')),     config(1) = 6; end
 
     if(picked('linear')),   config(2:3) = 1; end
     if(picked('log')),      config(2:3) = 2; end
@@ -108,7 +155,7 @@ function curios(sys,task,method,options)
 
 %% Backend Setup
 
-   [EMGR,mdf] = sel();
+    [EMGR,mdf] = sel();
 
 %% Print Welcome
 
@@ -175,26 +222,31 @@ function curios(sys,task,method,options)
                     WO = EMGR(sys.f,sys.g,sysdim,tdisc,'o',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                     [UX,DX,VX] = balco(WC,WO);
 
-                case 'linear-dominant'
+                case 'linear-dominant-subspaces'
                     WX = EMGR(sys.f,sys.F,sysdim,tdisc,'y',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                     [UX,DX,VX] = svd(WX);
-                    UX = bsxfun(@times,UX,diag(DX)');
-                    VX = bsxfun(@times,VX,diag(DX)');
+                    UX = UX*DX;
+                    VX = VX*DX;
                     proj = 'dominant';
 
-                case 'nonlinear-dominant'
+                case 'nonlinear-dominant-subspaces'
                     WX = EMGR(sys.f,sys.g,sysdim,tdisc,'x',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                     [UX,DX,VX] = svd(WX);
-                    UX = bsxfun(@times,UX,diag(DX)');
-                    VX = bsxfun(@times,VX,diag(DX)');
+                    UX = UX*DX;
+                    VX = VX*DX;
                     proj = 'dominant';
+
+                otherwise
+                    error('curios: unknown state-reduction method.');
             end
 
             if(picked('gains')), [UX,DX,VX] = gains(sys,UX,DX,VX); end
+
             fprintf(' offline time: %.2f s\n',toc);
             [ord,err,nam] = assess(sys,UX,VX,[],[],proj);
             plot_error_1d(ord,err,nam,method,subpl);
-            %morscore(ord{1},err{3},sys.N); % EXPERIMENTAL
+
+            if(not(picked('noscore'))), morscore(ord{1},err{3},sys.N); end;
 
 %% Parameter Reduction
 
@@ -229,13 +281,17 @@ function curios(sys,task,method,options)
                     else
                         WI = EMGR(sys.f,sys.g,sysdim,tdisc,'j',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
                     end
+
+                otherwise
+                    error('curios: unknown parameter-reduction method.');
             end
 
             [UP,DP,VP] = svd(WI{2});
             fprintf(' offline time: %.2f s\n',toc);
             [ord,err,nam] = assess(sys,[],[],UP,UP,proj);
             plot_error_1d(ord,err,nam,method,subpl);
-            %morscore(ord{1},err{3},size(sys.p)); % EXPERIMENTAL
+
+            if(not(picked('noscore'))), morscore(ord{2},err{3},size(sys.p,1)); end;
 
 %% Combined State and Parameter Reduction
 
@@ -276,12 +332,15 @@ function curios(sys,task,method,options)
                     end
                     if(picked('dominant'))
                         [UX,DX,VX] = svd(WI{1});
-                        UX = bsxfun(@times,UX,diag(DX)');
-                        VX = bsxfun(@times,VX,diag(DX)');
+                        UX = UX*DX;
+                        VX = VX*DX;
                         proj = 'dominant';
                     else
                         [UX,DX,VX] = balco(WI{1});
                     end
+
+                otherwise
+                    error('curios: unknown combined-reduction method.');
             end
 
             [UP,DP,VP] = svd(WI{2});
@@ -303,10 +362,13 @@ function curios(sys,task,method,options)
 
                     config(10) = 1;
                     WS = EMGR(sys.f,sys.g,sysdim,tdisc,'s',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm);
+
+                otherwise
+                    error('curios: unknown sensitivity-analysis method.');
             end
 
             fprintf(' offline time: %.2f s\n',toc);
-            plot_mag_1d(WS{2}./sum(WS{2}),method,'sensitivity',holding,subpl);
+            plot_mag_1d(WS{2}./max(WS{2}),method,'sensitivity',holding,subpl);
 
 %% Parameter Identification
 
@@ -321,11 +383,14 @@ function curios(sys,task,method,options)
                 case 'input-output-based'
 
                     WI = EMGR(sys.f,sys.g,sysdim,tdisc,'j',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
+
+                otherwise
+                    error('curios: unknown parameter-identification method.');
             end
 
             EO = sort(abs(eig(WI{2})),'descend');
             fprintf(' offline time: %.2f s\n',toc);
-            plot_mag_1d(abs(EO)./sum(EO),method,'identifiability',holding,subpl);
+            plot_mag_1d(abs(EO)./max(EO),method,'identifiability',holding,subpl);
 
 %% Decentralized Control
 
@@ -347,6 +412,9 @@ function curios(sys,task,method,options)
                         case 'nonlinear'
                         g = @(x,u,p,t) y0*sys.g(x,u0*u,p,t);
                         WXij = EMGR(f,g,[1,sys.N,1],tdisc,'x',sys.p,config,1,0,sys.xs,1,sys.xm,o_diag);
+
+                        otherwise
+                            error('curios: unknown decentralized-control method.');
                     end
 
                     PM(m,q) = sum(WXij.^2);
@@ -386,6 +454,9 @@ function curios(sys,task,method,options)
                     for k = 1:K
                         nl(k) = EMGR(sys.f,sys.g,sysdim,tdisc,'o',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sc(k)*sys.xm,o_trac);
                     end
+
+                otherwise
+                    error('curios: unknown nonlinearity-quantification method.');
             end
 
             nl = abs(nl);
@@ -411,73 +482,80 @@ function curios(sys,task,method,options)
                 case 'minimality'
 
                     w = EMGR(sys.f,sys.g,sysdim,tdisc,'x',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,o_diag);
+
+                otherwise
+                    error('curios: unknown state-index method.');
             end
 
             fprintf(' offline time: %.2f s\n',toc);
-            plot_mag_1d(abs(w)./sum(abs(w)),method,task,holding,subpl);
+            plot_mag_1d(abs(w)./max(abs(w)),method,task,holding,subpl);
 
 %% System Indices
 
         case 'system-index'
 
-            if(not(picked('cached')) || isempty(WX))
+            if(not(picked('cached')) || isempty(EV))
                 WX = EMGR(sys.f,sys.g,sysdim,tdisc,'x',sys.p,config,sys.ut,sys.us,sys.xs,sys.um,sys.xm,dp);
+                EV = eig(WX);
+                [~,IX] = sort(abs(EV),'descend');
+                EV = real(EV(IX));
+                ev = EV;
+                ev(abs(ev)<(eps*max(abs(ev)))) = 0;
+                SV = svd(WX);
             end
-            ev = eig(WX);
-            [EV,IX] = sort(abs(ev),'descend');
-            ev = ev(IX);
-            SV = svd(WX);
 
             switch(method)
 
                 case 'cauchy-index'
 
-                    in = sum(sign(real(ev))) - cumsum(sign(real(ev)));
+                    in = sum(sign(ev)) - cumsum(sign(ev));
 
                 case 'system-entropy'
 
-                    in = 1.0 - ([1:sys.N]'*log(2*pi*exp(1)) + cumsum(log(EV)))./(sys.N*log(2*pi*exp(1)) + sum(log(EV)));
+                    in = 1.0 - ([1:sys.N]'*log(2*pi*exp(1)) + cumsum(log(abs(EV))))./(sys.N*log(2*pi*exp(1)) + sum(log(abs(EV))));
 
                 case 'system-gain'
 
                     in = 1.0 - cumsum(EV)./sum(EV);
+                    in = in./max(in);
 
                 case 'hinf-bound'
 
-                    in = 2.0 * rcumsum([EV(2:end);0])./sum(EV);
+                    in = 2.0 * rcumsum([abs(EV(2:end));0])./sum(abs(EV));
+                    in = in./max(in);
 
                 case 'hankel-bound'
 
-                    in = [EV(2:end);0]./sum(EV);
-
-                case 'system-symmetry'
-
-                    in = cumsum(SV.^2)./sum(SV.^2) - cumsum(EV.^2)./sum(EV.^2);
+                    in = [abs(EV(2:end));0]./sum(abs(EV));
+                    in = in./max(in);
 
                 case 'energy-fraction'
 
                     in = 1.0 - cumsum(SV)./sum(SV);
+                    in = in./max(in);
 
                 case 'storage-efficiency'
 
-                    in = abs(cumprod(SV).^(1.0./numel(SV)));
+                    in = cumprod(abs(EV)).^(1.0./[1:numel(EV)]');
+                    in = in./max(in);
 
-                case 'nyquist-area'
+                case 'ellipsoid-volume'
 
-                    in = 1.0 - sqrt(pi*cumsum(EV.^2))./sqrt(pi*sum(EV.^2));
+                    in = sqrt(cumprod(abs(EV)));
+                    in = max(1e-16,in./max(in));
 
-                case 'robustness-index'
+                case 'nyquist-area' % = System-Norm
 
-                    in = abs(2.0 - (4.0/pi) * atan(sqrt(cumsum(EV)./rcumsum(EV))));
-
-                case 'recoverability-index'
-
-                    in = fliplr(EV)./max(EV);
+                    in = 1.0 - sqrt(cumsum(EV.^2) ./ sum(EV.^2));
+                    in = in./max(in);
 
                 case 'io-coherence'
 
-                    in = abs(cumsum(ev).^2./cumsum(ev.^2));
-                    in = 1.0 - in./max(in);
+                    in = 1.0 - abs((cumsum(EV).^2 * sum(EV.^2)) ./ (cumsum(EV.^2) * sum(EV).^2));
+                    in = in./max(in);
+
+                otherwise
+                    error('curios: unknown system-index method.');
             end
 
             fprintf(' offline time: %.2f s\n',toc);
@@ -491,6 +569,7 @@ function curios(sys,task,method,options)
 %% Clean up
 
     ODE = [];
+    STAGEC = [];
 
     fprintf('\n');
 end
@@ -507,6 +586,7 @@ function [EMGR,mdf] = sel()
         EMGR = @emgr_lgc;
         mdf = '-lgc';
     else
+
         assert(exist('emgr')==2,'emgr not found! Get emgr at: https://gramian.de');
         EMGR = @emgr;
         mdf = '';
@@ -555,7 +635,7 @@ function [TR,HSV,TL] = gains(sys,tr,hs,tl)
 
     B = zeros(sys.N,sys.M);
     for k = 1:sys.M
-        B(:,k) = sys.f(sys.xs,(1:sys.M==1)',sys.p,0);
+        B(:,k) = sys.f(sys.xs,(1:sys.M==k)',sys.p,0);
     end
     C = sys.g(1,sys.us,sys.p,0);
     HSV = abs(sum((tr'*B).*(C*tl)',2)).*hs;
@@ -607,7 +687,7 @@ function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
 
     for q = 1:Q
 
-        Y = ODE(sys.f,sys.g,[sys.h,sys.T],sys.xs,@(t) sys.us + sys.vt(t),sys.q(:,q));
+        Y = ODE(sys.f,sys.g,[sys.dt,sys.Tf],sys.xs,@(t) sys.us + sys.vt(t),sys.q(:,q));
         n0 = l0norm(Y);
         n1 = l1norm(Y);
         n2 = l2norm(Y);
@@ -638,11 +718,12 @@ function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
 
                 up = UP(:,1:p);
                 vp = VP(:,1:p)';
+
                 ip = find(ptest==p);
 
                 y = ODE(@(x,u,p,t) vx*sys.f(ux*x,u,up*p,t), ...
                         @(x,u,p,t)    sys.g(ux*x,u,up*p,t), ...
-                        [sys.h,sys.T], vx*sys.xs, @(t) sys.us + sys.vt(t), vp*sys.q(:,q));
+                        [sys.dt,sys.Tf], vx*sys.xs, @(t) sys.us + sys.vt(t), vp*sys.q(:,q));
 
                 e0 = l0norm(Y - y) / n0;
                 e1 = l1norm(Y - y) / n1;
@@ -671,29 +752,36 @@ function [orders,errors,names] = assess(sys,UX,VX,UP,VP,m)
         l8 = sqrt(l8 ./ Q);
     end
 
+    l0 = min(l0,1.0);
+    l1 = min(l1,1.0);
+    l2 = min(l2,1.0);
+    l8 = min(l8,1.0);
+
     orders = {xtest, ptest};
     errors = {l0, l1, l2, l8};
     names = {'L_1 Error', 'L_2 Error', 'L_\infty Error', 'L_0 Error'};
 end
 
-%% LOCAL FUNCTION: morscore (MORscore [Experimental; determine weighting])
+%% LOCAL FUNCTION: morscore (Model Reduction Scoring)
 function morscore(orders,errors,N)
 
-    sigm = @(x,L,k,z) L ./ (1.0 + exp(-k * (x - z)));
-    obj = @(p) norm(log10(errors(:))./16.0 - sigm(orders(:),p(1),p(2),p(3)),2);
-    depvelshi = fminunc(obj,[-0.5,1,0],optimset('Display','off'));
-    score = norm(depvelshi,2);
-    fprintf(' MOR score: %.2f',score);
-    text(0.5,0.5,num2str(score,'%.2f'),'Units','normalized');
+    nx = orders./(N-1);
+    ny = log10(errors)./16.0 + 1.0;
+    if(nx(end)~=1), nx(end+1) = 1; ny(end+1) = ny(end); end;
+    ms = 1.0 - trapz(nx(:),ny(:));
+    fprintf(' MOR score: %.2f',ms);
+    text(0.5,0.5,num2str(ms,'%.2f'),'Units','normalized');
 end
 
-%% LOCAL FUNCTION: rk45e (Custom Embedded Runge Kutta 4th / 5th Solver)
+%% LOCAL FUNCTION: rk45e (Embedded Runge Kutta 4th / 5th Solver)
 function y = rk45e(f,g,t,x0,u,p)
 
     [S,x] = ode45(@(t,x) f(x,u(t),p,t),[0,t(2)],x0,'InitialStep',t(1)); % Compute State Trajectory
+
     K = numel(S);
     z = g(x(1,:)',u(S(1)),p,S(1));
     z(end,K) = 0;
+
     for k = 2:K
         tk = S(k);
         z(:,k) = g(x(k,:)',u(tk),p,tk); % Compute Output Trajectory
@@ -730,7 +818,7 @@ function plot_error_1d(orders,errors,names,ident,subpl)
         set(gca,'Ytick',[]);
         set(gca,'Xtick',[]);
         if(subpl(3)<=subpl(2)), title(ident); end
-        set([gca; findall(gca,'Type','text')],'FontSize',6);
+        set([gca; findall(gca,'Type','text')],'FontSize',4);
     end
     set(gca,'YGrid','on');
 end
@@ -747,21 +835,22 @@ function plot_error_2d(orders,errors,names,ident,subpl)
 
     h = surf(orders{1},orders{2},min(1.0,errors{3}));
     set(gca,'ZScale','log');
-    zl = zlim();
-    zlim([zl(1),1]);
     set(h,'CData',log10(get(h,'CData')));
     set(gca,'CLim',log10(get(gca,'ZLim')));
-    view(135,25);
+    view(135,15);
 
     if(isempty(subpl))
+        zl = zlim();
+        zlim([zl(1),1]);
         ylabel('State Dimension')
         xlabel('Parameter Dimension');
         zlabel('Relative Error');
     else
+        zlim([1e-16,1]);
         set(gca,'Ytick',[]);
         set(gca,'Xtick',[]);
         if(subpl(3)<=subpl(2)), title(ident); end
-        set([gca; findall(gca,'Type','text')],'FontSize',6);
+        set([gca; findall(gca,'Type','text')],'FontSize',4);
     end
 end
 

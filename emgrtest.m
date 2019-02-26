@@ -11,8 +11,8 @@ function emgrtest()
     sys.M = 4;									% Number of inputs
     sys.N = sys.M*sys.M*sys.M;							% Number of states
     sys.Q = sys.M;								% Number of outputs
-    sys.h = 0.01;								% Time step
-    sys.T = 1.0;								% Time horizon
+    sys.dt = 0.01;								% Time step
+    sys.Tf = 1.0;								% Time horizon
 
     A = -gallery('lehmer',sys.N);						% System matrix
     B = toeplitz(1:sys.N,1:sys.M);						% Input matrix
@@ -33,13 +33,13 @@ function emgrtest()
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{[8,6,2]});
     curios(sys,'state-reduction','linear-direct-truncation',{[8,6,3]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{[8,6,4]});
-    curios(sys,'state-reduction','linear-dominant',{[8,6,5]});
-    curios(sys,'state-reduction','nonlinear-dominant',{[8,6,6]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{[8,6,5]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{[8,6,6]});
 
     curios(sys,'state-reduction','linear-direct-truncation',{'nonsym',[8,6,9]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'nonsym',[8,6,10]});
-    curios(sys,'state-reduction','linear-dominant',{'nonsym',[8,6,11]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'nonsym',[8,6,12]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'nonsym',[8,6,11]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'nonsym',[8,6,12]});
 
     curios(sys,'state-reduction','linear-balanced-truncation',{'gains',[8,6,13]});
     curios(sys,'state-reduction','linear-direct-truncation',{'gains',[8,6,15]});
@@ -48,36 +48,36 @@ function emgrtest()
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{'jacobi',[8,6,20]});
     curios(sys,'state-reduction','linear-direct-truncation',{'jacobi',[8,6,21]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'jacobi',[8,6,22]});
-    curios(sys,'state-reduction','linear-dominant',{'jacobi',[8,6,23]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'jacobi',[8,6,24]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'jacobi',[8,6,23]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'jacobi',[8,6,24]});
 
     curios(sys,'state-reduction','linear-balanced-truncation',{'scaled',[8,6,25]});
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{'scaled',[8,6,26]});
     curios(sys,'state-reduction','linear-direct-truncation',{'scaled',[8,6,27]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'scaled',[8,6,28]});
-    curios(sys,'state-reduction','linear-dominant',{'scaled',[8,6,29]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'scaled',[8,6,30]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'scaled',[8,6,29]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'scaled',[8,6,30]});
 
     curios(sys,'state-reduction','linear-balanced-truncation',{'active',[8,6,31]});
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{'active',[8,6,32]});
     curios(sys,'state-reduction','linear-direct-truncation',{'active',[8,6,33]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'active',[8,6,34]});
-    curios(sys,'state-reduction','linear-dominant',{'active',[8,6,35]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'active',[8,6,36]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'active',[8,6,35]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'active',[8,6,36]});
 
     curios(sys,'state-reduction','linear-balanced-truncation',{'tweighted',[8,6,37]});
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{'tweighted',[8,6,38]});
     curios(sys,'state-reduction','linear-direct-truncation',{'tweighted',[8,6,39]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'tweighted',[8,6,40]});
-    curios(sys,'state-reduction','linear-dominant',{'tweighted',[8,6,41]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'tweighted',[8,6,42]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'tweighted',[8,6,41]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'tweighted',[8,6,42]});
 
     curios(sys,'state-reduction','linear-balanced-truncation',{'polynomial',[8,6,43]});
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{'polynomial',[8,6,44]});
     curios(sys,'state-reduction','linear-direct-truncation',{'polynomial',[8,6,45]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'polynomial',[8,6,46]});
-    curios(sys,'state-reduction','linear-dominant',{'polynomial',[8,6,47]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'polynomial',[8,6,48]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'polynomial',[8,6,47]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'polynomial',[8,6,48]});
 
     % Parametric state-space reduction
     sys.p = ones(sys.N,1)*[0.01,0.5,1.0];					% Training parameter
@@ -87,18 +87,18 @@ function emgrtest()
     curios(sys,'state-reduction','nonlinear-balanced-truncation',{[3,6,2]});
     curios(sys,'state-reduction','linear-direct-truncation',{[3,6,3]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{[3,6,4]});
-    curios(sys,'state-reduction','linear-dominant',{[3,6,5]});
-    curios(sys,'state-reduction','nonlinear-dominant',{[3,6,6]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{[3,6,5]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{[3,6,6]});
 
     curios(sys,'state-reduction','linear-direct-truncation',{'nonsym',[3,6,9]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'nonsym',[3,6,10]});
-    curios(sys,'state-reduction','linear-dominant',{'nonsym',[3,6,11]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'nonsym',[3,6,12]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'nonsym',[3,6,11]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'nonsym',[3,6,12]});
 
     curios(sys,'state-reduction','linear-direct-truncation',{'nonsym','polynomial',[3,6,15]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'nonsym','polynomial',[3,6,16]});
-    curios(sys,'state-reduction','linear-dominant',{'nonsym','polynomial',[3,6,17]});
-    curios(sys,'state-reduction','nonlinear-dominant',{'nonsym','polynomial',[3,6,18]});
+    curios(sys,'state-reduction','linear-dominant-subspaces',{'nonsym','polynomial',[3,6,17]});
+    curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'nonsym','polynomial',[3,6,18]});
 
     % Parameter-space reduction tests
     sys.p = ones(sys.N,1)*[0.01,1.0];						% Training parameter range
@@ -125,16 +125,14 @@ function emgrtest()
     curios(sys,'parameter-reduction','minimality-based',{'nonsym','logpar',[4,4,16]});
 
     % Combined state and parameter reduction
-
     curios(sys,'combined-reduction','controllability-based',{[1,6,1]});
     curios(sys,'combined-reduction','observability-based',{'linpar',[1,6,2]});
     curios(sys,'combined-reduction','minimality-based',{'linpar',[1,6,3]});
     curios(sys,'combined-reduction','minimality-based',{'linpar','dominant',[1,6,4]});
-    curios(sys,'combined-reduction','minimality-based',{'nonsym','linear',[1,6,5]});
-    curios(sys,'combined-reduction','minimality-based',{'nonsym','linear','dominant',[1,6,6]});
+    curios(sys,'combined-reduction','minimality-based',{'nonsym','linpar',[1,6,5]});
+    curios(sys,'combined-reduction','minimality-based',{'nonsym','linpar','dominant',[1,6,6]});
 
     % Distributed cross operator
-
     curios(sys,'state-reduction','nonlinear-direct-truncation',{[2,3,1]});
     curios(sys,'state-reduction','nonlinear-direct-truncation',{'partitioned',[2,3,4]});
     curios(sys,'parameter-reduction','minimality-based',{[2,3,2]});
@@ -211,11 +209,9 @@ function emgrtest()
     curios(sys,'system-index','system-gain',{'cached'});
     curios(sys,'system-index','hinf-bound',{'cached','hold'})
     curios(sys,'system-index','hankel-bound',{'cached','hold'})
-    curios(sys,'system-index','system-symmetry',{'cached','hold'});
     curios(sys,'system-index','nyquist-area',{'cached','hold'});
     curios(sys,'system-index','energy-fraction',{'cached','hold'});
     curios(sys,'system-index','storage-efficiency',{'cached','hold'});
-    curios(sys,'system-index','robustness-index',{'cached','hold'});
-    curios(sys,'system-index','recoverability-index',{'cached','hold'});
+    curios(sys,'system-index','ellipsoid-volume',{'cached','hold'});
     curios(sys,'system-index','io-coherence',{'cached','hold'});
 end

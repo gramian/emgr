@@ -1,5 +1,5 @@
 function examples(t)
-%%% summary: examples(run emgr demos)
+%%% summary: examples (run emgr demos)
 %%% project: emgr - Empirical Gramian Framework ( https://gramian.de )
 %%% authors: Christian Himpe ( 0000-0003-2194-6754 )
 %%% license: BSD-2-Clause (2019)
@@ -14,8 +14,8 @@ function examples(t)
             sys.M = 1;								% Number of inputs
             sys.N = 64;								% Number of states
             sys.Q = 1;								% Number of outputs
-            sys.h = 0.01;							% Time step
-            sys.T = 1.0;							% Time horizon
+            sys.dt = 0.01;							% Time step
+            sys.Tf = 1.0;							% Time horizon
 
             A = sqrt(sys.N) * gallery('tridiag',sys.N,1,-2,1);			% System matrix
             B = ones(sys.N,sys.M);						% Input matrix
@@ -26,15 +26,15 @@ function examples(t)
             sys.p = ones(sys.N,1) * [0.5,1.0];					% Training parameter range
             sys.q = 0.5 + 0.5 * rand(sys.N,5);					% Test parameter
 
-            curios(sys,'combined-reduction','minimality-based',{'active','linpar'});
+            curios(sys,'combined-reduction','minimality-based',{'noscore','active','linpar'});
 
         case 'isp' % Inverse Sylvester Procedure
 
             sys.M = 1;								% Number of inputs
             sys.N = 64;								% Number of states
             sys.Q = 1;								% Number of outputs
-            sys.h = 0.01;							% Time step
-            sys.T = 1.0;							% Time horizon
+            sys.dt = 0.01;							% Time step
+            sys.Tf = 1.0;							% Time horizon
 
             a = 1e-1;
             b = 1e+1;
@@ -49,7 +49,7 @@ function examples(t)
             sys.f = @(x,u,p,t) A*x + B*u;					% Vector field
             sys.g = @(x,u,p,t) C*x;						% Output functional
 
-            curios(sys,'state-reduction','nonlinear-balanced-truncation');
+            curios(sys,'state-reduction','nonlinear-balanced-truncation',{'noscore'});
 
         case 'fss' % Flexible Space Structures
 
@@ -58,8 +58,8 @@ function examples(t)
             sys.M = 1;								% Number of inputs
             sys.N = 2*K;							% Number of states
             sys.Q = 1;								% Number of outputs
-            sys.h = 0.01;							% Time step
-            sys.T = 1.0;							% Time horizon
+            sys.dt = 0.01;							% Time step
+            sys.Tf = 1.0;							% Time horizon
 
             xi = rand(1,K) * 0.001;						% Sample damping ratio
             omega = rand(1,K) * 10.0;						% Sample natural frequencies
@@ -72,15 +72,15 @@ function examples(t)
             sys.f = @(x,u,p,t) A*x + B*u;					% Vector field
             sys.g = @(x,u,p,t) C*x;						% Output functional
 
-            curios(sys,'state-reduction','nonlinear-direct-truncation');
+            curios(sys,'state-reduction','nonlinear-direct-truncation',{'noscore'});
 
         case 'nrc' % Nonlinear Resistor-Capacitor cascade
 
             sys.M = 1;								% Number of inputs
             sys.N = 64;								% Number of states
             sys.Q = 1;								% Number of outputs
-            sys.h = 0.01;							% Time step
-            sys.T = 1.0;							% Time horizon
+            sys.dt = 0.01;							% Time step
+            sys.Tf = 1.0;							% Time horizon
 
             g = @(x) exp(x) + x - 1.0;						% Diode nonlinearity
             A0 = sparse(1,1,1,sys.N,sys.N);
@@ -91,31 +91,46 @@ function examples(t)
 
             sys.f = @(x,u,p,t) -g(A0*x) + g(A1*x) - g(A2*x) + B*u;		% Vector field
             sys.g = @(x,u,p,t) x(1);						% Output functional
-            sys.v = @(t) ones(sys.M,1)*(t<=0.5*sys.T);				% Test input
+            sys.v = @(t) ones(sys.M,1)*(t<=0.5*sys.Tf);				% Test input
 
-            curios(sys,'state-reduction','nonlinear-direct-truncation');
+            curios(sys,'state-reduction','nonlinear-direct-truncation',{'noscore'});
+
+        case 'rqo' % Random Diagonal System with Quadratic Output
+
+            sys.M = 1;
+            sys.N = 64;
+            sys.Q = 1;
+            sys.dt = 0.01;
+            sys.Tf = 1.0;
+
+            A = spdiags(-rand(sys.N,1),0,sys.N,sys.N);
+            B = rand(sys.N,1);
+
+            sys.f = @(x,u,p,t) A*x + B*u;
+            sys.g = @(x,u,p,t) norm(x);
+
+            curios(sys,'state-reduction','nonlinear-dominant-subspaces',{'noscore','mean','gauss'});
 
         case 'lte' % Linear Transport Equation
 
             sys.M = 1;								% Number of inputs
             sys.N = 256;							% Number of states
             sys.Q = 1;								% Number of outputs
-            sys.h = 1.0./sys.N;							% Time step
-            sys.T = 1.0;							% Time horizon
+            sys.dt = 0.5./sys.N;							% Time step
+            sys.Tf = 1.5;							% Time horizon
 
-            A = gallery('tridiag',sys.N,sys.N,-sys.N,0);			% System matrix
+            A = spdiags(sys.N*ones(sys.N,1)*[1,-1],[-1,0],sys.N,sys.N);		% System matrix
             B = sparse(1,1,sys.N,sys.N,1);					% Input matrix
             C = sparse(1,sys.N,1.0,1,sys.N);					% Output matrix
 
             sys.f = @(x,u,p,t) p*A*x + B*u;					% Vector field
             sys.F = @(x,u,p,t) p*A'*x + C'*u;					% Adjoint vector field
             sys.g = @(x,u,p,t) C*x;						% Output functional
-            sys.ut = Inf;
-            sys.v = @(t) exp(((t-0.1).^2)./(-0.001));				% Input function
-            sys.p = 1.25;							% Transport velocity
+            sys.vt = @(t) exp(-100*(t-0.2).^2);					% Input function
+            sys.p = 1;								% Transport velocity
             sys.q = sys.p;
 
-            curios(sys,'state-reduction','linear-direct-truncation',{'rms'});
+            curios(sys,'state-reduction','linear-dominant-subspaces',{'noscore','rms','step'});
 
         case 'fbc' % Five-Body Choreography
 
@@ -124,8 +139,8 @@ function examples(t)
             sys.M = 0;								% Number of inputs
             sys.N = 4*n;							% Number of states
             sys.Q = 2*n;							% Number of outputs
-            sys.h = 0.01;							% Time step
-            sys.T = 1.0;							% Time horizon
+            sys.dt = 0.01;							% Time step
+            sys.Tf = 1.0;							% Time horizon
 
             sys.f = @(x,u,p,t) [x((2*n)+1:end);acc(x(1:2*n),u,p)];		% Vector field
             sys.g = @(x,u,p,t) x(1:2*n);					% Output functional
@@ -135,15 +150,15 @@ function examples(t)
                      -0.349;  0.919; -0.349;  1.335;  0.810];
             sys.p = ones(n,1);							% Parameters
 
-            curios(sys,'state-reduction','observability-truncation',{'velocity'});
+            curios(sys,'state-reduction','observability-truncation',{'noscore','velocity'});
 
-        case 'qso' % Quasi-Stable Orbits inside black holes
+        case 'qso' % Quasi-Stable Orbits Inside Black Holes
 
             sys.M = 0;								% Number of inputs
             sys.N = 4;								% Number of states
             sys.Q = 3;								% Number of outputs
-            sys.h = 0.005;							% Time step
-            sys.T = 5.0;							% Time horizon
+            sys.dt = 0.005;							% Time step
+            sys.Tf = 5.0;							% Time horizon
 
             sys.f = @(x,u,p,t) orbit(x,u,p,t);					% Vector field
             sys.g = @(x,u,p,t) bl2c(x,u,p,t);					% Output functional
@@ -161,7 +176,7 @@ function examples(t)
             sys.xs = [0.2;0.5*pi;0;0];						% Initial state
             sys.p = [EE;1.38*EE;0.03*EE*EE;0.9982;0.05;0;0]*[0.9,1.1];		% Parameter range
 
-            curios(sys,'sensitivity-analysis','input-output-based',{'hold'});
+            curios(sys,'sensitivity-analysis','input-output-based',{'noscore','hold'});
 
         otherwise
 

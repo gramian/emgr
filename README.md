@@ -2,11 +2,11 @@
 =========================================================
 
 ![code meta-data.](https://img.shields.io/badge/code_meta--data-%E2%9C%93-brightgreen.svg) 
-![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.2530021.png)
+![zenodo listed.](https://zenodo.org/badge/doi/10.5281/zenodo.2577980.png)
 ![matlab compatible](https://img.shields.io/badge/matlab-compatible-lightgrey.svg)
 
 * emgr - EMpirical GRamian Framework ([gramian.de](https://gramian.de))
-* version: **5.6** (2019-01-02)
+* version: **5.7** (2019-02-26)
 * by: Christian Himpe ([0000-0003-2194-6754](https://orcid.org/0000-0003-2194-6754))
 * under: [BSD-2-Clause](https://opensource.org/licenses/BSD-2-Clause) License
 * summary: Empirical Gramians for (model reduction of) input-output systems.
@@ -51,7 +51,7 @@
   * `parfor` hints highlighting outer-most parallelizable loops
 * Functional design
 
-### Details
+### Algorithm
 
 For a mathematical summary and technical documentation of the empirical Gramian framework
 detailing all features and capabilities see:
@@ -64,9 +64,14 @@ detailing all features and capabilities see:
 
 * GNU Octave >=4.2.0 (available in Ubuntu **18.04** LTS repositories)
 * Mathworks MATLAB >=2016b (use `emgr_lgc.m` for earlier version)
-* Python 2.X and 3.X (experimental)
+* Python 2.X and 3.X
 
-## Basic Usage
+## Citation
+
+* C. Himpe (2019). emgr -- EMpirical GRamian Framework (Version 5.7) [Software].
+  https://gramian.de doi:[10.5281/zenodo.2577980](https://doi.org/10.5281/zenodo.2577980)
+
+## Getting Started
 
 Run a minimal example in a Matlab interpreter like OCTAVE or MATLAB:
 ```
@@ -80,7 +85,7 @@ testall
 
 To run demos use:
 ```
-examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
+examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'rqo', 'lte', 'fbc', 'qso'
 ```
 
 ## Files and Folders
@@ -97,7 +102,7 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 
 [`RUNME.m`](RUNME.m) Minimal Code Example
 
-[`emgr.m`](emgr.m) Empirical Gramian Framework (main file, crc32:999979f4)
+[`emgr.m`](emgr.m) Empirical Gramian Framework (main file, crc32:`52e9f192`)
 
 [`emgr_oct.m`](emgr_oct.m) Empirical Gramian Framework (Optional Octave variant) 
 
@@ -114,13 +119,18 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
   * `'isp'` Inverse Sylvester Procedure
   * `'fss'` Flexible Space Structures
   * `'nrc'` Nonlinear Resistor-Capacitor Cascade
+  * `'rqo'` Random Diagonal System with Quadratic Output
   * `'lte'` Linear Transport Equation
   * `'fbc'` Five Body Choreography
   * `'qso'` Quasi-Stable Orbits Inside Black Holes
 
+[`testobj.m`](testobj.m) State-Space Object Tests
+
 [`emgr-ref.pdf`](emgr-ref.pdf) emgr reference cheat sheet
 
-[`py/emgr.py`](py/emgr.py) Empirical Gramian Framework (experimental Python variant)
+[`py/emgr.py`](py/emgr.py) Empirical Gramian Framework (Python variant)
+
+[`py/moretests.py`](moretests.m) Component Tests (Python variant)
 
 ## Documentation Table-of-Contents
 
@@ -144,7 +154,7 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 
 ### [Custom Solver](https://gramian.de/#solver)
 
-### [Extra Utilities](https://gramian.de/#extra)
+### [Utility](https://gramian.de/#extra)
 
 ### [Tests](https://gramian.de/#tests)
 
@@ -154,6 +164,8 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 
 ### [References](https://gramian.de/#references)
 
+### [Contact](https://gramian.de/#contact)
+
 ### [Links](https://gramian.de/#links)
 
 ### [Notes](https://gramian.de/#notes)
@@ -161,3 +173,5 @@ examples(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'lte', 'fbc', 'qso'
 ### [Troubleshooting](https://gramian.de/#trouble)
 
 ## More information at: https://gramian.de
+
+Follow [@modelreduction](https://twitter.com/modelreduction) for `emgr` news.

@@ -1,15 +1,18 @@
 from __future__ import print_function
+from sys import argv
 import numpy as np
 from scipy.linalg import toeplitz
 from emgr import emgr
 import matplotlib.pyplot as plt
 
 
-def moretests(ut=1):
+def moretests():
 ### summary: moretests
 ### project: emgr - EMpirical GRamian Framework ( https://gramian.de )
 ### authors: Christian Himpe ( 0000-0003-2194-6754 )
 ### license: BSD-2-Clause (2019)
+
+    ut = argv[1]
 
     global ODE
 
@@ -29,7 +32,6 @@ def moretests(ut=1):
     on = np.arange(1,N+1)
     om = np.arange(1,M+1)
     X = np.linspace(0,1,N).T                       # initial state
-    #def U(t): np.ones((M,1)) * ((t<=h)/h)          # impulse input function
     P = 0.5 + 0.5 * np.cos(on).T                   # parameter
     R = np.ones((N,1)).dot(np.array([[0.5,1.0]]))  # parameter range
 
@@ -55,6 +57,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
     # Input Scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
@@ -69,7 +72,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"c",P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,1),"Controllability Gramian",8)
+    plotsingvals(W,(2,6,1),"Controllability Gramian",9)
     print("")
 
 ## Observability Gramian
@@ -86,6 +89,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
     # State scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
@@ -100,10 +104,13 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
+    # Average Observability
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[0,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+
     # Extra Input
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"o",P,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,2),"Observability Gramian",8)
+    plotsingvals(W,(2,6,2),"Observability Gramian",9)
     print("")
 
 ## Linear Cross Gramian
@@ -120,30 +127,22 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    # Input scales
+    # Scales
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,2,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")  # fast drop
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    # Adjoint scales
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,4,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-
-    # Input Rotations
+    # Rotations
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,1,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-
-    # Adjoint Rotations
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
     # Normalization
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,0,0,1,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,0,0,2,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,3),"Linear Cross Gramian",8)
+    plotsingvals(W,(2,6,3),"Linear Cross Gramian",9)
     W = []
 
     # Non-Symmetric Cross Gramian
@@ -155,30 +154,22 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[3,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[4,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[5,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[6,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    # Input Scales
+    # Scales
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,1,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,2,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,3,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")  # fast drop
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,4,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    # Adjoint Scales
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,1,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,2,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,3,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,4,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-
-    # Input Rotations
+    # Rotations
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,1,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
-
-    # Adjoint Rotations
-    W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,0,1,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
     # Normalization
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,0,0,1,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,ADJ,(M,N,Q),(h,T),"y",P,[0,0,0,0,0,2,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,4),"Linear Cross Gramian (Non-Symmetric)",8)
+    plotsingvals(W,(2,6,4),"Linear Cross Gramian (Non-Symmetric)",9)
     print("")
 
 ## Cross Gramian
@@ -195,6 +186,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
     # Input scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
@@ -221,7 +213,7 @@ def moretests(ut=1):
     # Extra Input
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,5),"Cross Gramian",15)
+    plotsingvals(W,(2,6,5),"Cross Gramian",16)
     W = []
 
     # Baseline
@@ -233,6 +225,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[3,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[4,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[5,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[6,0,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
     # Input scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[0,1,0,0,0,0,1,0,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
@@ -259,7 +252,7 @@ def moretests(ut=1):
     # Extra Input
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"x",P,[0,0,0,0,0,0,1,1,0,0,0,0],ut,0,X),compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,6),"Cross Gramian (Non-Symmetric)",15)
+    plotsingvals(W,(2,6,6),"Cross Gramian (Non-Symmetric)",16)
     print("")
 
 ## Sensitivity Gramian
@@ -276,6 +269,7 @@ def moretests(ut=1):
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
+    W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
 
     # Input scales
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
@@ -293,7 +287,7 @@ def moretests(ut=1):
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,0,0,0,0,0,0,1,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")  # fast drop
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,0,0,0,0,0,0,2,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
 
-    plotsingvals(W,(2,6,9),"Sensitivity Gramian",12)
+    plotsingvals(W,(2,6,9),"Sensitivity Gramian",13)
     W = []
 
     # Baseline
@@ -305,6 +299,7 @@ def moretests(ut=1):
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
+    W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
 
     # Input scales
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
@@ -312,7 +307,7 @@ def moretests(ut=1):
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,3,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,4,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
 
-    # Input scales
+    # State scales
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,2,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,3,0,0,0,0,0,0,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
@@ -331,7 +326,7 @@ def moretests(ut=1):
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,0,0,0,0,0,0,1,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")
     W.append(np.sort(emgr(LIN,OUT,(M,N,Q),(h,T),"s",R,[0,0,0,0,0,0,0,0,2,0,0,0],ut,0,X)[1])[::-1]); print("#", end="")  # fast drop
 
-    plotsingvals(W,(2,6,10),"Sensitivity Gramian (Input-Output)",17)
+    plotsingvals(W,(2,6,10),"Sensitivity Gramian (Input-Output)",18)
     print("")
 
 ## Identifiability Gramian
@@ -348,6 +343,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
     # State scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[0,0,1,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
@@ -357,6 +353,9 @@ def moretests(ut=1):
 
     # State Rotations
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[0,0,0,0,1,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
+
+    # Averaged Identifiability
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[0,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
     # Extra Input
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[0,0,0,0,0,0,0,1,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")  # fast drop
@@ -368,7 +367,7 @@ def moretests(ut=1):
     # Schur Complement
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"i",R,[0,0,0,0,0,0,0,0,0,1,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,8),"Identifiability Gramian",11)
+    plotsingvals(W,(2,6,8),"Identifiability Gramian",12)
     print("")
 
 ## Joint Gramian
@@ -385,6 +384,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[3,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[4,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[5,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[6,0,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
     # Input scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[0,1,0,0,0,0,0,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
@@ -414,7 +414,7 @@ def moretests(ut=1):
     # Schur Complement
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[0,0,0,0,0,0,0,0,0,1,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,11),"Cross-Identifiability Gramian",16)
+    plotsingvals(W,(2,6,11),"Cross-Identifiability Gramian",17)
     W = []
 
     # Baseline
@@ -426,6 +426,7 @@ def moretests(ut=1):
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[3,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[4,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[5,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
+    W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[6,0,0,0,0,0,1,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
     # Input scales
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[0,1,0,0,0,0,1,0,0,0,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
@@ -455,7 +456,7 @@ def moretests(ut=1):
     # Schur Complement
     W.append(np.linalg.svd(emgr(LIN,OUT,(M,N,Q),(h,T),"j",R,[0,0,0,0,0,0,1,0,0,1,0,0],ut,0,X)[1],compute_uv=False)); print("#", end="")
 
-    plotsingvals(W,(2,6,12),"Cross-Identifiability Gramian (Non-Symmetric)",16)
+    plotsingvals(W,(2,6,12),"Cross-Identifiability Gramian (Non-Symmetric)",17)
     print("")
 
     plt.show()
