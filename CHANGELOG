@@ -1,11 +1,29 @@
 # emgr Changelog
 
+## emgr 5.8 (2020-05)
+
+ * CHANGED replaced combined min/max by bounds
+ * CHANGED sequence of normalization options
+ * ADDED sinc input
+ * ADDED output-controllability Gramian (via controllability gramian)
+ * ADDED optional trajectory weighting
+ * FIXED normalization bug
+ * FIXED sensitivity Gramian bug
+ * IMPROVED sensitivity Gramian
+ * IMPROVED parameter Gramian calls
+ * IMPROVED configuration flag padding
+ * IMPROVED centering
+ * IMPROVED readability by sectioning
+ * IMPROVED readability of conditions
+ * IMPROVED python version
+ * REMOVED geometric mean centering
+
 ## emgr 5.7 (2019-02)
 
  * CHANGED built-in input argument codes
- * ADDED geometric mean centering
  * ADDED built-in step input
  * ADDED average observability Gramian option
+ * ADDED geometric mean centering
  * IMPROVED exponential chirp input
  * IMPROVED sensitivity Gramian computation
  * IMPROVED linear cross Gramian scales
@@ -171,7 +189,7 @@
  * REMOVED 1st order Euler integrator
  * REMOVED 2nd order Adams-Bashforth integrator
  * REMOVED 2nd order Ralston integrator
- * REOMVED 2nd order leapfrog integrator
+ * REMOVED 2nd order leapfrog integrator
 
 ## emgr 2.5 (2014-09)
 

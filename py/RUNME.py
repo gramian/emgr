@@ -1,11 +1,14 @@
+"""
+  project: emgr ( https://gramian.de )
+  version: 5.8.py (2020-05-01)
+  authors: Christian Himpe (0000-0003-2194-6754)
+  license: BSD-2-Clause License (opensource.org/licenses/BSD-2-Clause)
+  summary: RUNME (Minimal emgr test script)
+"""
+
 import numpy as np
 from emgr import emgr
 
-
-### summary: RUNME (Minimal test script)
-### project: emgr - Empirical Gramian Framework ( https://gramian.de )
-### authors: Christian Himpe ( 0000-0003-2194-6754 )
-### license: 2-Clause BSD (2019)
 
 print("emgr version: {0}".format(emgr("version")))
 

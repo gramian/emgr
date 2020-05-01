@@ -1,20 +1,20 @@
 # code.ini
 name: Empirical Gramian Framework
 shortname: emgr
-version: 5.7
-release-date: 2019-02-26
-id: 10.5281/zenodo.2577980
+version: 5.8
+release-date: 2020-05-01
+id: 10.5281/zenodo.3779889
 id-type: doi
 author: Christian Himpe
 orcid: 0000-0003-2194-6754
-topic: Science, Mathematics, Model Reduction
+topic: Science, Mathematics, System Theory
 type: Toolbox
 license: BSD-2-Clause
 license-type: open-source
 repository: github.com/gramian/emgr
 repository-type: git
 language: Matlab
-dependencies: Octave >=4.2, Matlab >=2016b
+dependencies: Octave >=5.2, Matlab >=2017b
 systems: Linux, Windows
 website: gramian.de
 keywords: Controllability, Observability, Cross Gramian, Model Reduction, Model Order Reduction

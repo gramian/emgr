@@ -1,14 +1,14 @@
 Cite As:
 
-C. Himpe (2019). emgr - EMpirical GRamian Framework (Version 5.7) [Software].
-Available from https://gramian.de . doi:10.5281/zenodo.2577980
+C. Himpe (2020). emgr - EMpirical GRamian Framework (Version 5.8) [Software].
+Available from https://gramian.de . doi:10.5281/zenodo.3779889
 
 BibTeX Entry:
 
-@MISC{emgr,
+@MISC{emgr58,
  author = {C. Himpe},
- title = {{emgr - EMpirical GRamian Framework} (Version~5.7)},
+ title = {{emgr - EMpirical GRamian Framework} (Version~5.8)},
  howpublished = {\url{https://gramian.de}},
- year = {2019},
- doi = {10.5281/zenodo.2577980}
+ year = {2020},
+ doi = {10.5281/zenodo.3779889}
 }
