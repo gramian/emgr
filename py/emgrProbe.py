@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 """
   project: emgr ( https://gramian.de )
-  version: 5.8.py (2020-05-01)
+  version: 5.9.py (2021-01-21)
   authors: Christian Himpe (0000-0003-2194-6754)
   license: BSD-2-Clause License (opensource.org/licenses/BSD-2-Clause)
   summary: Factorial empirical Gramian singular value decay testing
@@ -43,10 +45,10 @@ def emgrProbe():
 
     gramian = ["c", "o", "x", "y", "s", "i", "j"]  # controllability, observability, minimality, linear minimality, sensitivity, identifiability, cross-identifiability
 
-    kernels = [np.dot, quadratic, cubic, sigmoid]
-    training = ["i", "s", "c", "a", "r"]  # impulse, step, decaying-exponential-chirp, sinc, pseudo-random-binary
-    weighting = [0, 1, 2, 3, 4]  # none, linear-time, quadratic-time, per-state, per-component
-    centering = [0, 1, 2, 3, 4]  # none, steady-state, final-state, arithmetic-mean, root-mean-square
+    kernels = [np.dot] #, quadratic, cubic, sigmoid]
+    training = ["i", "s", "h", "a", "r"]  # impulse, step, havercosine-chirp, sinc, pseudo-random-binary
+    weighting = [0] #, 1, 2, 3, 4]  # none, linear-time, quadratic-time, per-state, per-component
+    centering = [0] #, 1, 2, 3, 4, 5]  # none, steady-state, final-state, arithmetic-mean, root-mean-square, midrange
     normalization = [0, 1, 2]  # none, steady-state, Jacobi-type
     stype = [0, 1]  # standard, (output-controllability, average-observability, non-symmetric-cross-gramian)
     extra = [0, 1]  # none, extra-input

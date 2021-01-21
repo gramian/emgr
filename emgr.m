@@ -2,7 +2,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %% emgr - EMpirical GRamian Framework
 %
 %  project: emgr ( https://gramian.de )
-%  version: 5.8 (2020-05-01)
+%  version: 5.9 (2021-01-21)
 %  authors: C. Himpe (0000-0003-2194-6754)
 %  license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %  summary: Empirical system Gramians for (nonlinear) input-output systems.
@@ -51,21 +51,21 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %    * state rotations: unit(0), single(1)
 %    * normalization (only: Wc, Wo, Wx, Wy): none(0), steady(1), Jacobi(2)
 %    * state gramian variant:
-%      * controllability gramian type (only: Wc): regular(0), output(1)
+%      * controllability gramian type (only: Wc, Ws): regular(0), output(1)
 %      * observability gramian type (only: Wo, Wi): regular(0), averaged(1)
 %      * cross gramian type (only: Wx, Wy, Wj): regular(0), non-symmetric(1)
-%    * extra input (only: Wo, Wx, Ws, Wi, Wj): none(0), yes(1)
+%    * extra input (only: Wo, Wx, Ws, Wi, Wj): no(0), yes(1)
 %    * parameter centering (only: Ws, Wi, Wj): none(0), linear(1), log(2)
 %    * parameter gramian variant:
 %      * averaging type (only: Ws): input-state(0), input-output(1)
 %      * Schur-complement (only: Wi, Wj): approx(0), coarse(1)
 %    * cross gramian partition size (only: Wx, Wj): full(0), partitioned(<N)
 %    * cross gramian partition index (only: Wx, Wj): partition(>0)
-%    * weighting: none(0), time-linear(1), time-squared(2), state(3), scale(4)
+%    * weighting: none(0), linear(1), squared(2), state(3), scale(4)
 %  ut {handle|'i'} input function: u_t = ut(t) or character:
 %    * 'i' delta impulse input
 %    * 's' step input / load vector / source term
-%    * 'c' decaying exponential chirp input
+%    * 'h' havercosine decaying exponential chirp input
 %    * 'a' sinc (cardinal sine) input
 %    * 'r' pseudo-random binary input
 %  us {vector|0} steady-state input (1 or M rows)
@@ -76,13 +76,13 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %
 % RETURNS:
 %
-%  W {matrix} State-space Gramian Matrix (for: Wc, Wo, Wx, Wy)
-%  W  {cell}  [State, Parameter]-space Gramian (for: Ws, Wi, Wj)
+%  W {matrix} State-space system Gramian Matrix (for: Wc, Wo, Wx, Wy)
+%  W  {cell}  {State, Parameter}-space system Gramian (for: Ws, Wi, Wj)
 %
 % CITE AS:
 %
-%  C. Himpe (2020). emgr - EMpirical GRamian Framework (Version 5.8)
-%  [Software]. Available from https://gramian.de . doi:10.5281/zenodo.3779889
+%  C. Himpe (2021). emgr - EMpirical GRamian Framework (Version 5.9)
+%  [Software]. Available from https://gramian.de . doi:10.5281/zenodo.4454679
 %
 % KEYWORDS:
 %
@@ -94,12 +94,12 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %
 % For more information, see: <https://gramian.de>
 
-    % Integrator Handle (for custom solvers)
+    % Set Integrator Handle (i.e. for custom solvers)
     global ODE;
     if not(isa(ODE,'function_handle')), ODE = @ssp2; end%if
 
-    % Version Info (use also to export integrator handle)
-    if isequal(f,'version'), W = 5.8; return; end%if
+    % Version Info (and export default local integrator)
+    if isequal(f,'version'), W = 5.9; return; end%if
 
     % Default Arguments
     if (nargin <  6) || isempty(pr), pr = 0.0; end%if
@@ -126,7 +126,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     Tf = t(2);                % Time horizon
     nt = floor(Tf / dt) + 1;  % Number of time-steps plus initial value
 
-    % Force lower-case Gramian type
+    % Gramian Type Uniform Case
     w = lower(w);
 
     % Lazy Output Functional
@@ -142,13 +142,13 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
             case 's'   % Step Input
                 ut = @(t) 1.0;
 
-            case 'c'   % Chirp Input
-                a0 = (2.0 * pi) / (4.0 * dt) * Tf / log(4.0 * (dt / Tf));
+            case 'h'   % Havercosine Chirp Input
+                a0 = pi / (2.0 * dt) * Tf / log(4.0 * (dt / Tf));
                 b0 = (4.0 * (dt / Tf)) ^ (1.0 / Tf);
                 ut = @(t) 0.5 * cos(a0 * (b0 ^ t - 1.0)) + 0.5;
 
             case 'a'   % Sinc Input
-                ut = @(t) sin(t / dt) / ((t / dt) + (t==0));
+                ut = @(t) sin(t / dt) / ((t / dt) + (t == 0));
 
             case 'r'   % Binary Input
                 rt = randi([0,1],1,nt);
@@ -177,10 +177,10 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
             wei = @(m) (0:dt:Tf) * sqrt(0.5);
 
         case 3     % State-weighting
-            wei = @(m) vecnorm(m,2,1);
+            wei = @(m) 1.0 ./ max(sqrt(eps),vecnorm(m,2,1));
 
         case 4     % Scale-weighting
-            wei = @(m) 1.0 ./ max(eps,vecnorm(m,Inf,2));
+            wei = @(m) 1.0 ./ max(sqrt(eps),vecnorm(m,Inf,2));
 
         otherwise  % None
             wei = @(m) 1.0;
@@ -208,36 +208,41 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
     end%switch
 
     % Gramian Normalization
-    if nf(6)
+    if nf(6) && ismember(w,{'c','o','x','y'})
 
-        TX = xs;             % Steady-state preconditioner
+        nf(6) = 0;
+        TX = xs;       % Steady-state preconditioner
 
-        if isequal(nf(6),2)  % Jacobi-type preconditioner
-
+        if nf(6) == 2  % Jacobi-type preconditioner
             NF = nf;
             NF(6) = 0;
-            if isequal(w,'c') || isequal(w,'s'), NF(7) = 0; end%if
-            WN = w;
-            if isequal(w,'s'), WN = 'c'; end%if
-            if isequal(w,'i'), WN = 'o'; end%if
-            if isequal(w,'j'), WN = 'x'; end%if
+            if isequal(w,'c'), NF(7) = 0; end%if
             PR = mean(pr,2);
             DP = @(x,y) sum(x .* y',2);  % Diagonal-only pseudo-kernel
-            TX = sqrt(abs(emgr(f,g,s,t,WN,PR,NF,ut,us,xs,um,xm,DP)));
+            TX = sqrt(abs(emgr(f,g,s,t,w,PR,NF,ut,us,xs,um,xm,DP)));
         end%if
 
-        TX(abs(TX) < (8*eps)) = 1.0;
+        TX(abs(TX) < sqrt(eps)) = 1.0;
         if isequal(w,'y'), tx = TX; else, tx = 1.0; end%if
         f = @(x,u,p,t) f(TX .* x,u,p,t) ./ TX;
         g = @(x,u,p,t) g(TX .* x,u,p,t) ./ tx;
         xs = xs ./ TX;
-        nf(6) = 0;
     end%if
 
-    % Non-symmetric cross Gramian and average observability Gramian
-    if nf(7), R = 1; else, R = Q; end%if
+    % State Gramian Variant
+    if nf(7)
+        G = g;                 % Output Controllability Gramian
+        R = 1;                 % Average Observability Cache Size
+        oavg = @(y) sum(y,2);  % Average Observability Gramian
+        S = 0;                 % Non-Symmetric (Linear) Cross Gramian
+    else
+        G = @id;               % Regular Controllability Gramian
+        R = Q;                 % Regular Observability Cache Size
+        oavg = @(y) y(:);      % Regular Observability Gramian
+        S = 1;                 % Regular (Linear) Cross Gramian
+    end%if
 
-    % Extra input for control explicit observability
+    % Extra Input (for control explicit observability)
     if nf(8), up = @(t) us + ut(t); else, up = @(t) us; end%if
 
     % Scale Sampling
@@ -252,6 +257,8 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% GRAMIAN COMPUTATION
 
+    W = 0;    % Initialize gramian variable
+
     switch w  % Empirical system gramian types
 
         % Common Layout:
@@ -264,22 +271,20 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 
         case 'c'
 
-            W = 0;  % Initialize gramian variable
             for k = 1:K
                 for c = 1:C
-                    for m = find(um(:,c))'  % parfor
-                        em = sparse(m,1,um(m,c),M + P,1);
-                        umc = @(t) up(t) + ut(t) .* em(1:M);
-                        pmc = pr(:,k) + em(M + 1:end);
-                        if nf(7)  % Output controllability gramian
-                            x = ODE(f,g,t,xs,umc,pmc);
-                        else      % Regular controllability gramian
-                            x = ODE(f,@id,t,xs,umc,pmc);
+                    for m = 1:M  % parfor
+                        if not(um(m,c) == 0)
+                            em = sparse(m,1,um(m,c),M + P,1);
+                            emc = em(1:M);
+                            umc = @(t) up(t) + ut(t) .* emc;
+                            pmc = pr(:,k) + em(M + 1:end);
+                            x = ODE(f,G,t,xs,umc,pmc);
+                            x = x .* wei(x);
+                            x = x - avg(x,G(xs,us,pmc,0));
+                            x = x ./ um(m,c);
+                            W = W + dp(x,x');
                         end%if
-                        x = x .* wei(x);
-                        x = x - avg(x,xs);
-                        x = x ./ um(m,c);
-                        W = W + dp(x,x');
                     end%for
                 end%for
             end%for
@@ -290,22 +295,19 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 
         case 'o'
 
-            W = 0;               % Initialize gramian variable
-            o = zeros(R*nt, A);  % Pre-allocate observability matrix
+            o = zeros(R*nt, A);  % Pre-allocate observability cache
             for k = 1:K
                 for d = 1:D
-                    for n = find(xm(:,d))'  % parfor
-                        en = sparse(n,1,xm(n,d),N + P,1);
-                        xnd = xs + en(1:N);
-                        pnd = pr(:,k) + en(N + 1:end);
-                        y = ODE(f,g,t,xnd,up,pnd);
-                        y = y .* wei(y);
-                        y = y - avg(y,g(xs,us,pnd,0));
-                        y = y ./ xm(n,d);
-                        if nf(7)  % Average observability gramian
-                            o(:,n) = sum(y,1)';
-                        else      % Regular observability gramian
-                            o(:,n) = y(:);
+                    for n = 1:A  % parfor
+                        if not(xm(n,d) == 0)
+                            en = sparse(n,1,xm(n,d),N+P,1);
+                            xnd = xs + en(1:N);
+                            pnd = pr(:,k) + en(N+1:end);
+                            y = ODE(f,g,t,xnd,up,pnd);
+                            y = y .* wei(y);
+                            y = y - avg(y,g(xs,us,pnd,0));
+                            y = y ./ xm(n,d);
+                            o(:,n) = oavg(y');
                         end%if
                     end%for
                     W = W + dp(o',o);
@@ -323,7 +325,7 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
             i0 = 1;  % Start column index
             i1 = A;  % Final column index
 
-            % Partitioned cross gramian
+            % Partitioned Cross Gramian
             if nf(11) > 0
                 sp = round(nf(11));  % Partition size
                 ip = round(nf(12));  % Partition index
@@ -334,39 +336,36 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                     i1 = min(i0 + sp - 1,A);
                 end%if
 
-                if (ip < 1) || (i0 > i1) || (i0 < 0), W = 0; return; end%if
+                if (ip < 1) || (i0 > i1) || (i0 < 0)
+                    return;
+                end%if
             end%if
 
-            W = 0;                      % Initialize gramian variable
-            o = zeros(nt, i1-i0+1, R);  % Pre-allocate observability 3-tensor
+            o = zeros(R*nt, i1-i0+1);  % Pre-allocate observability cache
             for k = 1:K
                 for d = 1:D
-                    for n = find(xm(i0:i1,d))'
-                        en = sparse(i0-1+n,1,xm(i0-1+n,d),N+P,1);
-                        xnd = xs + en(1:N);
-                        pnd = pr(:,k) + en(N + 1:end);
-                        y = ODE(f,g,t,xnd,up,pnd);
-                        y = y .* wei(y);
-                        y = y - avg(y,g(xs,us,pnd,0));
-                        y = y ./ xm(i0 - 1 + n,d);
-                        if nf(7)  % Non-symmetric cross gramian
-                            o(:,n,1) = sum(y,1)';
-                        else      % Regular cross gramian
-                            o(:,n,:) = y';
+                    for n = 1:i1-i0+1  % parfor
+                        if not(xm(n,d) == 0)
+                            en = sparse(i0+n-1,1,xm(i0+n-1,d),N+P,1);
+                            xnd = xs + en(1:N);
+                            pnd = pr(:,k) + en(N+1:end);
+                            y = ODE(f,g,t,xnd,up,pnd);
+                            y = y .* wei(y);
+                            y = y - avg(y,g(xs,us,pnd,0));
+                            y = y ./ xm(i0+n-1,d);
+                            o(:,n) = oavg(y');
                         end%if
                     end%for
                     for c = 1:C  % parfor
-                        for m = find(um(:,c))'
-                            em = sparse(m,1,um(m,c),M,1);
-                            umc = @(t) us + ut(t) .* em;
-                            x = ODE(f,@id,t,xs,umc,pr(:,k));
-                            x = x .* wei(x);
-                            x = x - avg(x,xs);
-                            x = x ./ um(m,c);
-                            if nf(7)  % Non-symmetric cross gramian
-                                W = W + dp(x,o(:,:,1));
-                            else      % Regular cross gramian
-                                W = W + dp(x,o(:,:,m));
+                        for m = 1:M
+                            if not(um(m,c) == 0)
+                                em = sparse(m,1,um(m,c),M,1);
+                                umc = @(t) us + ut(t) .* em;
+                                x = ODE(f,@id,t,xs,umc,pr(:,k));
+                                x = x .* wei(x);
+                                x = x - avg(x,xs);
+                                x = x ./ um(m,c);
+                                W = W + dp(x,o(nt*(S*(m-1)) + (1:nt),:));
                             end%if
                         end%for
                     end%for
@@ -382,35 +381,32 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
             assert(isequal(M,Q) || nf(7),' emgr: non-square system!');
             assert(isequal(C,size(vm,2)),' emgr: scale count mismatch!');
 
-            W = 0;               % Initialize gramian variable
-            a = cell(1,R);       % Initialize adjoint cache
-            a{1} = zeros(N,nt);  % Pre-allocate accumulator
+            a = zeros(N*nt,Q);  % Pre-allocate adjoint cache
             for k = 1:K
                 for c = 1:C
-                    for q = find(vm(:,c))'
-                        em = sparse(q,1,vm(q,c),Q,1);
-                        vqc = @(t) us + ut(t) .* em;
-                        z = ODE(g,@id,t,xs,vqc,pr(:,k));
-                        z = z .* wei(z);
-                        z = z - avg(z,xs);
-                        z = z ./ vm(q,c);
-                        if nf(7)  % Non-symmetric cross gramian
-                            a{1} = a{1} + z;
-                        else      % Regular cross gramian
-                            a{q} = z;
+                    for q = 1:Q  % parfor
+                        if not(vm(q,c) == 0)
+                            em = sparse(q,1,vm(q,c),Q,1);
+                            vqc = @(t) us + ut(t) .* em;
+                            z = ODE(g,@id,t,xs,vqc,pr(:,k));
+                            z = z .* wei(z);
+                            z = z - avg(z,xs);
+                            z = z ./ vm(q,c);
+                            a(:,q) = z(:);
                         end%if
                     end%for
-                    for m = find(um(:,c))'  % parfor
-                        em = sparse(m,1,um(m,c),M,1);
-                        umc = @(t) us + ut(t) .* em;
-                        x = ODE(f,@id,t,xs,umc,pr(:,k));
-                        x = x .* wei(x);
-                        x = x - avg(x,xs);
-                        x = x ./ um(m,c);
-                        if nf(7)  % Non-symmetric cross gramian
-                            W = W + dp(x,a{1}');
-                        else      % Regular cross gramian
-                            W = W + dp(x,a{m}');
+                    if nf(7)
+                        a(:,1) = sum(a,2);
+                    end%if
+                    for m = 1:M  % parfor
+                        if not(um(m,c) == 0)
+                            em = sparse(m,1,um(m,c),M,1);
+                            umc = @(t) us + ut(t) .* em;
+                            x = ODE(f,@id,t,xs,umc,pr(:,k));
+                            x = x .* wei(x);
+                            x = x - avg(x,xs);
+                            x = x ./ um(m,c);
+                            W = W + dp(x,reshape(a(:,1+S*(m-1)),N,nt)');
                         end%if
                     end%for
                 end%for
@@ -422,9 +418,9 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
 
         case 's'
 
-            % Controllability gramian
+            % Controllability Gramian
             [pr,pm] = pscales(pr,nf(9),C);
-            W{1} = emgr(f,g,s,t,'c',pr,nf,ut,us,xs,um,xm,dp);
+            WC = emgr(f,g,s,t,'c',pr,nf,ut,us,xs,um,xm,dp);
 
             if not(nf(10))  % Input-state sensitivty gramian
                 DP = @(x,y) sum(sum(x .* y'));       % Trace pseudo-kernel
@@ -434,53 +430,60 @@ function W = emgr(f,g,s,t,w,pr,nf,ut,us,xs,um,xm,dp)
                 DP = @(x,y) abs(sum(y(:) .* Y(:)));  % Custom pseudo-kernel
             end%if
 
-            V = zeros(P,1);
+            % (Diagonal) Sensitivity Gramian
+            WS = zeros(P,1);
             for p = 1:P  % parfor
-                pmp = sparse(M + p,1:C,pm(p,:),M + P,C);
-                V(p) = emgr(f,g,s,t,'c',pr,nf,ut,us,xs,pmp,xm,DP);
+                pp = repmat(pr,[1,size(pm,2)]);
+                pp(p,:) = pp(p,:) + pm(p,:);
+                WS(p) = emgr(f,g,s,t,'c',pp,nf,ut,us,xs,um,xm,DP);
             end%for
-            W{2} = V; % (Diagonal) Sensitivity gramian
+            W = {WC,WS};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Empirical Identifiability Gramian
 
         case 'i'
 
-            % Augmented observability gramian
+            % Augmented Observability Gramian
             [pr,pm] = pscales(pr,nf(9),D);
             V = emgr(f,g,s,t,'o',pr,nf,ut,us,xs,um,[xm;pm],dp);
 
-            W{1} = V(1:N, 1:N);    % Observability gramian
+            WO = V(1:N, 1:N);      % Observability gramian
             WM = V(1:N, N+1:N+P);  % Mixed block
 
-            % Identifiability gramian
+            % Identifiability Gramian
             if not(nf(10))  % Schur-complement via approximate inverse
-                W{2} = V(N+1:N+P, N+1:N+P) - (WM' * ainv(W{1}) * WM);   
+                WI = V(N+1:N+P, N+1:N+P) - (WM' * ainv(WO) * WM);
             else            % Coarse Schur-complement via zero
-                W{2} = V(N+1:N+P, N+1:N+P);
+                WI = V(N+1:N+P, N+1:N+P);
             end%if
+            W = {WO,WI};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Empirical Joint Gramian
 
         case 'j'
 
-            % Joint gramian
+            % Joint Gramian
             [pr,pm] = pscales(pr,nf(9),D);
             V = emgr(f,g,s,t,'x',pr,nf,ut,us,xs,um,[xm;pm],dp);
 
-            % Joint gramian partition
-            if nf(11), W = V; return; end%if            
+            % Joint Gramian Partition
+            if nf(11)
+                W = V;
+                return;
+            end%if
 
-            W{1} = V(1:N, 1:N);    % Cross gramian
+            WX = V(1:N, 1:N);      % Cross gramian
             WM = V(1:N, N+1:N+P);  % Mixed block
 
-            % Cross-identifiability gramian
+            % Cross-Identifiability Gramian
             if not(nf(10))  % Schur-complement via approximate inverse
-                W{2} = 0.5 * (WM' * ainv(W{1} + W{1}') * WM);
+                WI = 0.5 * (WM' * ainv(WX + WX') * WM);
             else            % Coarse Schur-complement via identity
-                W{2} = 0.5 * (WM' * WM);                
+                WI = 0.5 * (WM' * WM);
             end%if
+            W = {WX,WI};
 
         otherwise
 
@@ -575,7 +578,6 @@ function y = ssp2(f,g,t,x0,u,p)
 
     dt = t(1);
     nt = floor(t(2) / dt) + 1;
-
     y0 = g(x0,u(0),p,0);
     y = zeros(numel(y0),nt);  % Pre-allocate trajectory
     y(:,1) = y0;

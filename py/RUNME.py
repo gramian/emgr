@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 """
   project: emgr ( https://gramian.de )
-  version: 5.8.py (2020-05-01)
+  version: 5.9.py (2021-01-21)
   authors: Christian Himpe (0000-0003-2194-6754)
   license: BSD-2-Clause License (opensource.org/licenses/BSD-2-Clause)
   summary: RUNME (Minimal emgr test script)

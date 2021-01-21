@@ -1,6 +1,6 @@
 function estTest(t)
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.8 (2020-05-01)
+%%% version: 5.9 (2021-01-21)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: estTest - test est functionality
@@ -27,6 +27,8 @@ function estTest(t)
                  'Tf',1.0);
 
     switch lower(t)
+
+        case 'matrix_equation', matrix_equation(sys);
 
         case 'singular_values', singular_values(sys);
 
@@ -62,6 +64,47 @@ function estTest(t)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% TEST MATRIX EQUATION
+
+function matrix_equation(sys)
+
+    task = struct('type','matrix_equation');
+
+    method = {'lyapunov', ...
+              'sylvester'};
+
+    config = struct('linearity','linear');
+
+    disp([char(10),'Task: ',task.type,char(10)]);
+
+    er = zeros(numel(method),1);
+
+    for k = 1:numel(method)
+
+        name{k} = [method{k}];
+
+        disp(['Testing: ',name{k}]);
+
+        r = est(sys,setfield(task,'method',method{k}),config);
+
+        s = est(setfield(sys,'dt',sys.dt * 0.1),setfield(task,'method',method{k}),config);
+
+        t = est(setfield(sys,'dt',sys.dt * 0.01),setfield(task,'method',method{k}),config);
+
+        err{k} = [norm(r - t,'Fro'),norm(s - t,'Fro')];
+
+        EOC(k,1) = log10(norm(r - t,'Fro') / norm(s - t,'Fro'));
+    end%for
+
+    EOC
+
+    figure('Name',task.type,'NumberTitle','off');
+    set(gca,'YScale','log','YGrid','on','XLim',[1,2],'NextPlot','add','ColorOrder',lines12);
+    cellfun(@(c) plot(c,'LineWidth',3),err);
+    legend(name(:));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TEST SINGULAR VALUES
 
 function singular_values(sys)
@@ -88,9 +131,8 @@ function singular_values(sys)
 
             disp(['Testing: ',name{k,l}]);
 
-            [r,s] = est(sys, ...
-                        setfield(task,'method',method{k}), ...
-                        setfield(config,'linearity',linearity{l}));
+            [r,s] = est(sys,setfield(task,'method',method{k}), ...
+                            setfield(config,'linearity',linearity{l}));
             sv{k,l} = r;
             ms(k,l) = s;
         end%for
@@ -99,7 +141,7 @@ function singular_values(sys)
     MORscore = ms
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','YGrid','on','XLim',[1,sys.N],'NextPlot','add');
+    set(gca,'YScale','log','YGrid','on','XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),sv);
     legend(name(:));
 end
@@ -114,7 +156,9 @@ function model_reduction(sys)
     method = {'poor_man', ...
               'dominant_subspaces', ...
               'approx_balancing', ...
-              'balanced_truncation'};
+              'balanced_pod', ...
+              'balanced_truncation' ...
+              'dmd_galerkin'};
 
     variant = {'observability', ...
                'minimality'};
@@ -128,7 +172,7 @@ function model_reduction(sys)
     sv = cell(numel(method),numel(variant),numel(linearity));
     ms = zeros(numel(method),numel(variant),numel(linearity));
 
-    for k = 1:numel(method)   
+    for k = 1:numel(method)
         for l = 1:numel(variant)
             for m = 1:numel(linearity)
 
@@ -136,9 +180,8 @@ function model_reduction(sys)
 
                 disp(['Testing: ',name{k,l,m}]);
 
-                [r,s] = est(sys, ...
-                        setfield(setfield(task,'method',method{k}),'variant',variant{l}), ...
-                        setfield(setfield(config,'linearity',linearity{m}),'test',true));
+                [r,s] = est(sys,setfield(setfield(task,'method',method{k}),'variant',variant{l}), ...
+                                setfield(setfield(config,'linearity',linearity{m}),'test',true));
 
                 mr{k,l,m} = r;
                 ms(k,l,m) = s;
@@ -150,13 +193,14 @@ function model_reduction(sys)
     MORscore_DS = squeeze(ms(2,:,:))
     MORscore_AB = squeeze(ms(3,:,:))
     MORscore_BT = squeeze(ms(4,:,:))
+    MORscore_DG = squeeze(ms(5,:,:))
 
     figure('Name',task.type,'NumberTitle','off');
     yl = {'L_1','L_2','L_\infty','L_0'};
     for k = 1:numel(method)
         for l = 1:4
             subplot(4,numel(method),(l-1)*numel(method)+k);
-            set(gca,'YScale','log','Ytick',[1e-16,1e-8,1e-0],'YGrid','on','XLim',[1,sys.N-1],'YLim',[1e-16,1.1],'NextPlot','add');
+            set(gca,'YScale','log','Ytick',[1e-16,1e-8,1e-0],'YGrid','on','XLim',[1,sys.N-1],'YLim',[1e-16,1.1],'NextPlot','add','ColorOrder',lines12);
             cellfun(@(c) plot(c{l+2},'LineWidth',3),mr(k,:,:));
             if isequal(k,1), ylabel(yl{l}); end%if
             if isequal(l,1), title(method{k},'Interpreter','none'); end%if
@@ -199,7 +243,7 @@ function parameter_reduction(sys)
     yl = {'L_1','L_2','L_\infty','L_0'};
     for l = 1:4
         subplot(4,1,l);
-        set(gca,'YScale','log','Ytick',[1e-16,1e-8,1],'YGrid','on','XLim',[1,sys.N-1],'YLim',[1e-16,1.1],'NextPlot','add');
+        set(gca,'YScale','log','Ytick',[1e-16,1e-8,1],'YGrid','on','XLim',[1,sys.N-1],'YLim',[1e-16,1.1],'NextPlot','add','ColorOrder',lines12);
         for k = 1:numel(method)
             plot(pr{k}{l+2},'LineWidth',3);
         end%for
@@ -217,6 +261,7 @@ function combined_reduction(sys)
     variant = {'poor_man', ...
                'dominant_subspaces', ...
                'approx_balancing', ...
+               'balanced_pod', ...
                'balanced_truncation'};
 
     method = {'observability', ...
@@ -226,7 +271,7 @@ function combined_reduction(sys)
 
     disp([char(10),'Task: ',task.type,char(10)]);
 
-    for k = 1:numel(method)   
+    for k = 1:numel(method)
         for l = 1:numel(variant)
 
             disp(['Testing: ',method{k},' (',variant{l},')']);
@@ -262,13 +307,13 @@ function decentralized_control(sys)
     task = struct('type','decentralized_control');
 
     method = {'relative_gain_array', ...
-              'input_output_pairing', ...
+              'io_pairing', ...
               'hardy_inf', ...
               'participation_matrix', ...
               'hankel_interaction', ...
               'rms_hsv', ...
               'hardy_2', ...
-              'input_output_coherence'};
+              'io_coherence'};
 
     linearity = {'linear','nonlinear'};
 
@@ -281,9 +326,8 @@ function decentralized_control(sys)
 
             disp(['Testing: ',method{k},' (',linearity{l},')']);
 
-            dc{l,k} = est(sys, ...
-                          setfield(task,'method',method{k}), ...
-                          setfield(config,'linearity',linearity{l}));
+            dc{l,k} = est(sys,setfield(task,'method',method{k}), ...
+                              setfield(config,'linearity',linearity{l}));
         end%for
     end%for
 
@@ -317,16 +361,15 @@ function state_sensitivity(sys)
 
             disp(['Testing: ',method{k},' (',linearity{l},')']);
 
-            ds{l,k} = est(sys, ...
-                          setfield(task,'method',method{k}), ...
-                          setfield(config,'linearity',linearity{l}));
+            ds{l,k} = est(sys,setfield(task,'method',method{k}), ...
+                              setfield(config,'linearity',linearity{l}));
         end%for
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
     for k = 1:numel(linearity)
         subplot(1,numel(linearity),k);
-        set(gca,'XLim',[1,sys.N],'NextPlot','add');
+        set(gca,'XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
         cellfun(@(c) plot(c,'LineWidth',3), ds(k,:));
     end%for
 end
@@ -358,7 +401,7 @@ function parameter_sensitivity(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','XLim',[1,sys.N],'NextPlot','add');
+    set(gca,'YScale','log','XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),ps);
 end
 
@@ -386,7 +429,7 @@ function parameter_identifiability(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','XLim',[1,sys.N],'NextPlot','add');
+    set(gca,'YScale','log','XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),pj);
 end
 
@@ -408,17 +451,15 @@ function uncertainty_quantification(sys)
 
         disp(['Testing: ',method{k}]);
 
-        uq{k} = est(sys, ...
-                    setfield(task,'method',method{k}), ...
-                    config);
+        uq{k} = est(sys,setfield(task,'method',method{k}),config);
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
     subplot(1,2,1);
-    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add');
+    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
     plot(uq{1}./max(uq{1}),'LineWidth',3);
     subplot(1,2,2);
-    set(gca,'XLim',[1,sys.Q],'YScale','log','NextPlot','add');
+    set(gca,'XLim',[1,sys.Q],'YScale','log','NextPlot','add','ColorOrder',lines12);
     plot(uq{2}./max(uq{2}),'LineWidth',3);
 end
 
@@ -448,7 +489,7 @@ function nonlinearity_quantification(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'XLim',[1,10],'YScale','log','NextPlot','add');
+    set(gca,'XLim',[1,10],'YScale','log','NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),nq);
 end
 
@@ -465,7 +506,9 @@ function gramian_index(sys)
               'energy_fraction', ...
               'operator_norm', ...
               'sigma_max', ...
+              'log_det', ...
               'storage_efficiency', ...
+              'unobservability_index', ...
               'performance_index'};
 
     variant = {'controllability', ...
@@ -487,9 +530,7 @@ function gramian_index(sys)
 
             disp(['Testing: ',method{k},'(',variant{l},')']);
 
-            gi{k,l} = est(sys, ...
-                            setfield(setfield(task,'method',method{k}),'variant',variant{l}), ...
-                            config);
+            gi{k,l} = est(sys,setfield(setfield(task,'method',method{k}),'variant',variant{l}),config);
         end%for
     end%for
 
@@ -497,7 +538,7 @@ function gramian_index(sys)
     for l = 1:numel(variant)
 
         subplot(1,numel(variant),l);
-        set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add');
+        set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
         cellfun(@(c) plot(c./max(c),'LineWidth',3),gi(:,l));
         title(variant{l},'Interpreter','None');
         legend(method,'Location','SouthOutside','Interpreter','None');
@@ -537,27 +578,25 @@ function system_index(sys)
 
         disp(['Testing: ',method{k}]);
 
-        si{k} = est(sys, ...
-                    setfield(task,'method',method{k}), ...
-                    config);
+        si{k} = est(sys,setfield(task,'method',method{k}),config);
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
 
     subplot(1,3,1);
-    set(gca,'XLim',[1,sys.N],'NextPlot','add');
+    set(gca,'XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
     plot(si{1},'LineWidth',3);
     title('Discrete Indicators','Interpreter','None');
     legend(method(1),'Location','SouthOutside','Interpreter','None');
 
     subplot(1,3,2);
-    set(gca,'XLim',[1,sys.N],'NextPlot','add');
+    set(gca,'XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),si(2:3));
     title('Linear Indicators','Interpreter','None');
     legend(method(2:3),'Location','SouthOutside','Interpreter','None');
 
     subplot(1,3,3);
-    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add');
+    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),si(4:end));
     title('Logarithmic Indicators','Interpreter','None');
     legend(method(4:end),'Location','SouthOutside','Interpreter','None');
@@ -590,13 +629,11 @@ function system_norm(sys)
 
         disp(['Testing: ',method{k}]);
 
-        sn{k} = est(sys, ...
-                    setfield(task,'method',method{k}), ...
-                    config);
+        sn{k} = est(sys,setfield(task,'method',method{k}),config);
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add');
+    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),sn);
     title('Norms','Interpreter','None');
     legend(method,'Location','SouthOutside','Interpreter','None');
@@ -621,14 +658,35 @@ function tau_function(sys)
 
         disp(['Testing: ',name{l}]);
 
-        au{l} = est(sys, ...
-                    task, ...
-                    setfield(config,'linearity',linearity{l}));
+        au{l} = est(sys,task,setfield(config,'linearity',linearity{l}));
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YGrid','on','NextPlot','add');
+    set(gca,'YGrid','on','NextPlot','add','ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),au);
     legend(name(:));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% HELPER FUNCTION
+
+function r = lines12(n)
+
+    if nargin<1 || isempty(n), n = 12; end%if
+
+    x = [166,206,227; ...
+         31,120,180;  ...
+         178,223,138; ...
+         51,160,44;   ...
+         251,154,153; ...
+         227,26,28;   ...
+         253,191,111; ...
+         255,127,0;   ...
+         202,178,214; ...
+         106,61,154; ...
+         255,255,153; ...
+         177,89,40]./256;
+
+    r = x(rem(0:(n-1),size(x,1))+1,:);
 end
 

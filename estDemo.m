@@ -1,6 +1,6 @@
 function estDemo(t)
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.8 (2020-05-01)
+%%% version: 5.9 (2021-01-21)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: estDemo - run emgr examples via est
@@ -18,6 +18,8 @@ function estDemo(t)
         case 'rqo', rqo(); % Random Diagonal System with Quadratic Output
 
         case 'lte', lte(); % Linear Transport Equation
+
+        case 'aps', aps(); % All Pass System
 
         case 'fbc', fbc(); % Five-Body Choreography
 
@@ -37,11 +39,11 @@ function hnm()
     disp(['Example: ',name]);
 
     sys.M = 1;									% Number of inputs
-    sys.N = 64;									% Number of states
+    sys.N = 64;								% Number of states
     sys.Q = 1;									% Number of outputs
 
     A = sqrt(sys.N) * gallery('tridiag',sys.N,1,-2,1);				% System matrix
-    B = tanh(1:sys.N)';								% Input matrix
+    B = tanh(1:sys.N)';							% Input matrix
     C = B'; 									% Output matrix
 
     sys.f = @(x,u,p,t) A * tanh(p.*x) + B * u;					% Vector field
@@ -93,16 +95,16 @@ function isp()
     randn('seed',1009);
 
     sys.M = 1;									% Number of inputs
-    sys.N = 64;									% Number of states
+    sys.N = 64;								% Number of states
     sys.Q = 1;									% Number of outputs
 
     a = 1e-1;									% Minimum cross gramian singular value
     b = 1e+1;									% Maximum cross gramian singular value
     WX = -diag( a*((b/a).^rand(sys.N,1)) );					% Balanced cross gramian
     B = randn(sys.N,sys.M);							% Balanced input and output matrix
-    A = sylvester(WX,WX,B*B') - sqrt(eps)*speye(sys.N);				% Balanced system matrix
+    A = sylvester(WX,WX,B*B') - sqrt(eps)*speye(sys.N);			% Balanced system matrix
     Q = orth(randn(sys.N,sys.N));						% Unbalancing transformation
-    A = Q'*A*Q;									% Unbalanced system matrix
+    A = Q'*A*Q;								% Unbalanced system matrix
     B = Q'*B;									% Unbalanced input matrix
     C = B';									% Unbalanced output matrix
 
@@ -147,7 +149,7 @@ function fss()
                        num2cell([xi;omega],1),'UniformOutput',false);
     A = blkdiag(A_k{:});							% System matrix
     B = kron(rand(K,sys.M),[1;0]);						% Input matrix
-    C = 10.0 * rand(sys.Q,2*K);							% Output matrix
+    C = 10.0 * rand(sys.Q,2*K);						% Output matrix
 
     sys.f = @(x,u,p,t) A*x + B*u;						% Vector field
     sys.g = @(x,u,p,t) C*x;							% Output functional
@@ -179,7 +181,7 @@ function nrc()
     disp(['Example: ',name]);
 
     sys.M = 1;									% Number of inputs
-    sys.N = 64;									% Number of states
+    sys.N = 64;								% Number of states
     sys.Q = 1;									% Number of outputs
 
     g = @(x) exp(x) + x - 1.0;							% Diode nonlinearity
@@ -282,7 +284,42 @@ function lte()
 
     MORscore = S
 
-    errorplot('Linear Transport Equation',R{1},R{3},R{4},R{5},R{6});
+    errorplot(name,R{1},R{3},R{4},R{5},R{6});
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% ALL PASS SYSTEM
+
+function aps()
+
+    name = 'All Pass System';
+
+    disp(['Example: ',name]);
+
+    sys.M = 1;									% Number of inputs
+    sys.N = 64;								% Number of states
+    sys.Q = 1;									% Number of outputs
+
+    A = gallery('tridiag',sys.N,-1,0,1); A(1,1) = -0.5;			% System matrix
+    B = sparse(1,1,1,sys.N,1);							% Input matrix
+    C = -B';									% Output matrix
+
+    sys.f = @(x,u,p,t) A*x + B*u;						% Vector field
+    sys.g = @(x,u,p,t) C*x;							% Output functional
+    sys.dt = 0.01;								% Time step
+    sys.Tf = 1.0;								% Time horizon
+
+    task.type = 'model_reduction';
+    task.method = 'dmd_galerkin';
+    task.variant = 'controllability';
+
+    config.test = true;
+
+    [R,S] = est(sys,task,config);
+
+    MORscore = S
+
+    errorplot(name,R{1},R{3},R{4},R{5},R{6});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -304,7 +341,7 @@ function fbc()
     sys.dt = 0.01;								% Time step
     sys.Tf = 1.0;								% Time horizon
     sys.p = ones(n,1);								% Parameters
-    sys.x0 = [1.449;  0.0;    0.400; -0.345; -1.125;...				% Initial condition
+    sys.x0 = [1.449;  0.0;    0.400; -0.345; -1.125;...			% Initial condition
               0.448; -1.125; -0.448;  0.400;  0.345;...
               0.0;   -0.922; -1.335;  0.810; -0.919;...
              -0.349;  0.919; -0.349;  1.335;  0.810];
@@ -314,7 +351,7 @@ function fbc()
     task.variant = 'observability';
 
     config.centering = 'mean';
-    config.kernel = 'velocity';
+    config.kernel = @(x,y) x(size(x,1)/2+2:end,:) * pinv(y(:,size(y,2)/2+1:end-1)'); % velocity dmd kernel
     config.test = true;
 
     [R,S] = est(sys,task,config);
@@ -333,7 +370,7 @@ function qso()
 
     disp(['Example: ',name]);
 
-    sys.M = 0;									% Number of inputs
+    sys.M = 1;									% Number of inputs
     sys.N = 4;									% Number of states
     sys.Q = 3;									% Number of outputs
     sys.f = @orbit;								% Vector field
@@ -371,10 +408,10 @@ function errorplot(name,dims,l0,l1,l2,l8)
 
     figure('Name',name,'NumberTitle','off');
     set(gca,'XLim',[dims(1),dims(end)],'YLim',[1e-16,1.1],'YScale','log','Ytick',[1e-16,1e-8,1e-0],'YGrid','on','NextPlot','add');
-    plot(dims,l1,'r','LineWidth',3);
-    plot(dims,l2,'g','LineWidth',3);
-    plot(dims,l8,'b','LineWidth',3);
-    plot(dims,l0,'k--','LineWidth',3);
+    plot(dims,l1+eps,'r','LineWidth',3);
+    plot(dims,l2+eps,'g','LineWidth',3);
+    plot(dims,l8+eps,'b','LineWidth',3);
+    plot(dims,l0+eps,'k--','LineWidth',3);
     legend('L_1 Error','L_2 Error','L_\infty Error','L_0 Error','location','NorthEast');
     xlabel('State Dimension');
     ylabel('Relative Error');
@@ -392,7 +429,7 @@ function a = acc(x,u,p,t) % N-body acceleration vector field component
         Z = p'./(sqrt(1e-6+(sum(B.^2))).^3);
         B = bsxfun(@times,B,Z);
         y(:,n) = sum(B,2);
-    end
+    end%for
 
     a = y(:);
 end

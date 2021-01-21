@@ -1,5 +1,5 @@
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.8 (2020-05-01)
+%%% version: 5.9 (2021-01-21)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: emgrTest - run all system tests
@@ -8,6 +8,7 @@ RUNME;
 
 disp(' ');
 
+estTest('matrix_equation');
 estTest('singular_values');
 estTest('model_reduction');
 estTest('parameter_reduction');
@@ -30,13 +31,15 @@ estDemo('isp');
 estDemo('fss');
 estDemo('nrc');
 estDemo('rqo');
+estDemo('aps');
 estDemo('lte');
 estDemo('fbc');
 estDemo('qso');
 
 disp(' ');
 
-estProbe([],'controllability','linear')
-estProbe([],'minimality','linear')
-estProbe([],'observability','nonlinear')
-estProbe([],'minimality','nonlinear')
+%estProbe([],'controllability','linear')
+%estProbe([],'minimality','linear')
+%estProbe([],'observability','nonlinear')
+%estProbe([],'minimality','nonlinear')
+
