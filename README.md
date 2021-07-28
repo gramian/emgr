@@ -82,7 +82,7 @@ Successfully tested on:
 
 ## Citation
 
-* C. Himpe (2020). emgr -- EMpirical GRamian Framework (Version 5.9) [Software].
+* C. Himpe (2021). emgr -- EMpirical GRamian Framework (Version 5.9) [Software].
   https://gramian.de [doi:10.5281/zenodo.4454679](https://doi.org/10.5281/zenodo.4454679)
 
 ## Getting Started
