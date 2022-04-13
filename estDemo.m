@@ -1,6 +1,6 @@
 function estDemo(t)
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.9 (2021-01-21)
+%%% version: 5.99 (2022-04-13)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: estDemo - run emgr examples via est
@@ -62,6 +62,7 @@ function hnm()
     config.extra_input = 'yes';
     config.skip_x = 3;
     config.skip_p = 3;
+    config.ptype = 'exact_schur';
 
     [R,S] = est(sys,task,config);
 
@@ -261,7 +262,7 @@ function lte()
     sys.N = 256;								% Number of states
     sys.Q = 1;									% Number of outputs
 
-    A = spdiags(sys.N*ones(sys.N,1)*[1,-1],[-1,0],sys.N,sys.N);			% System matrix
+    A = spdiags(sys.N*ones(sys.N,1)*[1,-1],[-1,0],sys.N,sys.N);		% System matrix
     B = sparse(1,1,sys.N,sys.N,1);						% Input matrix
     C = sparse(1,sys.N,1.0,1,sys.N);						% Output matrix
 
@@ -397,7 +398,11 @@ function qso()
     RP = est(sys,task,config);
 
     figure('Name',name,'NumberTitle','off');
-    set(gca,'XLim',[0,8],'XTickLabel',{' ','E','L','Q','a','e','\mu','\epsilon',' '},'YScale','log','YGrid','on','NextPlot','add');
+    set(gca,'XLim',[0,8],'YLim',[1e-2,1e2], ...
+            'XTickLabel',{' ','E','L','Q','a','e','\mu','\epsilon',' '}, ...
+            'YScale','log', ...
+            'YGrid','on', ...
+            'NextPlot','add');
     bar([RF,RP]);
 end
 

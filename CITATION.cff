@@ -1,15 +1,19 @@
-cff-version: 1.1.0
+cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: Himpe
     given-names: Christian
     orcid: https://orcid.org/0000-0003-2194-6754
 title: "emgr - EMpirical GRamian Framework"
-version: 5.9
-date-released: 2021-01-21
-doi: 10.5281/zenodo.4454679
+version: 5.99
+date-released: 2022-04-13
+doi: 10.5281/zenodo.6457616
 license: BSD-2-Clause
 url: https://gramian.de
 abstract: "Empirical system Gramians for (nonlinear) input-output systems."
-keywords: Controllability, Observability, Empirical Gramians, Model Reduction, Model Order Reduction
-
+keywords:
+  - "Controllability"
+  - "Observability"
+  - "Empirical Gramians"
+  - "Model Reduction"
+  - "Model Order Reduction"

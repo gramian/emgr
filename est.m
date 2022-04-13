@@ -1,11 +1,11 @@
 function [r,m] = est(sys,task,config)
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.9 (2021-01-21)
+%%% version: 5.99 (2022-04-13)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: est - empirical system theory (emgr frontend)
 
-    global ODE;    ODE = [];							% Custom integrator handle
+    %global ODE;    ODE = [];							% Custom integrator handle
     global STAGES; STAGES = 3;							% Default integrator configuration
     global RANK;   RANK = Inf;							% Maximum rank of decompositions
 
@@ -23,7 +23,7 @@ function [r,m] = est(sys,task,config)
     persistent GX;
 
     sysdim = [sys.M, sys.N, sys.Q];						% System dimension
-    timdis = [sys.dt, sys.Tf];							% Time discretizations
+    tdisc = [sys.dt, sys.Tf];							% Time discretizations
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% DEFAULT VALUES
@@ -66,8 +66,10 @@ function [r,m] = est(sys,task,config)
 
     gtimes = @(m) m * m';
 
-    dp = match(config,'kernel',[],{'sum',           @kernel_sum; ...		% Sum Peudo Kernel
-                                   'trace',         @kernel_trace; ...		% Trace Peudo Kernel
+    dp = match(config,'kernel',[],{'lie'            @(x,y) x*y - y'*x';        % Lie Bracket kernel
+                                   'hyp'            @(x,y) x*x' - y*y';        % Hyperbolic SVD kernel
+                                   'sum',           @kernel_sum; ...		% Sum Peudo Kernel
+                                   'trace',         @kernel_trace; ...	% Trace Peudo Kernel
                                    'diagonal',      @kernel_diagonal; ...	% Diagonal Pseudo Kernel
                                    'dmd',           @dmd; ...			% DMD Pseudo Kernel
                                    'position',      @(x,y) x(1:size(x,1)/2,:) * y(:,1:size(y,2)/2); ...		% Position Pseudo Kernel
@@ -89,11 +91,12 @@ function [r,m] = est(sys,task,config)
                                       'random',  'r'});			% Random-binary input
 
     % Choose trajectory weighting
-    nf(13) = match(config,'weighting',0,{'none',       0; ...                  % No weighting
-                                         'linear',     1; ...			% Linear Time-Weighting
-                                         'quadratic',  2; ...			% Quadratic Time-Weighting
-                                         'state',      3; ...			% State-Based Weighting
-                                         'scale',      4});			% Scale-Based Weighting
+    nf(13) = match(config,'weighting',0,{'none',      0; ...			% No weighting
+                                         'linear',    1; ...			% Linear Time-Weighting
+                                         'quadratic', 2; ...			% Quadratic Time-Weighting
+                                         'state',     3; ...			% State-Based Weighting
+                                         'scale',     4; ...			% Range-Based Weighting
+                                         'rsqrt',     5});			% Reciprocal Square-Root Time-Weighting
 
     % Choose trajectory centering
     nf(1) = match(config,'centering',0,{'none',     0; ...			% No Centering
@@ -101,7 +104,8 @@ function [r,m] = est(sys,task,config)
                                         'final',    2; ...			% Final State
                                         'mean',     3; ...			% Arithmetic Mean
                                         'rms',      4; ...			% Root-Mean-Squared
-                                        'midrange', 5});			% Mid-Range
+                                        'midrange', 5; ...			% Mid-Range
+                                        'range'     6;});			% Range-based
 
     % Choose perturbation scales
     nf([2,3]) = match(config,'scales',0,{'single',      0; ...			% No Subdivision: [1.0]
@@ -133,13 +137,15 @@ function [r,m] = est(sys,task,config)
     % Choose parameter centering
     nf(9) = match(config,'pcentering',0,{'none',        0; ...			% No Scaling
                                          'linear',      1; ...			% Linear Scaling and Parameter Centering
-                                         'logarithmic', 2});			% Logarithmic Scaling Parameter Centering
+                                         'logarithmic', 2; ...			% Logarithmic Scaling Parameter Centering
+                                         'nominal'      3});			% Linear Scaling and Nominal Parameter Centering
 
     % Parameter gramian variant
     nf(10) = match(config,'ptype',0,{'standard',       0; ...			% Regular parameter Gramian
                                      'special',        1; ...			% Generic non-standard
                                      'io_sensitivity', 1; ...			% input-output-based sensitivity gramian
-                                     'coarse_schur',   1});			% (cross-)identifiability gramian via approximate schur complement
+                                     'coarse_schur',   1;                      % (cross-)identifiability gramian via coarse schur complement
+                                     'exact_schur'     2});			% (cross-)identifiability gramian via exact schur complement
 
     % Set maximum rank for decompositions
     RANK = hasfield(config,'max_order',Inf);
@@ -172,7 +178,7 @@ function [r,m] = est(sys,task,config)
 
             assert(not(isempty(v)),'est: Unknown matrix_equation method');
 
-            r = emgr(f{v},g{v},sysdim,timdis,w{v},pr,nf,ut,us,xs,um,xm,dp);
+            r = emgr(f{v},g{v},sysdim,tdisc,w{v},pr,nf,ut,us,xs,um,xm,dp);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SINGULAR VALUES
@@ -185,7 +191,7 @@ function [r,m] = est(sys,task,config)
 
             assert(not(isempty(v)),'est: Unknown singular_value method');
 
-            r = SVD(emgr(f{v},g{v},sysdim,timdis,w{v},pr,nf,ut,us,xs,um,xm,dp));
+            r = SVD(emgr(f{v},g{v},sysdim,tdisc,w{v},pr,nf,ut,us,xs,um,xm,dp));
 
             if hasfield(config,'score',false)
 
@@ -207,20 +213,20 @@ function [r,m] = est(sys,task,config)
 
             if     (isequal(task.method,'dmd_galerkin') || isequal(task.method,'poor_man')) && isequal(task.variant,'observability')
 
-                W = {emgr(f{2},g{2},sysdim,timdis,w{2},pr,nf,ut,us,xs,um,xm,dp)};
+                W = {emgr(f{2},g{2},sysdim,tdisc,w{2},pr,nf,ut,us,xs,um,xm,dp)};
 
-            elseif (isequal(task.method,'dmd_galerkin') || isequal(task.method,'poor_man')) 
+            elseif (isequal(task.method,'dmd_galerkin') || isequal(task.method,'poor_man'))
 
-                W = {emgr(f{1},g{1},sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp)};
+                W = {emgr(f{1},g{1},sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp)};
 
             elseif isequal(task.variant,'observability')
 
-                W = {emgr(f{1},g{1},sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp), ...
-                     emgr(f{2},g{2},sysdim,timdis,w{2},pr,nf,ut,us,xs,um,xm,dp)};
+                W = {emgr(f{1},g{1},sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp), ...
+                     emgr(f{2},g{2},sysdim,tdisc,w{2},pr,nf,ut,us,xs,um,xm,dp)};
 
             elseif isequal(task.variant,'minimality')
 
-                W = {emgr(f{3},g{3},sysdim,timdis,w{3},pr,nf,ut,us,xs,um,xm,dp)};
+                W = {emgr(f{3},g{3},sysdim,tdisc,w{3},pr,nf,ut,us,xs,um,xm,dp)};
             else
 
                 error('est: Unknown model_reduction variant');
@@ -231,7 +237,7 @@ function [r,m] = est(sys,task,config)
                                                'dominant_subspaces',  @dominant_subspaces; ...
                                                'approx_balancing',    @approx_balancing; ...
                                                'balanced_pod',        @balanced_pod; ...
-                                               'balanced_truncation', @balanced_truncation}); 
+                                               'balanced_truncation', @balanced_truncation});
 
             assert(not(isempty(reductor)),'est: Unknown model_reduction method');
 
@@ -269,7 +275,7 @@ function [r,m] = est(sys,task,config)
 
             assert(not(isempty(w)),'est: Unknown parameter_reduction method');
 
-            W = emgr(sys.f,sys.g,sysdim,timdis,w,pr,nf,ut,us,xs,um,xm,dp);
+            W = emgr(sys.f,sys.g,sysdim,tdisc,w,pr,nf,ut,us,xs,um,xm,dp);
 
             [UP,~,~] = SVD(W{2});
 
@@ -296,12 +302,12 @@ function [r,m] = est(sys,task,config)
 
             if isequal(task.method,'observability')
 
-                W = [emgr(sys.f,sys.g,sysdim,timdis,'c',pr,nf,ut,us,xs,um,xm,dp), ...
-                     emgr(sys.f,sys.g,sysdim,timdis,'i',pr,nf,ut,us,xs,um,xm,dp)];
+                W = [emgr(sys.f,sys.g,sysdim,tdisc,'c',pr,nf,ut,us,xs,um,xm,dp), ...
+                     emgr(sys.f,sys.g,sysdim,tdisc,'i',pr,nf,ut,us,xs,um,xm,dp)];
 
             elseif isequal(task.method,'minimality')
 
-                W = emgr(sys.f,sys.g,sysdim,timdis,'j',pr,nf,ut,us,xs,um,xm,dp);
+                W = emgr(sys.f,sys.g,sysdim,tdisc,'j',pr,nf,ut,us,xs,um,xm,dp);
             else
 
                 error('est: Unknown combined_reduction method');
@@ -355,12 +361,12 @@ function [r,m] = est(sys,task,config)
 
                 eg = @(ui,yj,dp) emgr(@(x,u,p,t) sys.f(x,us + sparse(ui,1,u,sys.M,1),p,t), ...
                                       @(x,u,p,t) sys.F(x,ys + sparse(yj,1,u,sys.Q,1),p,t), ...
-                                      [1,sys.N,1],timdis,'y',pr,nf,ut,[],xs,um,xm,dp);
+                                      [1,sys.N,1],tdisc,'y',pr,nf,ut,[],xs,um,xm,dp);
             else
 
                 eg = @(ui,yj,dp) emgr(@(x,u,p,t) sys.f(x,us + sparse(ui,1,u,sys.M,1),p,t), ...
                                       @(x,u,p,t) elem(sys.g(x,u,p,t),yj), ...
-                                      [1,sys.N,1],timdis,'x',pr,nf,ut,[],xs,um,xm,dp);
+                                      [1,sys.N,1],tdisc,'x',pr,nf,ut,[],xs,um,xm,dp);
             end%if
 
             em = match(task,'method',[],{'relative_gain_array',  @(ui,yj) eg(ui,yj,@kernel_trace); ...
@@ -369,7 +375,7 @@ function [r,m] = est(sys,task,config)
                                          'participation_matrix', @(ui,yj) sqrt(gtrace(eg(ui,yj,[]))); ...
                                          'hardy_2',              @(ui,yj) abs(emgr(@(x,u,p,t) sys.f(x,us + sparse(ui,1,u,sys.M,1),p,t), ...
                                                                                    @(x,u,p,t) elem(sys.g(x,u,p,t),yj), ...
-                                                                                   [1,sys.N,1],timdis,'c',pr,nf,ut,[],xs,um,xm)); ...
+                                                                                   [1,sys.N,1],tdisc,'c',pr,nf,ut,[],xs,um,xm)); ...
                                          'hardy_inf',            @(ui,yj) sum(abs(EIG(eg(ui,yj,[])))); ...
                                          'hankel_interaction',   @(ui,yj) abs(eigs(eg(ui,yj,[]),1)); ...
                                          'rms_hsv',              @(ui,yj) sum(SVD(eg(ui,yj,[])).^4)});
@@ -391,7 +397,7 @@ function [r,m] = est(sys,task,config)
 
             assert(not(isempty(v)),'est: Unknown state_sensitivity method');
 
-            r = sqrt(abs(emgr(f{v},g{v},sysdim,timdis,w{v},pr,nf,ut,us,xs,um,xm,@kernel_diagonal)));
+            r = sqrt(abs(emgr(f{v},g{v},sysdim,tdisc,w{v},pr,nf,ut,us,xs,um,xm,@kernel_diagonal)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PARAMETER SENSITIVITY
@@ -408,7 +414,7 @@ function [r,m] = est(sys,task,config)
 
             nf(7) = match(task,'method',0,{'observability', 1});
 
-            ws = emgr(sys.f,sys.g,sysdim,timdis,'s',pr,nf,ut,us,xs,um,xm,dp);
+            ws = emgr(sys.f,sys.g,sysdim,tdisc,'s',pr,nf,ut,us,xs,um,xm,dp);
 
             r = ws{2};
 
@@ -422,7 +428,7 @@ function [r,m] = est(sys,task,config)
 
             assert(not(isempty(w)),'est: Unknown parameter_identifiability method');
 
-            wi = emgr(sys.f,sys.g,sysdim,timdis,w,pr,nf,ut,us,xs,um,xm,dp);
+            wi = emgr(sys.f,sys.g,sysdim,tdisc,w,pr,nf,ut,us,xs,um,xm,dp);
 
             r = SVD(wi{2});
 
@@ -438,7 +444,7 @@ function [r,m] = est(sys,task,config)
 
             nf(7) = v;
 
-            [UC,SC,~] = SVD(emgr(sys.f,sys.g,sysdim,timdis,'c',pr,nf,ut,us,xs,um,xm,dp));
+            [UC,SC,~] = SVD(emgr(sys.f,sys.g,sysdim,tdisc,'c',pr,nf,ut,us,xs,um,xm,dp));
 
             r = SC;
 
@@ -463,13 +469,15 @@ function [r,m] = est(sys,task,config)
                 r = (rx .* rx) ./ (rc .* ro);
             else
 
-                r = arrayfun(@(k) emgr(sys.f,sys.g,sysdim,timdis,w,pr,nf,ut,us,xs,k,k,@kernel_trace),linspace(1.0,10.0,10));
+                r = arrayfun(@(k) emgr(sys.f,sys.g,sysdim,tdisc,w,pr,nf,ut,us,xs,k,k,@kernel_trace),linspace(1.0,10.0,10));
             end%if
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% GRAMIAN INDEX
 
         case 'gramian_index' % OK
+
+            xlogx = @(x) x .* log(x);
 
             inw = match(task,'method',[],{'sigma_min',             @(w) min(SVD(w)); ...
 ...
@@ -483,7 +491,9 @@ function [r,m] = est(sys,task,config)
 ...
                                           'sigma_max',             @(w) svds(w,1); ...
 ...
-                                          'log_det',               @(w) log(prod(SVD(w))); ...
+                                          'log_det',               @(w) sum(log(SVD(w))); ...
+...
+                                          'entropy',               @(w) -1.0./size(w,1) * sum(xlogx(SVD(w))); ...
 ...
                                           'storage_efficiency',    @(w) sqrt(prod(SVD(w))/prod(diag(w))); ...
 ...
@@ -499,7 +509,7 @@ function [r,m] = est(sys,task,config)
 
                     if isempty(WC) || not(isequal(FC,sys.f)) || not(isequal(GC,sys.g))
 
-                        WC = emgr(f{1},g{1},sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp);
+                        WC = emgr(f{1},g{1},sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp);
                         FC = sys.f;
                         GC = sys.g;
                     end%if
@@ -510,7 +520,7 @@ function [r,m] = est(sys,task,config)
 
                     if isempty(WO) || not(isequal(FO,sys.f)) || not(isequal(GO,sys.g))
 
-                        WO = emgr(f{2},g{2},sysdim,timdis,w{2},pr,nf,ut,us,xs,um,xm,dp);
+                        WO = emgr(f{2},g{2},sysdim,tdisc,w{2},pr,nf,ut,us,xs,um,xm,dp);
                         FO = sys.f;
                         GO = sys.g;
                     end%if
@@ -521,7 +531,7 @@ function [r,m] = est(sys,task,config)
 
                     if isempty(WX) || not(isequal(FX,sys.f)) || not(isequal(GX,sys.g))
 
-                        WX = emgr(f{3},g{3},sysdim,timdis,w{3},pr,nf,ut,us,xs,um,xm,dp);
+                        WX = emgr(f{3},g{3},sysdim,tdisc,w{3},pr,nf,ut,us,xs,um,xm,dp);
                         FX = sys.f;
                         GX = sys.g;
                     end%if
@@ -550,7 +560,7 @@ function [r,m] = est(sys,task,config)
 
                 if isempty(WX) || not(isequal(FX,sys.f)) || not(isequal(GX,sys.g))
 
-                    WX = emgr(f{3},g{3},sysdim,timdis,w{3},pr,nf,ut,us,xs,um,xm,dp);
+                    WX = emgr(f{3},g{3},sysdim,tdisc,w{3},pr,nf,ut,us,xs,um,xm,dp);
                     FX = sys.f;
                     GX = sys.g;
                 end%if
@@ -572,8 +582,8 @@ function [r,m] = est(sys,task,config)
                 if isempty(WC) || not(isequal(FC,sys.f)) || not(isequal(GC,sys.g)) || not(isequal(FO,sys.f)) || not(isequal(GO,sys.g))
 
                     nf(7) = 0;
-                    WC = emgr(f{1},g{1},sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp);
-                    WO = emgr(f{2},g{2},sysdim,timdis,w{2},pr,nf,ut,us,xs,um,xm,dp);
+                    WC = emgr(f{1},g{1},sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp);
+                    WO = emgr(f{2},g{2},sysdim,tdisc,w{2},pr,nf,ut,us,xs,um,xm,dp);
                     FC = sys.f;
                     GC = sys.g;
                     FO = sys.f;
@@ -598,12 +608,12 @@ function [r,m] = est(sys,task,config)
                 if isempty(WQ) || not(isequal(FQ,sys.f)) || not(isequal(GQ,sys.g))
 
                     nf(7) = 1;
-                    WQ = emgr(f{1},g{1},sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp);
+                    WQ = emgr(f{1},g{1},sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp);
                     FQ = sys.f;
                     GQ = sys.g;
                 end%if
 
-                r = eps + abs(inoc(WQ) - arrayfun(@(k) inoc(emgr(f{1},@(x,u,p,t) g{1}(sys.proj{1}(:,1:k)*(sys.proj{2}(:,1:k)'*x),u,p,t),sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp)),1:min(sys.N,RANK))); 
+                r = eps + abs(inoc(WQ) - arrayfun(@(k) inoc(emgr(f{1},@(x,u,p,t) g{1}(sys.proj{1}(:,1:k)*(sys.proj{2}(:,1:k)'*x),u,p,t),sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp)),1:min(sys.N,RANK))); 
                 return
             end%if
 
@@ -618,8 +628,8 @@ function [r,m] = est(sys,task,config)
                 if isempty(WC) || not(isequal(FC,sys.f)) || not(isequal(GC,sys.g)) || not(isequal(FO,sys.f)) || not(isequal(GO,sys.g))
 
                     nf(7) = 0;
-                    WC = emgr(f{1},g{1},sysdim,timdis,w{1},pr,nf,ut,us,xs,um,xm,dp);
-                    WO = emgr(f{2},g{2},sysdim,timdis,w{2},pr,nf,ut,us,xs,um,xm,dp);
+                    WC = emgr(f{1},g{1},sysdim,tdisc,w{1},pr,nf,ut,us,xs,um,xm,dp);
+                    WO = emgr(f{2},g{2},sysdim,tdisc,w{2},pr,nf,ut,us,xs,um,xm,dp);
                     FC = sys.f;
                     GC = sys.g;
                     FO = sys.f;
@@ -635,9 +645,9 @@ function [r,m] = est(sys,task,config)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TAU FUNCTION
 
-        case 'tau_function'
+        case 'tau_function' % OK
 
-            r = arrayfun(@(k) prod(real(EIG(eye(sys.N) + emgr(f{3},g{3},sysdim,timdis,w{3},pr,nf,ut,us,xs,um,xm,@(x,y) x(:,k:end)*y(k:end,:))))),1:floor(sys.Tf / sys.dt));
+            r = arrayfun(@(k) prod(real(EIG(eye(sys.N) + emgr(f{3},g{3},sysdim,tdisc,w{3},pr,nf,ut,us,xs,um,xm,@(x,y) x(:,k:end)*y(k:end,:))))),1:floor(sys.Tf / sys.dt));
     end%switch
 
     ODE = [];
@@ -660,7 +670,7 @@ function varargout = SVD(A)
             if isinf(RANK)
                 varargout = {svd(A)};
             else
-                varargout = {svds(A,r)};
+                varargout = {svds(A,RANK)};
             end%if
 
         case 2
@@ -668,7 +678,7 @@ function varargout = SVD(A)
             if isinf(RANK)
                 [U,D,~] = svd(A);
             else
-                [U,D,~] = svds(A,r);
+                [U,D,~] = svds(A,RANK);
             end%if
             D = diag(D);
             varargout = {U,D};
@@ -678,7 +688,7 @@ function varargout = SVD(A)
             if isinf(RANK)
                 [U,D,V] = svd(A);
             else
-                [U,D,V] = svds(A,r);
+                [U,D,V] = svds(A,RANK);
             end%if
             D = diag(D);
             varargout = {U,D,V};
@@ -698,7 +708,7 @@ function varargout = EIG(A)
             if isinf(RANK)
                 varargout = {eig(A)};
             else
-                varargout = {eigs(A,r)};
+                varargout = {eigs(A,RANK)};
             end%if
 
         case 2
@@ -706,7 +716,7 @@ function varargout = EIG(A)
             if isinf(RANK)
                 [U,D,~] = eig(A,'vector');
             else
-                [U,D,~] = eigs(A,r);
+                [U,D,~] = eigs(A,RANK);
                 D = diag(D);
             end%if
             varargout = {U,D};
@@ -776,9 +786,9 @@ end
 function y = rk45ex(f,g,t,x0,u,p)
 % summary: Adaptive 4th/5th Dormand-Prince Runge-Kutta method
 
-    [S,x] = ode45(@(t,x) f(x,u(t),p,t),[0,t(2)],x0,'InitialStep',t(1));
-    z = arrayfun(@(k) g(x(k,:)',u(S(k)),p,S(k)),1:numel(S),'UniformOutput',false);
-    y = interp1(S,z',0:t(1):t(2))';
+    [S,x] = ode45(@(t,x) f(x,u(t),p,t),[0,t(2)],x0,odeset('InitialStep',t(1)));
+    z = cell2mat(arrayfun(@(k) g(x(k,:)',u(S(k)),p,S(k)),1:numel(S),'UniformOutput',false));
+    y = interp1(S,z',(0:t(1):t(2)))';
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -920,12 +930,14 @@ function r = assess(sys,config,XL,XR,PL,PR)
     end%if
 
     if isequal(numel(XL),1)
+        skip_x = 1;
         max_x = 1;
     else
         max_x = min(size(XL,1)-1,size(XL,2));
     end%if
 
     if isequal(numel(PL),1)
+        skip_p = 1;
         max_p = 1;
     else
         max_p = min(size(PL,1)-1,size(PL,2));
@@ -937,7 +949,7 @@ function r = assess(sys,config,XL,XR,PL,PR)
     norms = { @(y) sys.dt * norm(y(:),1), ...					% L1 time series norm
               @(y) sqrt(sys.dt) * norm(y(:),2), ...				% L2 time series norm
               @(y) norm(y(:),Inf), ...						% Linf time series norm
-              @(y) sum(abs(prod(y,1).^(1/size(y,1))))};				% L0 time series norm
+              @(y) sum(abs(prod(y,1).^(1/size(y,1)))) };			% L0 time series norm
 
     ln = cellfun(@(n) zeros(numel(test_x),numel(test_p)),norms,'UniformOutput',false);
 

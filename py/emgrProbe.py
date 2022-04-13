@@ -2,7 +2,7 @@
 
 """
   project: emgr ( https://gramian.de )
-  version: 5.9.py (2021-01-21)
+  version: 5.99.py (2021-04-13)
   authors: Christian Himpe (0000-0003-2194-6754)
   license: BSD-2-Clause License (opensource.org/licenses/BSD-2-Clause)
   summary: Factorial empirical Gramian singular value decay testing
@@ -41,22 +41,22 @@ def emgrProbe():
     Tf = 1.0
 
     p = np.zeros((N, 1))
-    q = np.ones((N, 1)).dot([[0.5, 1.0]])
+    q = np.ones((N, 1)).dot([[0.5, 0.75, 1.0]])
 
     gramian = ["c", "o", "x", "y", "s", "i", "j"]  # controllability, observability, minimality, linear minimality, sensitivity, identifiability, cross-identifiability
 
     kernels = [np.dot] #, quadratic, cubic, sigmoid]
     training = ["i", "s", "h", "a", "r"]  # impulse, step, havercosine-chirp, sinc, pseudo-random-binary
-    weighting = [0] #, 1, 2, 3, 4]  # none, linear-time, quadratic-time, per-state, per-component
-    centering = [0] #, 1, 2, 3, 4, 5]  # none, steady-state, final-state, arithmetic-mean, root-mean-square, midrange
+    weighting = [0, 1, 2, 3, 4, 5]  # none, linear-time, quadratic-time, per-state, per-component, reciprocal
+    centering = [0, 1, 2, 3, 4, 5]  # none, steady-state, final-state, arithmetic-mean, root-mean-square, midrange
     normalization = [0, 1, 2]  # none, steady-state, Jacobi-type
     stype = [0, 1]  # standard, (output-controllability, average-observability, non-symmetric-cross-gramian)
     extra = [0, 1]  # none, extra-input
 
-    scales = [0]#, 1, 2, 3, 4]  # single, linear, geometric, logarithmic, sparse
-    rotations = [0]#, 1]  # positive-negative, single
+    scales = [0, 1, 2, 3, 4]  # single, linear, geometric, logarithmic, sparse
+    rotations = [0, 1]  # positive-negative, single
 
-    pcentering = [0]#, 1, 2]  # none, linear, logarithmic
+    pcentering = [0, 1, 2, 3]  # none, linear, logarithmic, nominal
     ptype = [0, 1]  # standard (input-output-sensitivity, coarse-schur-complement)
 
     z = 0
@@ -79,7 +79,12 @@ def emgrProbe():
 
                                         for j in ptype:
                                             for k in pcentering:
-                                                W.append(np.linalg.svd(emgr(F, K, [M, N, Q], [dt, Tf], w, q, [d, 0, 0, 0, 0, e, f, g, 0, j, k, 0, h], c, 0.0, 0.0, 1.0, 1.0, i)[1], compute_uv=False))
+                                                X,P = emgr(F, K, [M, N, Q], [dt, Tf], w, q, [d, 0, 0, 0, 0, e, f, g, j, k, 0, 0, h], c, 0.0, 0.0, 1.0, 1.0, i)
+                                                if w == "s":
+                                                    W.append(P)
+                                                else:
+                                                    W.append(np.linalg.svd(P, compute_uv=False))
+
                                     else:
                                         W.append(np.linalg.svd(emgr(F, K, [M, N, Q], [dt, Tf], w, p, [d, 0, 0, 0, 0, e, f, g, 0, 0, 0, 0, h], c, 0.0, 0.0, 1.0, 1.0, i), compute_uv=False))
 

@@ -1,8 +1,10 @@
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.9 (2021-01-21)
+%%% version: 5.99 (2022-04-13)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: emgrTest - run all system tests
+
+tid = tic();
 
 RUNME;
 
@@ -42,4 +44,6 @@ disp(' ');
 %estProbe([],'minimality','linear')
 %estProbe([],'observability','nonlinear')
 %estProbe([],'minimality','nonlinear')
+
+totalTime = toc(tid)
 

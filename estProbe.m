@@ -1,6 +1,6 @@
 function R = estProbe(sys,m,l)
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.9 (2021-01-21)
+%%% version: 5.99 (2022-04-13)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: estProbe - factorial test of emgr option flags
@@ -36,9 +36,9 @@ function R = estProbe(sys,m,l)
     T = 0;
     R = NaN;
 
-    for n = {'unit','quadratic','cubic','sigmoid','mercersigmoid','logarithmic','exponential','gauss','dmd','single'}
+    for n = {'unit','lie','hyp','quadratic','cubic','sigmoid','mercersigmoid','logarithmic','exponential','gauss','dmd','single'}
         for o = {'impulse','step','sinc','chirp','random'}
-            for p = {'none','linear','quadratic','state','scale','reciprocal'}
+            for p = {'none','linear','quadratic','state','scale','rsqrt'}
                 for q = {'none','steady','final','mean','rms','midrange'}
                     for r = {'none','steady','jacobi'}
                         for s = {'standard','special'}

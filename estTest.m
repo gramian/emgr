@@ -1,11 +1,11 @@
 function estTest(t)
 %%% project: emgr - EMpirical GRamian Framework ( https://gramian.de )
-%%% version: 5.9 (2021-01-21)
+%%% version: 5.99 (2022-04-13)
 %%% authors: Christian Himpe (0000-0003-2194-6754)
 %%% license: BSD-2-Clause (opensource.org/licenses/BSD-2-Clause)
 %%% summary: estTest - test est functionality
 
-    rand('seed',1009);								% Seed uniform random number generator
+    rand('seed',1009);  % Seed uniform random number generator
     randn('seed',1009');
 
     M = 4;
@@ -99,7 +99,11 @@ function matrix_equation(sys)
     EOC
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','YGrid','on','XLim',[1,2],'NextPlot','add','ColorOrder',lines12);
+    set(gca,'YScale','log', ...
+            'YGrid','on', ...
+            'XLim',[1,2], ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),err);
     legend(name(:));
 end
@@ -141,7 +145,11 @@ function singular_values(sys)
     MORscore = ms
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','YGrid','on','XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
+    set(gca,'YScale','log', ...
+            'YGrid','on', ...
+            'XLim',[1,sys.N], ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),sv);
     legend(name(:));
 end
@@ -200,7 +208,13 @@ function model_reduction(sys)
     for k = 1:numel(method)
         for l = 1:4
             subplot(4,numel(method),(l-1)*numel(method)+k);
-            set(gca,'YScale','log','Ytick',[1e-16,1e-8,1e-0],'YGrid','on','XLim',[1,sys.N-1],'YLim',[1e-16,1.1],'NextPlot','add','ColorOrder',lines12);
+            set(gca,'YScale','log', ...
+                    'Ytick',[1e-16,1e-8,1e-0], ...
+                    'YGrid','on', ...
+                    'XLim',[1,sys.N-1], ...
+                    'YLim',[1e-16,1.1], ...
+                    'NextPlot','add', ...
+                    'ColorOrder',lines12);
             cellfun(@(c) plot(c{l+2},'LineWidth',3),mr(k,:,:));
             if isequal(k,1), ylabel(yl{l}); end%if
             if isequal(l,1), title(method{k},'Interpreter','none'); end%if
@@ -243,11 +257,18 @@ function parameter_reduction(sys)
     yl = {'L_1','L_2','L_\infty','L_0'};
     for l = 1:4
         subplot(4,1,l);
-        set(gca,'YScale','log','Ytick',[1e-16,1e-8,1],'YGrid','on','XLim',[1,sys.N-1],'YLim',[1e-16,1.1],'NextPlot','add','ColorOrder',lines12);
+        set(gca,'YScale','log', ...
+                'Ytick',[1e-16,1e-8,1], ...
+                'YGrid','on', ...
+                'XLim',[1,sys.N-1], ...
+                'YLim',[1e-16,1.1], ...
+                'NextPlot','add', ...
+                'ColorOrder',lines12);
         for k = 1:numel(method)
             plot(pr{k}{l+2},'LineWidth',3);
         end%for
         ylabel(yl{l});
+        legend(method(:));
     end%for
 end
 
@@ -293,7 +314,8 @@ function combined_reduction(sys)
         h = surf(cr{m}{1},cr{m}{2},cr{m}{5});
         xlabel('x');
         ylabel('p');
-        set(gca,'ZScale','log','CLim',log10(get(gca,'ZLim')));
+        set(gca,'ZScale','log', ...
+                'CLim',log10(get(gca,'ZLim')));
         set(h,'CData',log10(get(h,'CData')));
         view(135,15);
     end%for
@@ -359,7 +381,9 @@ function state_sensitivity(sys)
     for k = 1:numel(method)
         for l = 1:numel(linearity)
 
-            disp(['Testing: ',method{k},' (',linearity{l},')']);
+            name{k,l} = [method{k},' (',linearity{l},')'];
+
+            disp(['Testing: ',name{k,l}]);
 
             ds{l,k} = est(sys,setfield(task,'method',method{k}), ...
                               setfield(config,'linearity',linearity{l}));
@@ -369,8 +393,11 @@ function state_sensitivity(sys)
     figure('Name',task.type,'NumberTitle','off');
     for k = 1:numel(linearity)
         subplot(1,numel(linearity),k);
-        set(gca,'XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
+        set(gca,'XLim',[1,sys.N], ...
+                'NextPlot','add', ...
+                'ColorOrder',lines12);
         cellfun(@(c) plot(c,'LineWidth',3), ds(k,:));
+        legend(name(:,k));
     end%for
 end
 
@@ -401,8 +428,13 @@ function parameter_sensitivity(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
+    set(gca,'YScale','log', ...
+            'YLim',[1e-3,1e2], ...
+            'XLim',[1,sys.N], ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),ps);
+    legend(method(:));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -429,8 +461,12 @@ function parameter_identifiability(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YScale','log','XLim',[1,sys.N],'NextPlot','add','ColorOrder',lines12);
+    set(gca,'YScale','log', ...
+            'XLim',[1,sys.N], ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),pj);
+    legend(method(:));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -456,11 +492,19 @@ function uncertainty_quantification(sys)
 
     figure('Name',task.type,'NumberTitle','off');
     subplot(1,2,1);
-    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
+    set(gca,'XLim',[1,sys.N], ...
+            'YScale','log', ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     plot(uq{1}./max(uq{1}),'LineWidth',3);
+    legend(method{1});
     subplot(1,2,2);
-    set(gca,'XLim',[1,sys.Q],'YScale','log','NextPlot','add','ColorOrder',lines12);
+    set(gca,'XLim',[1,sys.Q], ...
+            'YScale','log', ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     plot(uq{2}./max(uq{2}),'LineWidth',3);
+    legend(method{2});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -489,8 +533,12 @@ function nonlinearity_quantification(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'XLim',[1,10],'YScale','log','NextPlot','add','ColorOrder',lines12);
+    set(gca,'XLim',[1,10], ...
+            'YScale','log', ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),nq);
+    legend(method(:));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -507,6 +555,7 @@ function gramian_index(sys)
               'operator_norm', ...
               'sigma_max', ...
               'log_det', ...
+              'entropy', ...
               'storage_efficiency', ...
               'unobservability_index', ...
               'performance_index'};
@@ -538,7 +587,10 @@ function gramian_index(sys)
     for l = 1:numel(variant)
 
         subplot(1,numel(variant),l);
-        set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
+        set(gca,'XLim',[1,sys.N], ...
+                'YScale','log', ...
+                'NextPlot','add', ...
+                'ColorOrder',lines12);
         cellfun(@(c) plot(c./max(c),'LineWidth',3),gi(:,l));
         title(variant{l},'Interpreter','None');
         legend(method,'Location','SouthOutside','Interpreter','None');
@@ -633,7 +685,10 @@ function system_norm(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'XLim',[1,sys.N],'YScale','log','NextPlot','add','ColorOrder',lines12);
+    set(gca,'XLim',[1,sys.N], ...
+            'YScale','log', ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c./max(c),'LineWidth',3),sn);
     title('Norms','Interpreter','None');
     legend(method,'Location','SouthOutside','Interpreter','None');
@@ -662,7 +717,9 @@ function tau_function(sys)
     end%for
 
     figure('Name',task.type,'NumberTitle','off');
-    set(gca,'YGrid','on','NextPlot','add','ColorOrder',lines12);
+    set(gca,'YGrid','on', ...
+            'NextPlot','add', ...
+            'ColorOrder',lines12);
     cellfun(@(c) plot(c,'LineWidth',3),au);
     legend(name(:));
 end

@@ -1,17 +1,17 @@
 ![code meta-data](https://img.shields.io/badge/code_meta--data-%E2%9C%93-brightgreen.svg) 
-![zenodo listed](https://zenodo.org/badge/doi/10.5281/zenodo.4454679.png)
+![zenodo listed](https://zenodo.org/badge/doi/10.5281/zenodo.6457616.png)
 ![matlab compatible](https://img.shields.io/badge/matlab-compatible-lightgrey.svg)
 ![SWH](https://archive.softwareheritage.org/badge/origin/https://github.com/gramian/emgr/)
 
-![emgr logo](emgr.png) emgr -- EMpirical GRamian Framework (5.9)
-================================================================
+![emgr logo](emgr.png) emgr -- EMpirical GRamian Framework (5.99)
+=================================================================
 
 [Website](https://gramian.de) |
 [Twitter](https://twitter.com/modelreduction) |
 [Feedback](&#x63;&#x68;&#x40;&#x67;&#x72;&#x61;&#x6D;&#x69;&#x61;&#x6E;&#x2E;&#x64;&#x65;)
 
-* [emgr - EMpirical GRamian Framework](https://gramian.de)
-* version: **5.9** (2021-01-21)
+* project: [emgr - EMpirical GRamian Framework](https://gramian.de)
+* version: **5.99** (2022-04-13)
 * by: [Christian Himpe](https://orcid.org/0000-0003-2194-6754)
 * under: [BSD-2-Clause](https://opensource.org/licenses/BSD-2-Clause) License
 * summary: Empirical system Gramians for (nonlinear) input-output systems.
@@ -25,7 +25,7 @@
     - Combined State and Parameter Reduction
 * Decentralized Control
 * Sensitivity Analysis
-* Parameter Identification | Structural Identifiability | Input-Output Identifiability
+* Parameter Identification |  Input-Output Identifiability
 * Nonlinearity Quantification
 * Uncertainty Quantification
 * System Norms | System Indices | System Invariants
@@ -65,7 +65,7 @@ detailing most features and capabilities see:
 
 * C. Himpe.
   [emgr -- the Empirical Gramian Framework](https://doi.org/10.3390/a11070091).
-  Algorithms 11(7): 91, 2018.
+  Algorithms 11(7): 91, 2018. (open access)
 
 and references therein.
 See also the [reference lists](https://gramian.de/emgr-est.md) for further theoretical backgrounds on empirical Gramians.
@@ -75,15 +75,15 @@ See also the [reference lists](https://gramian.de/emgr-est.md) for further theor
 Successfully tested on:
 
 * Mathworks MATLAB 2017b
-* Mathworks MATLAB 2020b
+* Mathworks MATLAB 2022a
 * GNU Octave 5.2.0
-* GNU Octave 6.1.0
-* Python 3.8.5 (NumPy 1.17.4)
+* GNU Octave 7.1.0
+* Python 3.8.10 (NumPy 1.17.4)
 
 ## Citation
 
-* C. Himpe (2021). emgr -- EMpirical GRamian Framework (Version 5.9) [Software].
-  https://gramian.de [doi:10.5281/zenodo.4454679](https://doi.org/10.5281/zenodo.4454679)
+* C. Himpe (2022). emgr -- EMpirical GRamian Framework (Version 5.99) [Software].
+  https://gramian.de [doi:10.5281/zenodo.6457616](https://doi.org/10.5281/zenodo.6457616)
 
 ## Getting Started
 
@@ -110,9 +110,13 @@ emgrDemo(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'rqo', 'lte', 'aps', '
 
 [`CHANGELOG`](CHANGELOG) Version Information
 
-[`CITATION`](CITATION) Citation Information
+[`CITATION`](CITATION) Citation Information (`BibTeX`)
 
-[`CODE`](CODE) Meta Information
+[`CITATION.cff`](CITATION.cff) Citation Information (`CFF`)
+
+[`CODE`](CODE) Meta Information (`INI`)
+
+[`codemeta.json`](coedmeta.json) Meta Information (`JSON`)
 
 [`LICENSE`](LICENSE) License Information
 
@@ -120,11 +124,11 @@ emgrDemo(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'rqo', 'lte', 'aps', '
 
 [`RUNME.m`](RUNME.m) Minimal Code Example
 
-[`emgr.m`](emgr.m) Empirical Gramian Framework (main file, crc32:`c136507c`)
+[`emgr.m`](emgr.m) Empirical Gramian Framework (main file, crc32:`f76f4638`)
 
 [`emgrTest.m`](emgrTest.m) Run all tests
 
-[`est.m`](est.m) Empirical System Theory (EST) emgr frontend
+[`est.m`](est.m) Empirical System Theory (EST) emgr prototype frontend
 
 [`estTest.m`](estTest.m) EST System Tests
 
@@ -141,6 +145,8 @@ emgrDemo(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'rqo', 'lte', 'aps', '
 * `'qso'` Quasi-Stable Orbits Inside Black Holes
 
 [`estProbe.m`](estProbe.m) emgr factorial comparison of singular value decays
+
+[`test_dwj.m`](test_dwj.m) Test partioned joint Gramian computation
 
 [`est.scm`](est.scm) EST tree-based documentation in [Scheme](https://en.wikipedia.org/wiki/Scheme_(programming_language))
 

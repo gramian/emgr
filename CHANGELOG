@@ -1,5 +1,20 @@
 # emgr Changelog
 
+## emgr 5.99 (2022-04)
+
+ * **CHANGED** parameter scale computation
+ * **ADDED** parameter centering around nominal parameter
+ * **ADDED** exact Schur complement for (cross-)identifiability Gramian
+ * **ADDED** inline-if local function for cleaner assignments
+ * **ADDED** Lie-bracket kernel and hyperbolic-SVD kernel for testing
+ * **ADDED** reciprocal square-root time-weighting
+ * **FIXED** normalization bug
+ * **FIXED** approximate inverse (Python)
+ * **IMPROVED** observability and adjoint caching
+ * **IMPROVED** default solver
+ * **IMPROVED** time-weighting
+ * **IMPROVED** code readability
+
 ## emgr 5.9 (2021-01)
 
  * **CHANGED** chirp input function character changed to 'h'
