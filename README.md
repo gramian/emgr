@@ -214,4 +214,4 @@ emgrDemo(id) % with id one of 'hnm', 'isp', 'fss', 'nrc', 'rqo', 'lte', 'aps', '
 
 ## More information at: https://gramian.de
 
-Follow [@modelreduction](https://twitter.com/modelreduction) for `emgr` news.
+**See also:** C. Himpe: "[emgr - EMpirical GRamian Framework 5.99](https://doi.org/10.1145/3609860)"; Transactions on Mathematical Software, 49(3): 31, 2023.
